@@ -1,0 +1,2609 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Sportlehrer-Toolbox</title>
+<style>
+  :root {
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --danger: #dc2626;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  .hidden { display: none !important; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  #app { min-height: 100vh; }
+  .view { max-width: 1100px; margin: 0 auto; padding: 14px; padding-bottom: 60px; }
+
+  h1 { font-size: 1.4rem; margin: 4px 0 18px; text-align: center; }
+  .btn {
+    border: none; border-radius: 10px; padding: 10px 16px; font-size: 0.95rem;
+    font-weight: 600; cursor: pointer; color: white; background: var(--accent);
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-secondary { background: #64748b; }
+  .btn-danger { background: var(--danger); }
+  .btn-outline { background: white; color: var(--accent); border: 1px solid var(--accent); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row.between { justify-content: space-between; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .card-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
+  .card-sub { color: var(--muted); font-size: 0.85rem; }
+  .card-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .card-actions .btn { padding: 8px 12px; font-size: 0.85rem; }
+  .empty-hint { color: var(--muted); text-align: center; padding: 30px; }
+  input[type="text"], input[type="number"], textarea, select {
+    border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 0.95rem;
+    background: white; color: var(--text); font-family: inherit;
+  }
+  label.field-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); display: block; margin-bottom: 3px; }
+  .back-row { margin-bottom: 12px; }
+
+  /* Home */
+  #homeView .tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+  .tool-tile {
+    border: none; border-radius: 16px; padding: 26px 12px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: white; font-weight: 700; font-size: 1rem;
+  }
+  .tool-tile .ti { font-size: 2.4rem; }
+  .tool-lauf { background: linear-gradient(135deg, #16a34a, #14532d); }
+  .tool-schwimm { background: linear-gradient(135deg, #38bdf8, #0369a1); }
+  .tool-kriterien { background: linear-gradient(135deg, #7c3aed, #4c1d95); }
+  .tool-seil { background: linear-gradient(135deg, #f59e0b, #92400e); }
+  .tool-multi { background: linear-gradient(135deg, #64748b, #1e293b); }
+  .tool-parkour { background: linear-gradient(135deg, #dc2626, #7f1d1d); }
+  .tool-scoreboard { background: linear-gradient(135deg, #111827, #030712); }
+  .tool-team { background: linear-gradient(135deg, #0d9488, #134e4a); }
+  .home-actions { display: flex; gap: 10px; justify-content: center; }
+
+  /* Modal (shared) */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px;
+  }
+  .modal-box {
+    background: var(--card); border-radius: 14px; padding: 20px; max-width: 720px; width: 100%;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-box.wide { max-width: 980px; }
+  .modal-box h2 { margin: 0 0 14px; font-size: 1.15rem; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+  #confirmOverlay { z-index: 200; }
+  #confirmOverlay .modal-box { max-width: 380px; }
+  .modal-box input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; margin-bottom: 12px; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .modal-header p { margin: 0; }
+  .modal-header button { border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; background: var(--accent); color: white; }
+  .class-row, .new-name-item, .check-item {
+    display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
+  }
+  .class-row .cname { flex: 1; font-weight: 600; cursor: pointer; }
+  .class-row button, .new-name-item button { border: none; border-radius: 6px; padding: 5px 10px; font-weight: 600; color: white; }
+  .class-row .edit-btn { background: #64748b; }
+  .class-row .del-btn { background: var(--danger); }
+  .new-name-item span { flex: 1; font-weight: 600; }
+  .new-name-item button { background: var(--danger); }
+  .check-item input { width: 20px; height: 20px; }
+  .check-item span { font-weight: 600; }
+  .scroll-list { max-height: 40vh; overflow-y: auto; margin-bottom: 12px; }
+  .select-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+  .select-actions button { flex: 1; border: 1px solid var(--border); background: white; border-radius: 8px; padding: 8px; font-weight: 600; }
+
+  /* ===================== LAUF (dunkles Theme) ===================== */
+  #laufView { background: #0f172a; color: #f1f5f9; min-height: 100vh; margin: 0; max-width: none; padding: 10px; }
+  #laufView .lf-wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .lf-btn { border: none; border-radius: 10px; padding: 9px 14px; font-size: 0.9rem; font-weight: 700; color: white; cursor: pointer; }
+  .lf-btn:active { transform: scale(0.97); }
+  .lf-back { background: #334155; }
+  .lf-timer-box { background: #1e293b; border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .lf-timer-display { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 110px; }
+  .lf-btn-start { background: #22c55e; color: #052e12; }
+  .lf-btn-pause { background: #f59e0b; color: #3a2400; }
+  .lf-btn-reset { background: #475569; }
+  .lf-btn-all { background: #2563eb; width: 100%; font-size: 1.15rem; padding: 14px; }
+  .lf-action-row { display: flex; gap: 6px; }
+  .lf-action-row .lf-btn { flex: 1; font-size: 0.85rem; padding: 10px 6px; white-space: nowrap; }
+  .lf-btn-sort { background: #7c3aed; }
+  .lf-btn-resetlaps { background: #b45309; }
+  .lf-btn-export { background: #0891b2; }
+  .lf-btn-save { background: #059669; }
+  .lf-btn-classes { background: #4338ca; width: 100%; font-size: 1rem; padding: 12px; }
+  .lf-add-row { display: flex; gap: 8px; background: #1e293b; border-radius: 12px; padding: 8px; }
+  .lf-add-row input { flex: 1; border: none; border-radius: 8px; padding: 10px; font-size: 0.95rem; background: #0f172a; color: #f1f5f9; }
+  .lf-add-row button { background: #22c55e; color: #052e12; }
+  .lf-list { display: flex; flex-direction: column; gap: 8px; }
+  .lf-runner { position: relative; border-radius: 12px; overflow: hidden; }
+  .lf-delete-zone { position: absolute; inset: 0; background: #ef4444; display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; font-weight: 700; color: white; }
+  .lf-runner-content { position: relative; background: #1e293b; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; touch-action: pan-y; }
+  .lf-rank { width: 22px; text-align: center; color: #94a3b8; font-weight: 700; flex-shrink: 0; }
+  .lf-name { flex: 1; font-size: 1rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lf-interval-btn { border: none; background: #334155; color: #cbd5e1; border-radius: 50%; width: 36px; height: 36px; font-size: 1rem; flex-shrink: 0; }
+  .lf-laps { font-size: 1.5rem; font-weight: 800; min-width: 42px; text-align: center; flex-shrink: 0; }
+  .lf-roundbtn { width: 54px; height: 54px; border-radius: 50%; font-size: 1.6rem; font-weight: 700; border: none; color: white; flex-shrink: 0; }
+  .lf-minus { background: #ef4444; }
+  .lf-plus { background: #16a34a; }
+  .lf-empty { color: #94a3b8; text-align: center; margin-top: 30px; }
+  .lf-hint { color: #94a3b8; text-align: center; font-size: 0.8rem; }
+  #lfIntervalOverlay .modal-box { background: #1e293b; color: #f1f5f9; }
+  #lfIntervalList div { padding: 4px 0; border-bottom: 1px solid #334155; }
+
+  /* ===================== SCHWIMM (helles Blau-Theme) ===================== */
+  #schwimmView { background: #eaf6ff; color: #0c4a6e; min-height: 100vh; margin: 0; max-width: none; padding: 8px; }
+  #schwimmView .sw-wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
+  .sw-btn { border: none; border-radius: 10px; padding: 8px 14px; font-size: 0.95rem; font-weight: 600; color: white; cursor: pointer; }
+  .sw-back { background: #ffffff; color: #0c4a6e; border: 1px solid #bae6fd; }
+  .sw-timer-box { background: #ffffff; border: 1px solid #bae6fd; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sw-timer-display { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 90px; color: #0c4a6e; }
+  .sw-btn-start { background: #0ea5e9; color: white; }
+  .sw-btn-pause { background: #f59e0b; color: #3a2400; }
+  .sw-btn-reset { background: #475569; }
+  .sw-distance-row { display: flex; gap: 6px; }
+  .sw-distance-btn { flex: 1; background: #ffffff; border: 2px solid #bae6fd; border-radius: 10px; padding: 6px 4px; text-align: center; color: #0c4a6e; font-weight: 600; }
+  .sw-distance-btn .m { font-size: 0.95rem; font-weight: 800; display: block; }
+  .sw-distance-btn .l { font-size: 0.7rem; color: #5b7c94; display: block; }
+  .sw-distance-btn.active { border-color: #0284c7; background: #bae6fd; }
+  .sw-action-row { display: flex; gap: 6px; }
+  .sw-action-row .sw-btn { flex: 1; font-size: 0.8rem; padding: 8px 6px; white-space: nowrap; }
+  .sw-btn-classes { background: #7c3aed; }
+  .sw-btn-export { background: #0891b2; }
+  .sw-btn-resetresults { background: #b45309; }
+  .sw-btn-save { background: #059669; }
+  .sw-add-row { display: flex; gap: 6px; background: #ffffff; border: 1px solid #bae6fd; border-radius: 12px; padding: 6px; }
+  .sw-add-row input { flex: 1; border: 1px solid #bae6fd; border-radius: 8px; padding: 8px; font-size: 0.95rem; background: #f0f9ff; color: #0c4a6e; }
+  .sw-add-row button { background: #0ea5e9; color: white; padding: 8px 12px; }
+  .sw-section-title { font-size: 0.75rem; font-weight: 700; color: #5b7c94; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 2px; }
+  .sw-dropzone { background: #dbeefe; border-radius: 10px; padding: 6px; border: 2px dashed transparent; }
+  .sw-dropzone.drop-hover { border-color: #0ea5e9; background: #bae6fd; }
+  .sw-pool-zone { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; min-height: 40px; max-height: 15vh; overflow-y: auto; }
+  .sw-empty-hint { color: #5b7c94; font-size: 0.8rem; padding: 4px; }
+  .sw-chip { background: #ffffff; border: 1px solid #bae6fd; border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; color: #0c4a6e; touch-action: none; }
+  .sw-chip button { border: none; border-radius: 6px; background: #ef4444; color: white; font-weight: 700; padding: 1px 6px; }
+  .sw-lanes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  @media (max-width: 700px) { .sw-lanes-grid { grid-template-columns: repeat(2, 1fr); } }
+  .sw-lane-col { display: flex; flex-direction: column; gap: 4px; }
+  .sw-lane-box { display: flex; flex-direction: column; gap: 4px; }
+  .sw-card { background: #ffffff; border: 1px solid #bae6fd; border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; touch-action: none; }
+  .sw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+  .sw-name { font-size: 0.9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #0c4a6e; }
+  .sw-result { font-size: 0.75rem; font-weight: 700; color: #0284c7; white-space: nowrap; }
+  .sw-deficit { font-size: 0.68rem; color: #b45309; font-weight: 600; }
+  .sw-bottom { display: flex; align-items: center; gap: 4px; }
+  .sw-lenbtn { border: none; border-radius: 50%; color: white; font-weight: 700; flex-shrink: 0; width: 34px; height: 34px; font-size: 1rem; }
+  .sw-lenbtn.minus { background: #ef4444; }
+  .sw-lenbtn.plus1, .sw-lenbtn.plus2 { background: #0284c7; }
+  .sw-lengths { font-size: 0.9rem; font-weight: 800; min-width: 40px; text-align: center; flex: 1; color: #0c4a6e; }
+  .sw-del { border: none; border-radius: 6px; background: transparent; color: #5b7c94; font-size: 0.95rem; padding: 2px 4px; }
+  .sw-drag-ghost { position: fixed; top: 0; left: 0; transform: translate(-50%,-50%); background: #0ea5e9; color: white; font-weight: 700; padding: 10px 16px; border-radius: 10px; z-index: 300; pointer-events: none; }
+  @media (orientation: landscape) {
+    .sw-card { padding: 10px 12px; gap: 6px; }
+    .sw-name { font-size: 1.1rem; }
+    .sw-result { font-size: 0.9rem; }
+    .sw-lenbtn { width: 42px; height: 42px; font-size: 1.2rem; }
+  }
+
+  /* ===================== KRITERIENRASTER ===================== */
+  .editor-top-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .levels-editor { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .level-chip { display: flex; align-items: center; gap: 6px; background: var(--bg); border-radius: 8px; padding: 6px 8px; }
+  .level-chip input { width: 130px; }
+  .level-chip button { border: none; background: var(--danger); color: white; border-radius: 6px; padding: 3px 7px; font-weight: 700; }
+  .toggle-group { display: flex; gap: 8px; margin-bottom: 14px; }
+  .toggle-btn { flex: 1; border: 1px solid var(--border); background: white; color: var(--text); border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer; }
+  .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+  table.criteria-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  table.criteria-table th, table.criteria-table td { border: 1px solid var(--border); padding: 6px; vertical-align: top; }
+  table.criteria-table th { background: var(--bg); font-size: 0.8rem; }
+  table.criteria-table input[type="text"] { width: 100%; margin-bottom: 4px; }
+  table.criteria-table input[type="number"] { width: 64px; text-align: center; }
+  .crit-del-btn { border: none; background: transparent; color: var(--muted); font-size: 1.1rem; }
+  .checkbox-crit-card { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 10px; background: var(--bg); }
+  .checkbox-crit-card .crit-head { display: flex; gap: 8px; margin-bottom: 8px; }
+  .checkbox-crit-card .crit-head input[type="text"] { flex: 1; }
+  .box-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .box-row input[type="text"] { flex: 1; }
+  .box-row input[type="number"] { width: 64px; text-align: center; }
+  .box-row button { border: none; background: var(--danger); color: white; border-radius: 6px; padding: 5px 9px; font-weight: 700; }
+  .add-box-btn { background: white; border: 1px dashed var(--accent); color: var(--accent); border-radius: 8px; padding: 6px 10px; font-weight: 600; }
+  .student-row { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .student-row .sname { flex: 1; font-weight: 600; }
+  .attempt-btn { border: 1px solid var(--accent); background: white; color: var(--accent); border-radius: 8px; padding: 8px 12px; font-weight: 700; font-size: 0.85rem; }
+  .attempt-btn.graded { background: var(--accent); color: white; }
+  .attempt-btn.graded.low { background: var(--danger); border-color: var(--danger); }
+  .grading-table { width: 100%; border-collapse: collapse; }
+  .grading-table th, .grading-table td { border: 1px solid var(--border); padding: 8px; text-align: center; font-size: 0.85rem; }
+  .grading-table th { background: var(--bg); }
+  .grading-table td.crit-title-cell { text-align: left; min-width: 160px; }
+  .crit-title-cell .t { font-weight: 700; display: block; }
+  .crit-title-cell .d { color: var(--muted); font-size: 0.8rem; }
+  .level-cell { cursor: pointer; font-weight: 700; min-width: 90px; }
+  .level-cell.selected { outline: 3px solid rgba(0,0,0,0.35); outline-offset: -3px; }
+  .comment-cell textarea { width: 100%; min-height: 40px; resize: vertical; }
+  .checkbox-cell { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .box-cell { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; min-width: 80px; cursor: pointer; font-weight: 600; background: white; line-height: 1.3; }
+  .box-cell .bp { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+  .box-cell.selected { background: var(--accent); color: white; border-color: var(--accent); }
+  .box-cell.selected .bp { color: rgba(255,255,255,0.85); }
+  .grade-summary { display: flex; gap: 20px; align-items: baseline; margin-bottom: 14px; background: var(--bg); border-radius: 10px; padding: 10px 14px; }
+  .grade-summary .note { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+  .grade-summary .pts { color: var(--muted); }
+
+  /* ===================== SEILSPRINGEN ===================== */
+  .sl-duration-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .sl-duration-btn { flex: 1; background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 12px; font-weight: 700; }
+  .sl-duration-btn.active { border-color: #f59e0b; background: #fff7ed; }
+  .sl-timer { text-align: center; font-size: 2.4rem; font-weight: 800; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+  .sl-tapbtn {
+    display: block; margin: 0 auto 18px; width: 240px; height: 240px; border-radius: 50%;
+    background: #f59e0b; color: white; border: none; font-size: 3.5rem; font-weight: 800;
+    box-shadow: 0 8px 24px rgba(245,158,11,0.4);
+  }
+  .sl-tapbtn:disabled { background: #cbd5e1; box-shadow: none; color: #64748b; }
+  .sl-tapbtn:active:not(:disabled) { transform: scale(0.97); }
+  .sl-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .sl-name-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .sl-name-row select, .sl-name-row input { flex: 1; min-width: 160px; }
+
+  /* ===================== MULTISTOPPUHR ===================== */
+  .ms-row { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+  .ms-row .ms-name { flex: 1; font-weight: 700; font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ms-time { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 110px; text-align: center; }
+  .ms-row button { border: none; border-radius: 8px; padding: 10px 14px; font-weight: 700; color: white; }
+  .ms-toggle { background: #16a34a; min-width: 84px; }
+  .ms-toggle.running { background: #f59e0b; }
+  .ms-lap { background: #2563eb; }
+  .ms-reset { background: #64748b; }
+  .ms-del { background: var(--danger); }
+  .ms-laps { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+
+  /* ===================== PARKOUR ===================== */
+  .pk-time-display { text-align: center; font-size: 3rem; font-weight: 800; font-variant-numeric: tabular-nums; margin: 10px 0; }
+  .pk-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .pk-deduction-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; }
+  .pk-deduction-row .count { font-size: 2rem; font-weight: 800; min-width: 50px; text-align: center; }
+  .pk-deduction-row button { width: 54px; height: 54px; border-radius: 50%; border: none; font-size: 1.6rem; font-weight: 700; color: white; }
+  .pk-minus { background: var(--danger); }
+  .pk-plus { background: #64748b; }
+
+  /* ===================== SCOREBOARD ===================== */
+  #scoreboardView { background: #030712; color: white; min-height: 100vh; margin: 0; max-width: none; padding: 0; display: flex; flex-direction: column; }
+  .sb-back-row { padding: 10px; }
+  .sb-back-row .btn { background: #1f2937; }
+  .sb-main { flex: 1; display: flex; align-items: stretch; justify-content: center; touch-action: none; user-select: none; }
+  .sb-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; position: relative; }
+  .sb-side:first-child { border-right: 2px solid #1f2937; }
+  .sb-team-name { border: none; background: transparent; color: #94a3b8; font-size: 1.2rem; font-weight: 700; text-align: center; width: 90%; }
+  .sb-team-name:focus { outline: 1px solid #334155; border-radius: 6px; }
+  .sb-number { font-family: "Courier New", monospace; font-size: min(28vw, 220px); font-weight: 800; line-height: 1; color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,0.35); }
+  .sb-reset-row { text-align: center; padding: 10px; }
+  .sb-reset-row .btn { background: #1f2937; }
+  .sb-hint { text-align: center; color: #64748b; font-size: 0.8rem; padding: 10px; }
+
+  /* ===================== TEAMERSTELLUNG ===================== */
+  .tm-participant { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .tm-participant .tm-name { flex: 1; font-weight: 600; }
+  .tm-rating-controls { display: flex; align-items: center; gap: 8px; }
+  .tm-rating-controls button { width: 34px; height: 34px; border-radius: 50%; border: none; font-weight: 700; font-size: 1.1rem; color: white; background: #64748b; }
+  .tm-rating-value { min-width: 30px; text-align: center; font-weight: 800; font-size: 1.1rem; }
+  .tm-rating-value.pos { color: #16a34a; }
+  .tm-rating-value.neg { color: var(--danger); }
+  .tm-team-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .tm-team-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
+  .tm-team-card .tm-member { padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .tm-team-total { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+
+  /* ===================== KAMERA-BUTTON (Ergebnis als Foto) ===================== */
+  .cam-btn {
+    position: fixed; right: 16px; bottom: 16px; z-index: 60;
+    width: 52px; height: 52px; border-radius: 50%; border: none;
+    background: #2563eb; color: white; font-size: 1.4rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  .cam-btn:active { transform: scale(0.95); }
+
+  /* ===================== VERLAUF ===================== */
+  .vl-student-row { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; font-weight: 600; }
+  .vl-student-row.active { border-color: var(--accent); background: #eff6ff; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ HOME ============ -->
+  <div id="homeView" class="view">
+    <h1>🏅 Sportlehrer-Toolbox</h1>
+    <div class="tool-grid">
+      <button class="tool-tile tool-lauf" data-tool="lauf"><span class="ti">🏃</span><span class="tt">12-Minuten-Lauf</span></button>
+      <button class="tool-tile tool-schwimm" data-tool="schwimm"><span class="ti">🏊</span><span class="tt">Schwimmausdauer</span></button>
+      <button class="tool-tile tool-kriterien" data-tool="kriterien"><span class="ti">📋</span><span class="tt">Kriterienraster</span></button>
+      <button class="tool-tile tool-seil" data-tool="seil"><span class="ti">➰</span><span class="tt">Seilspringen</span></button>
+      <button class="tool-tile tool-multi" data-tool="multi"><span class="ti">⏱️</span><span class="tt">Multistoppuhr</span></button>
+      <button class="tool-tile tool-parkour" data-tool="parkour"><span class="ti">🏑</span><span class="tt">Parkourbenotung</span></button>
+      <button class="tool-tile tool-scoreboard" data-tool="scoreboard"><span class="ti">📟</span><span class="tt">Scoreboard</span></button>
+      <button class="tool-tile tool-team" data-tool="team"><span class="ti">👥</span><span class="tt">Teamerstellung</span></button>
+    </div>
+    <div class="home-actions">
+      <button class="btn btn-outline" id="homeClassesBtn">Klassen verwalten</button>
+      <button class="btn btn-outline" id="homeVerlaufBtn">Leistungen ansehen</button>
+    </div>
+  </div>
+
+  <!-- ============ LAUF ============ -->
+  <div id="laufView" class="view hidden">
+    <div class="lf-wrap">
+      <div class="row back-row"><button class="lf-btn lf-back" data-back>← Start</button></div>
+      <div class="lf-timer-box">
+        <div class="lf-timer-display" id="lf_timerDisplay">12:00</div>
+        <button class="lf-btn lf-btn-start" id="lf_startBtn">Start</button>
+        <button class="lf-btn lf-btn-pause" id="lf_pauseBtn">Pause</button>
+        <button class="lf-btn lf-btn-reset" id="lf_resetTimerBtn">Reset</button>
+      </div>
+      <button class="lf-btn lf-btn-all" id="lf_allPlusBtn">+1 Runde für alle</button>
+      <div class="lf-action-row">
+        <button class="lf-btn lf-btn-sort" id="lf_sortBtn">Sortieren</button>
+        <button class="lf-btn lf-btn-resetlaps" id="lf_resetLapsBtn">Runden zurücksetzen</button>
+        <button class="lf-btn lf-btn-export" id="lf_exportBtn">Exportieren</button>
+      </div>
+      <button class="lf-btn lf-btn-save" id="lf_saveResultsBtn">Resultate sichern (Leistungen)</button>
+      <div class="lf-add-row">
+        <input id="lf_nameInput" type="text" placeholder="Name eingeben..." maxlength="20">
+        <button class="lf-btn" id="lf_addBtn">+ Hinzufügen</button>
+      </div>
+      <button class="lf-btn lf-btn-classes" id="lf_classesBtn">Klassen</button>
+      <div class="lf-list" id="lf_list"></div>
+      <div class="lf-hint">Zum Löschen: Zeile nach links wischen · Uhr-Symbol gedrückt halten für Intervalle</div>
+    </div>
+    <button class="cam-btn" id="lf_camBtn" title="Ergebnis als Foto sichern">📷</button>
+  </div>
+
+  <!-- ============ SCHWIMM ============ -->
+  <div id="schwimmView" class="view hidden">
+    <div class="sw-wrap">
+      <div class="row back-row"><button class="sw-btn sw-back" data-back>← Start</button></div>
+      <div class="sw-timer-box">
+        <div class="sw-timer-display" id="sw_timerDisplay">00:00</div>
+        <button class="sw-btn sw-btn-start" id="sw_startBtn">Start</button>
+        <button class="sw-btn sw-btn-pause" id="sw_pauseBtn">Pause</button>
+        <button class="sw-btn sw-btn-reset" id="sw_resetTimerBtn">Neues Rennen</button>
+      </div>
+      <div class="sw-distance-row">
+        <button class="sw-distance-btn" data-meters="300" data-lengths="12"><span class="m">300 m</span><span class="l">12 Längen</span></button>
+        <button class="sw-distance-btn" data-meters="400" data-lengths="16"><span class="m">400 m</span><span class="l">16 Längen</span></button>
+        <button class="sw-distance-btn" data-meters="500" data-lengths="20"><span class="m">500 m</span><span class="l">20 Längen</span></button>
+      </div>
+      <div class="sw-add-row">
+        <input id="sw_nameInput" type="text" placeholder="Name eingeben..." maxlength="20">
+        <button class="sw-btn" id="sw_addBtn">+ Hinzufügen</button>
+      </div>
+      <div class="sw-action-row">
+        <button class="sw-btn sw-btn-classes" id="sw_classesBtn">Klassen</button>
+        <button class="sw-btn sw-btn-resetresults" id="sw_resetResultsBtn">Ergebnisse zurücksetzen</button>
+        <button class="sw-btn sw-btn-export" id="sw_exportBtn">Exportieren</button>
+      </div>
+      <button class="sw-btn sw-btn-save" id="sw_saveResultsBtn" style="width:100%;">Resultate sichern (Leistungen)</button>
+      <div class="sw-section-title">Nicht zugeteilt</div>
+      <div class="sw-dropzone sw-pool-zone" id="sw_poolZone" data-lane="0"></div>
+      <div class="sw-lanes-grid">
+        <div class="sw-lane-col"><div class="sw-section-title">Bahn 1</div><div class="sw-dropzone sw-lane-box" id="sw_lane1" data-lane="1"></div></div>
+        <div class="sw-lane-col"><div class="sw-section-title">Bahn 2</div><div class="sw-dropzone sw-lane-box" id="sw_lane2" data-lane="2"></div></div>
+        <div class="sw-lane-col"><div class="sw-section-title">Bahn 3</div><div class="sw-dropzone sw-lane-box" id="sw_lane3" data-lane="3"></div></div>
+        <div class="sw-lane-col"><div class="sw-section-title">Bahn 4</div><div class="sw-dropzone sw-lane-box" id="sw_lane4" data-lane="4"></div></div>
+      </div>
+    </div>
+    <button class="cam-btn" id="sw_camBtn" title="Ergebnis als Foto sichern">📷</button>
+  </div>
+
+  <!-- ============ KRITERIENRASTER ============ -->
+  <div id="kriterienView" class="view hidden">
+    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
+    <div class="tabs" style="display:flex; gap:8px; margin-bottom:14px;">
+      <button class="tab-btn btn btn-outline" id="tabRubrics" style="flex:1;">Kriterienraster</button>
+      <button class="tab-btn btn btn-outline" id="tabExams" style="flex:1;">Prüfungen</button>
+    </div>
+    <div id="viewRubrics">
+      <div class="toolbar">
+        <button class="btn" id="newRubricBtn">+ Neues Raster</button>
+        <button class="btn btn-outline" id="importCsvBtn">CSV importieren</button>
+        <button class="btn btn-outline" id="exportTemplateBtn">Vorlage exportieren</button>
+        <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+      </div>
+      <div id="rubricList"></div>
+    </div>
+    <div id="viewExams" class="hidden">
+      <div class="toolbar"><button class="btn" id="newExamBtn">+ Neue Prüfung</button></div>
+      <div id="examList"></div>
+    </div>
+  </div>
+
+  <!-- ============ SEILSPRINGEN ============ -->
+  <div id="seilView" class="view hidden">
+    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
+    <h1>🪢 Seilspringen</h1>
+    <div class="sl-name-row">
+      <select id="sl_classSelect"><option value="">Manuell eingeben</option></select>
+      <select id="sl_studentSelect" class="hidden"></select>
+      <input type="text" id="sl_nameInput" placeholder="Name (optional)">
+    </div>
+    <div class="sl-duration-row">
+      <button class="sl-duration-btn" data-sec="30">30 Sek.</button>
+      <button class="sl-duration-btn active" data-sec="60">60 Sek.</button>
+      <button class="sl-duration-btn" data-sec="90">90 Sek.</button>
+      <button class="sl-duration-btn" data-sec="120">120 Sek.</button>
+    </div>
+    <div class="sl-timer" id="sl_timerDisplay">01:00</div>
+    <button class="sl-tapbtn" id="sl_tapBtn" disabled><span id="sl_countDisplay">0</span></button>
+    <div class="sl-controls">
+      <button class="btn btn-outline" id="sl_startBtn">Start</button>
+      <button class="btn btn-secondary" id="sl_resetBtn">Zurücksetzen</button>
+      <button class="btn hidden" id="sl_saveBtn" style="background:#059669;">Ergebnis sichern</button>
+    </div>
+  </div>
+
+  <!-- ============ MULTISTOPPUHR ============ -->
+  <div id="multiView" class="view hidden">
+    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
+    <h1>⏱️ Multistoppuhr</h1>
+    <div class="toolbar">
+      <input type="text" id="ms_nameInput" placeholder="Name/Gruppe eingeben...">
+      <button class="btn" id="ms_addBtn">+ Hinzufügen</button>
+      <button class="btn btn-outline" id="ms_startAllBtn">Alle starten</button>
+      <button class="btn btn-outline" id="ms_stopAllBtn">Alle stoppen</button>
+      <button class="btn btn-danger" id="ms_resetAllBtn">Alle zurücksetzen</button>
+    </div>
+    <div id="ms_list"></div>
+  </div>
+
+  <!-- ============ PARKOURBENOTUNG ============ -->
+  <div id="parkourView" class="view hidden">
+    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
+    <div class="tabs" style="display:flex; gap:8px; margin-bottom:14px;">
+      <button class="btn btn-outline" id="pkTabCourses" style="flex:1;">Parcours</button>
+      <button class="btn btn-outline" id="pkTabRuns" style="flex:1;">Durchgänge</button>
+    </div>
+    <div id="pkViewCourses">
+      <div class="toolbar"><button class="btn" id="newCourseBtn">+ Neuer Parcours</button></div>
+      <div id="courseList"></div>
+    </div>
+    <div id="pkViewRuns" class="hidden">
+      <div class="toolbar"><button class="btn" id="newRunBtn">+ Neuer Durchgang</button></div>
+      <div id="runList"></div>
+    </div>
+  </div>
+
+  <!-- ============ SCOREBOARD ============ -->
+  <div id="scoreboardView" class="view hidden">
+    <div class="sb-back-row"><button class="btn" data-back>← Start</button></div>
+    <div class="sb-main">
+      <div class="sb-side" data-side="left">
+        <input type="text" class="sb-team-name" id="sb_leftName" value="Team A" maxlength="16">
+        <div class="sb-number" id="sb_leftScore">0</div>
+      </div>
+      <div class="sb-side" data-side="right">
+        <input type="text" class="sb-team-name" id="sb_rightName" value="Team B" maxlength="16">
+        <div class="sb-number" id="sb_rightScore">0</div>
+      </div>
+    </div>
+    <div class="sb-reset-row"><button class="btn" id="sb_resetBtn">Zurücksetzen</button></div>
+    <div class="sb-hint">Mit 3 Fingern auf einer Seite nach oben wischen = +1 Punkt · nach unten wischen = −1 Punkt (max. 50)</div>
+  </div>
+
+  <!-- ============ TEAMERSTELLUNG ============ -->
+  <div id="teamView" class="view hidden">
+    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
+    <h1>👥 Teamerstellung</h1>
+    <div class="toolbar">
+      <input type="text" id="tm_nameInput" placeholder="Name eingeben...">
+      <button class="btn" id="tm_addBtn">+ Hinzufügen</button>
+      <button class="btn btn-outline" id="tm_classesBtn">Klasse laden</button>
+      <button class="btn btn-danger" id="tm_clearBtn">Alle entfernen</button>
+    </div>
+    <div id="tm_participantList"></div>
+    <div class="toolbar" style="align-items:center;">
+      <label class="field-label" style="margin:0;">Anzahl Teams</label>
+      <input type="number" id="tm_numTeams" value="2" min="2" max="8" style="width:70px;">
+      <button class="btn" id="tm_buildBtn">Teams bilden (zufällig &amp; fair)</button>
+    </div>
+    <div id="tm_teamsResult"></div>
+    <button class="cam-btn" id="tm_camBtn" title="Teams als Foto sichern">📷</button>
+  </div>
+
+  <!-- ============ VERLAUF ============ -->
+  <div id="verlaufView" class="view hidden">
+    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
+    <h1>📊 Leistungen</h1>
+    <label class="field-label">Klasse</label>
+    <select id="vl_classSelect" style="width:100%; margin-bottom:14px;"><option value="">Klasse wählen...</option></select>
+    <div id="vl_studentList"></div>
+    <div id="vl_historyList"></div>
+  </div>
+
+</div>
+
+<!-- ============ SHARED MODALS ============ -->
+<div class="modal-overlay hidden" id="confirmOverlay">
+  <div class="modal-box">
+    <p id="confirmMessage" style="font-size:1.05rem; margin:0 0 16px;"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="confirmCancel">Abbrechen</button>
+      <button class="btn btn-danger" id="confirmOk">Bestätigen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="classListOverlay">
+  <div class="modal-box">
+    <div class="modal-header"><p>Klassen</p><button id="classAddBtn">+ Neue Klasse</button></div>
+    <div class="scroll-list" id="classListScroll"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="classListClose">Schliessen</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="createClassOverlay">
+  <div class="modal-box">
+    <h2 id="createClassModalTitle">Neue Klasse erstellen</h2>
+    <input type="text" id="createClassName" placeholder="Klassenname, z.B. 3.Sek A">
+    <div class="row" style="margin-bottom:12px;">
+      <input type="text" id="createClassNameInput" style="flex:1;" placeholder="Schülername...">
+      <button class="btn" id="createClassAddBtn">+</button>
+    </div>
+    <div class="scroll-list" id="createClassNamesScroll"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="createClassCancel">Abbrechen</button>
+      <button class="btn" id="createClassSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="selectStudentsOverlay">
+  <div class="modal-box">
+    <h2 id="selectStudentsTitle">Schüler auswählen</h2>
+    <div class="select-actions"><button id="selectAllBtn">Alle</button><button id="selectNoneBtn">Keine</button></div>
+    <div class="scroll-list" id="selectStudentsScroll"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="selectStudentsCancel">Abbrechen</button>
+      <button class="btn" id="selectStudentsAdd">Hinzufügen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="lfIntervalOverlay">
+  <div class="modal-box">
+    <h2 id="lfIntervalTitle">Intervalle</h2>
+    <div id="lfIntervalList"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="lfIntervalClose">Schliessen</button></div>
+  </div>
+</div>
+
+<!-- ============ KRITERIEN-SPEZIFISCHE MODALS ============ -->
+<div class="modal-overlay hidden" id="rubricEditorOverlay">
+  <div class="modal-box wide">
+    <h2 id="rubricEditorTitle">Neues Kriterienraster</h2>
+    <div class="editor-top-grid">
+      <div><label class="field-label">Name des Rasters</label><input type="text" id="rubricName" style="width:100%" placeholder="z.B. Unihockey Spielnote"></div>
+      <div><label class="field-label">Punkte für Note 6</label><input type="number" id="rubricMaxSix" style="width:100%" min="0" step="0.5"></div>
+    </div>
+    <label class="field-label">Bewertungsart</label>
+    <div class="toggle-group" id="typeToggle">
+      <button class="toggle-btn" data-type="levels">Stufen (eine Auswahl pro Kriterium)</button>
+      <button class="toggle-btn" data-type="checkboxes">Ankreuzfelder (mehrere, kumulativ)</button>
+    </div>
+    <label class="field-label">Anzahl Versuche pro Prüfung</label>
+    <div class="toggle-group" id="attemptsToggle">
+      <button class="toggle-btn" data-attempts="1">1 Versuch</button>
+      <button class="toggle-btn" data-attempts="2">2 Versuche</button>
+    </div>
+    <div id="levelsSection">
+      <label class="field-label">Bewertungsstufen (von bester zu schlechtester)</label>
+      <div class="levels-editor" id="levelsEditor"></div>
+      <button class="btn btn-outline" id="addLevelBtn" style="margin-bottom:14px;">+ Stufe hinzufügen</button>
+    </div>
+    <label class="field-label">Kriterien</label>
+    <div id="criteriaEditorContainer"></div>
+    <button class="btn btn-outline" id="addCriterionBtn">+ Kriterium hinzufügen</button>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="rubricEditorCancel">Abbrechen</button>
+      <button class="btn" id="rubricEditorSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="newExamOverlay">
+  <div class="modal-box">
+    <h2>Neue Prüfung</h2>
+    <label class="field-label">Name der Prüfung</label>
+    <input type="text" id="examName" style="width:100%; margin-bottom:12px;" placeholder="z.B. Unihockey Spielnote – 3a">
+    <label class="field-label">Kriterienraster</label>
+    <select id="examRubricSelect" style="width:100%; margin-bottom:12px;"></select>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="newExamCancel">Abbrechen</button>
+      <button class="btn" id="newExamSave">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="examDetailOverlay">
+  <div class="modal-box wide">
+    <h2 id="examDetailTitle">Prüfung</h2>
+    <div class="toolbar">
+      <input type="text" id="examAddNameInput" placeholder="Name eingeben...">
+      <button class="btn btn-outline" id="examAddNameBtn">+ Hinzufügen</button>
+      <button class="btn btn-outline" id="examLoadClassBtn">Klasse laden</button>
+      <button class="btn btn-outline" id="examExportBtn">Exportieren</button>
+    </div>
+    <div id="examStudentList"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="examDetailClose">Schliessen</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="gradingOverlay">
+  <div class="modal-box wide">
+    <h2 id="gradingTitle">Bewertung</h2>
+    <div class="grade-summary">
+      <div><span class="pts" id="gradingPointsLabel">0 Punkte</span></div>
+      <div class="note" id="gradingNoteLabel">–</div>
+    </div>
+    <div style="overflow-x:auto;"><table class="grading-table" id="gradingTable"></table></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="gradingCancel">Abbrechen</button>
+      <button class="btn" id="gradingSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="courseEditorOverlay">
+  <div class="modal-box">
+    <h2 id="courseEditorTitle">Neuer Parcours</h2>
+    <label class="field-label">Name des Parcours</label>
+    <input type="text" id="courseName" style="width:100%;" placeholder="z.B. Hindernisparcours Halle 1">
+    <label class="field-label">Bestzeit (Sekunden) = Note 6</label>
+    <input type="number" id="courseBestTime" style="width:100%;" step="0.1" min="0">
+    <label class="field-label">Schwächste Zeit (Sekunden) = Note 1</label>
+    <input type="number" id="courseWorstTime" style="width:100%;" step="0.1" min="0">
+    <label class="field-label">Strafzeit pro Abzug (Sekunden)</label>
+    <input type="number" id="coursePenalty" style="width:100%;" step="0.1" min="0" value="2">
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="courseEditorCancel">Abbrechen</button>
+      <button class="btn" id="courseEditorSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="newRunOverlay">
+  <div class="modal-box">
+    <h2>Neuer Durchgang</h2>
+    <label class="field-label">Name des Durchgangs</label>
+    <input type="text" id="runName" style="width:100%; margin-bottom:12px;" placeholder="z.B. Parkour – 5a">
+    <label class="field-label">Parcours</label>
+    <select id="runCourseSelect" style="width:100%; margin-bottom:12px;"></select>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="newRunCancel">Abbrechen</button>
+      <button class="btn" id="newRunSave">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="runDetailOverlay">
+  <div class="modal-box wide">
+    <h2 id="runDetailTitle">Durchgang</h2>
+    <div class="toolbar">
+      <input type="text" id="runAddNameInput" placeholder="Name eingeben...">
+      <button class="btn btn-outline" id="runAddNameBtn">+ Hinzufügen</button>
+      <button class="btn btn-outline" id="runLoadClassBtn">Klasse laden</button>
+      <button class="btn btn-outline" id="runExportBtn">Exportieren</button>
+    </div>
+    <div id="runStudentList"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="runDetailClose">Schliessen</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="pkGradingOverlay">
+  <div class="modal-box">
+    <h2 id="pkGradingTitle">Zeiterfassung</h2>
+    <div class="pk-time-display" id="pkTimeDisplay">00.0</div>
+    <div class="pk-controls">
+      <button class="btn btn-outline" id="pkStartStopBtn">Start</button>
+      <button class="btn btn-secondary" id="pkTimeResetBtn">Zeit zurücksetzen</button>
+    </div>
+    <label class="field-label" style="text-align:center;">Zeit manuell korrigieren (Sekunden)</label>
+    <input type="number" id="pkManualTime" style="width:100%; text-align:center; margin-bottom:16px;" step="0.1" min="0">
+    <label class="field-label" style="text-align:center;">Abzüge</label>
+    <div class="pk-deduction-row">
+      <button class="pk-minus" id="pkDeductionMinus">−</button>
+      <div class="count" id="pkDeductionCount">0</div>
+      <button class="pk-plus" id="pkDeductionPlus">+</button>
+    </div>
+    <div class="grade-summary">
+      <div><span class="pts" id="pkEffectiveTimeLabel">0.0 s effektiv</span></div>
+      <div class="note" id="pkNoteLabel">–</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="pkGradingCancel">Abbrechen</button>
+      <button class="btn" id="pkGradingSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= Shared utils ================= */
+function loadJSON(key, fallback) {
+  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+  catch (e) { return fallback; }
+}
+function saveJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+function escapeHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str == null ? "" : String(str);
+  return d.innerHTML;
+}
+function uid() { return Date.now() + "_" + Math.random().toString(36).slice(2, 9); }
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.max(0, Math.round(sec)) % 60;
+  return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+}
+function roundToQuarter(n) { return Math.round(n / 0.25) * 0.25; }
+function formatNote(n) {
+  const r = Math.round(roundToQuarter(n) * 100) / 100;
+  if (Number.isInteger(r)) return String(r);
+  if (Number.isInteger(r * 10)) return r.toFixed(1);
+  return r.toFixed(2);
+}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+function formatDateDE(iso) {
+  const parts = iso.split("-");
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+/* ================= Navigation ================= */
+function closeAllModals() {
+  document.querySelectorAll(".modal-overlay").forEach(m => m.classList.add("hidden"));
+  classesPickCallback = null;
+  clearInterval(pkStopwatchInterval);
+}
+function showView(name) {
+  closeAllModals();
+  document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
+  document.getElementById(name + "View").classList.remove("hidden");
+}
+document.querySelectorAll(".tool-tile").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tool = btn.dataset.tool;
+    showView(tool);
+    if (tool === "seil") renderSeilClassOptions();
+    if (tool === "kriterien") { renderRubricList(); }
+    if (tool === "parkour") { renderCourseList(); }
+    if (tool === "scoreboard") { sbRender(); }
+    if (tool === "team") { renderTmList(); }
+  });
+});
+document.querySelectorAll("[data-back]").forEach(btn => {
+  btn.addEventListener("click", () => showView("home"));
+});
+
+/* ================= Confirm modal (shared) ================= */
+let confirmCb = null;
+let confirmCancelCb = null;
+function openConfirm(message, onConfirm, onCancel, confirmLabel) {
+  document.getElementById("confirmMessage").textContent = message;
+  document.getElementById("confirmOk").textContent = confirmLabel || "Bestätigen";
+  confirmCb = onConfirm || null;
+  confirmCancelCb = onCancel || null;
+  document.getElementById("confirmOverlay").classList.remove("hidden");
+}
+function closeConfirm() {
+  document.getElementById("confirmOverlay").classList.add("hidden");
+  confirmCb = null; confirmCancelCb = null;
+}
+document.getElementById("confirmOk").addEventListener("click", () => { const cb = confirmCb; closeConfirm(); if (cb) cb(); });
+document.getElementById("confirmCancel").addEventListener("click", () => { const cb = confirmCancelCb; closeConfirm(); if (cb) cb(); });
+
+/* ================= Klassen (gemeinsam für alle Tools) ================= */
+const CLASSES_KEY = "spt_classes_v1";
+let classes = loadJSON(CLASSES_KEY, {});
+function persistClasses() { saveJSON(CLASSES_KEY, classes); }
+let newClassEntries = [];
+let editingClassName = null;
+let classesPickCallback = null;
+
+function openClassesModal(onPick) {
+  classesPickCallback = onPick || null;
+  renderClassListModal();
+  document.getElementById("classListOverlay").classList.remove("hidden");
+}
+function openCreateClassModal() {
+  editingClassName = null;
+  newClassEntries = [];
+  document.getElementById("createClassModalTitle").textContent = "Neue Klasse erstellen";
+  document.getElementById("createClassName").value = "";
+  document.getElementById("createClassNameInput").value = "";
+  renderNewClassNames();
+  document.getElementById("createClassOverlay").classList.remove("hidden");
+}
+function openEditClassModal(name) {
+  editingClassName = name;
+  newClassEntries = (classes[name] || []).slice();
+  document.getElementById("createClassModalTitle").textContent = "Klasse bearbeiten";
+  document.getElementById("createClassName").value = name;
+  document.getElementById("createClassNameInput").value = "";
+  renderNewClassNames();
+  document.getElementById("createClassOverlay").classList.remove("hidden");
+}
+function renderNewClassNames() {
+  const scroll = document.getElementById("createClassNamesScroll");
+  scroll.innerHTML = newClassEntries.length === 0
+    ? '<p style="color:var(--muted)">Noch keine Namen hinzugefügt.</p>'
+    : newClassEntries.map((n, i) => `<div class="new-name-item"><span>${escapeHtml(n)}</span><button data-index="${i}">✕</button></div>`).join("");
+}
+document.getElementById("createClassNameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("createClassAddBtn").click(); });
+document.getElementById("createClassAddBtn").addEventListener("click", () => {
+  const input = document.getElementById("createClassNameInput");
+  const v = input.value.trim();
+  if (!v) return;
+  newClassEntries.push(v);
+  input.value = "";
+  renderNewClassNames();
+});
+document.getElementById("createClassNamesScroll").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-index]");
+  if (!btn) return;
+  newClassEntries.splice(Number(btn.dataset.index), 1);
+  renderNewClassNames();
+});
+document.getElementById("createClassCancel").addEventListener("click", () => document.getElementById("createClassOverlay").classList.add("hidden"));
+document.getElementById("createClassSave").addEventListener("click", () => {
+  const name = document.getElementById("createClassName").value.trim();
+  if (!name) { openConfirm("Bitte einen Klassennamen eingeben.", null, null, "OK"); return; }
+  if (newClassEntries.length === 0) { openConfirm("Bitte mindestens einen Namen hinzufügen.", null, null, "OK"); return; }
+  if (editingClassName && editingClassName !== name) delete classes[editingClassName];
+  classes[name] = newClassEntries.slice();
+  persistClasses();
+  document.getElementById("createClassOverlay").classList.add("hidden");
+  renderClassListModal();
+  openConfirm(`Klasse "${name}" gespeichert (${newClassEntries.length} Namen).`, null, null, "OK");
+});
+function deleteClassByName(name) { delete classes[name]; persistClasses(); renderClassListModal(); }
+function renderClassListModal() {
+  const scroll = document.getElementById("classListScroll");
+  const names = Object.keys(classes);
+  scroll.innerHTML = names.length === 0
+    ? '<p style="color:var(--muted)">Noch keine Klasse erstellt.</p>'
+    : names.map(n => `
+      <div class="class-row">
+        <div class="cname" data-name="${escapeHtml(n)}" data-action="select">${escapeHtml(n)} (${classes[n].length})</div>
+        <button class="edit-btn" data-name="${escapeHtml(n)}" data-action="edit">✎</button>
+        <button class="del-btn" data-name="${escapeHtml(n)}" data-action="delete">✕</button>
+      </div>
+    `).join("");
+}
+document.getElementById("classListScroll").addEventListener("click", (e) => {
+  const target = e.target.closest("[data-action]");
+  if (!target) return;
+  const name = target.dataset.name;
+  const action = target.dataset.action;
+  if (action === "select") openSelectStudents(name);
+  else if (action === "edit") openEditClassModal(name);
+  else if (action === "delete") openConfirm(`Klasse "${name}" wirklich löschen?`, () => deleteClassByName(name), null, "Löschen");
+});
+document.getElementById("classAddBtn").addEventListener("click", openCreateClassModal);
+document.getElementById("classListClose").addEventListener("click", () => {
+  document.getElementById("classListOverlay").classList.add("hidden");
+  classesPickCallback = null;
+});
+document.getElementById("homeClassesBtn").addEventListener("click", () => openClassesModal(null));
+
+let selectStudentsClassName = null;
+let selectStudentsChecked = new Set();
+function openSelectStudents(className) {
+  selectStudentsClassName = className;
+  selectStudentsChecked = new Set();
+  document.getElementById("selectStudentsTitle").textContent = `Schüler auswählen – ${className}`;
+  document.getElementById("selectStudentsAdd").textContent = classesPickCallback ? "Hinzufügen" : "Schliessen";
+  renderSelectStudents();
+  document.getElementById("selectStudentsOverlay").classList.remove("hidden");
+}
+function renderSelectStudents() {
+  const scroll = document.getElementById("selectStudentsScroll");
+  const students = classes[selectStudentsClassName] || [];
+  scroll.innerHTML = students.length === 0
+    ? '<p style="color:var(--muted)">Diese Klasse hat keine Namen.</p>'
+    : students.map((n, i) => `<label class="check-item"><input type="checkbox" data-index="${i}" ${selectStudentsChecked.has(i) ? "checked" : ""}><span>${escapeHtml(n)}</span></label>`).join("");
+}
+document.getElementById("selectStudentsScroll").addEventListener("change", (e) => {
+  const cb = e.target.closest("input[type=checkbox]");
+  if (!cb) return;
+  const idx = Number(cb.dataset.index);
+  if (cb.checked) selectStudentsChecked.add(idx); else selectStudentsChecked.delete(idx);
+});
+document.getElementById("selectAllBtn").addEventListener("click", () => {
+  const students = classes[selectStudentsClassName] || [];
+  selectStudentsChecked = new Set(students.map((_, i) => i));
+  renderSelectStudents();
+});
+document.getElementById("selectNoneBtn").addEventListener("click", () => { selectStudentsChecked = new Set(); renderSelectStudents(); });
+document.getElementById("selectStudentsCancel").addEventListener("click", () => document.getElementById("selectStudentsOverlay").classList.add("hidden"));
+document.getElementById("selectStudentsAdd").addEventListener("click", () => {
+  if (!classesPickCallback) {
+    document.getElementById("selectStudentsOverlay").classList.add("hidden");
+    return;
+  }
+  const students = classes[selectStudentsClassName] || [];
+  const chosen = students.filter((_, i) => selectStudentsChecked.has(i));
+  if (chosen.length === 0) { openConfirm("Bitte mindestens einen Schüler auswählen.", null, null, "OK"); return; }
+  const cb = classesPickCallback;
+  document.getElementById("selectStudentsOverlay").classList.add("hidden");
+  document.getElementById("classListOverlay").classList.add("hidden");
+  cb(chosen);
+});
+
+/* ================= Verlauf (gemeinsame Historie) ================= */
+const HISTORY_KEY = "spt_history_v1";
+let history = loadJSON(HISTORY_KEY, {});
+function persistHistory() { saveJSON(HISTORY_KEY, history); }
+function pushHistory(name, tool, label, detail) {
+  if (!name) return;
+  if (!history[name]) history[name] = [];
+  history[name].push({ date: todayISO(), tool, label, detail });
+  persistHistory();
+}
+document.getElementById("homeVerlaufBtn").addEventListener("click", () => {
+  showView("verlauf");
+  renderVerlaufClassSelect();
+});
+function renderVerlaufClassSelect() {
+  const sel = document.getElementById("vl_classSelect");
+  sel.innerHTML = '<option value="">Klasse wählen...</option>' + Object.keys(classes).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  document.getElementById("vl_studentList").innerHTML = "";
+  document.getElementById("vl_historyList").innerHTML = "";
+}
+document.getElementById("vl_classSelect").addEventListener("change", () => {
+  const cls = document.getElementById("vl_classSelect").value;
+  document.getElementById("vl_historyList").innerHTML = "";
+  const listEl = document.getElementById("vl_studentList");
+  if (!cls) { listEl.innerHTML = ""; return; }
+  const students = classes[cls] || [];
+  listEl.innerHTML = students.map(n => `<div class="vl-student-row" data-name="${escapeHtml(n)}">${escapeHtml(n)}</div>`).join("");
+});
+document.getElementById("vl_studentList").addEventListener("click", (e) => {
+  const row = e.target.closest(".vl-student-row");
+  if (!row) return;
+  document.querySelectorAll(".vl-student-row").forEach(r => r.classList.remove("active"));
+  row.classList.add("active");
+  const name = row.dataset.name;
+  const entries = (history[name] || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+  const el = document.getElementById("vl_historyList");
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="empty-hint">Noch keine Resultate für diese Person.</div>';
+    return;
+  }
+  el.innerHTML = `<h3 style="margin:14px 0 8px;">${escapeHtml(name)}</h3>` + entries.map(en => `
+    <div class="card">
+      <div class="card-title">${formatDateDE(en.date)} · ${escapeHtml(en.label)}</div>
+      <div class="card-sub">${escapeHtml(en.detail)}</div>
+    </div>
+  `).join("");
+});
+
+/* =========================================================================
+   LAUF-TOOL
+   ========================================================================= */
+const LAUF_STORAGE_KEY = "spt_lauf_state_v1";
+const LAUF_MAX_RUNNERS = 12;
+const LAUF_TIMER_SECONDS = 12 * 60;
+const LF_SWIPE_THRESHOLD = 60;
+const LF_SWIPE_MAX = 90;
+const LF_COOLDOWN_MS = 10000;
+
+let runners = [];
+let laufTimerRemaining = LAUF_TIMER_SECONDS;
+let laufTimerInterval = null;
+let laufTimerRunning = false;
+
+function laufSave() { saveJSON(LAUF_STORAGE_KEY, { runners, laufTimerRemaining }); }
+function laufLoad() {
+  const data = loadJSON(LAUF_STORAGE_KEY, null);
+  if (!data) return;
+  if (Array.isArray(data.runners)) runners = data.runners;
+  if (typeof data.laufTimerRemaining === "number") laufTimerRemaining = data.laufTimerRemaining;
+}
+function renderLaufTimer() {
+  const el = document.getElementById("lf_timerDisplay");
+  el.textContent = formatTime(Math.max(0, laufTimerRemaining));
+  el.style.color = laufTimerRemaining <= 60 && laufTimerRemaining > 0 ? "#f59e0b" : (laufTimerRemaining <= 0 ? "#ef4444" : "");
+}
+function laufBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880; g.gain.setValueAtTime(0.2, ctx.currentTime);
+    o.start(); o.stop(ctx.currentTime + 0.4);
+  } catch (e) {}
+}
+function startLaufTimer() {
+  if (laufTimerRunning) return;
+  if (laufTimerRemaining <= 0) laufTimerRemaining = LAUF_TIMER_SECONDS;
+  laufTimerRunning = true;
+  laufTimerInterval = setInterval(() => {
+    laufTimerRemaining--;
+    if (laufTimerRemaining <= 0) { laufTimerRemaining = 0; pauseLaufTimer(); laufBeep(); }
+    renderLaufTimer(); laufSave();
+  }, 1000);
+}
+function pauseLaufTimer() { laufTimerRunning = false; clearInterval(laufTimerInterval); }
+function resetLaufTimer() { pauseLaufTimer(); laufTimerRemaining = LAUF_TIMER_SECONDS; renderLaufTimer(); laufSave(); }
+
+function addRunner(name) {
+  if (!name.trim()) return;
+  if (runners.length >= LAUF_MAX_RUNNERS) { openConfirm("Maximal " + LAUF_MAX_RUNNERS + " Läufer möglich.", null, null, "OK"); return; }
+  runners.push({ id: uid(), name: name.trim(), laps: 0, lapTimestamps: [], lastTapAt: null });
+  renderLaufList(); laufSave();
+}
+function removeRunner(id) { runners = runners.filter(r => String(r.id) !== String(id)); renderLaufList(); laufSave(); }
+function tapLapPlus(id) {
+  const r = runners.find(r => String(r.id) === String(id));
+  if (!r) return;
+  r.laps++;
+  if (!r.lapTimestamps) r.lapTimestamps = [];
+  r.lapTimestamps.push(Date.now());
+  r.lastTapAt = Date.now();
+  renderLaufList(); laufSave();
+}
+function tapLapMinus(id) {
+  const r = runners.find(r => String(r.id) === String(id));
+  if (!r || r.laps <= 0) return;
+  r.laps--;
+  if (r.lapTimestamps && r.lapTimestamps.length) r.lapTimestamps.pop();
+  r.lastTapAt = null;
+  renderLaufList(); laufSave();
+}
+function addLapAll() {
+  runners.forEach(r => { r.laps++; if (!r.lapTimestamps) r.lapTimestamps = []; r.lapTimestamps.push(Date.now()); });
+  renderLaufList(); laufSave();
+}
+function sortRunners() { runners.sort((a, b) => b.laps - a.laps); renderLaufList(); laufSave(); }
+function resetAllLaps() {
+  runners.forEach(r => { r.laps = 0; r.lapTimestamps = []; r.lastTapAt = null; });
+  renderLaufList(); laufSave();
+}
+function renderLaufList() {
+  const listEl = document.getElementById("lf_list");
+  if (runners.length === 0) { listEl.innerHTML = '<div class="lf-empty">Noch keine Läufer hinzugefügt.</div>'; return; }
+  listEl.innerHTML = runners.map((r, i) => `
+    <div class="lf-runner" data-id="${r.id}">
+      <div class="lf-delete-zone" data-id="${r.id}">Löschen</div>
+      <div class="lf-runner-content" data-id="${r.id}">
+        <div class="lf-rank">${i + 1}</div>
+        <div class="lf-name">${escapeHtml(r.name)}</div>
+        <button class="lf-interval-btn" data-id="${r.id}">⏱</button>
+        <button class="lf-roundbtn lf-minus" data-action="minus" data-id="${r.id}">−</button>
+        <div class="lf-laps">${r.laps}</div>
+        <button class="lf-roundbtn lf-plus" data-action="plus" data-id="${r.id}">+</button>
+      </div>
+    </div>
+  `).join("");
+}
+setInterval(() => {
+  if (document.getElementById("laufView").classList.contains("hidden")) return;
+  const now = Date.now();
+  document.querySelectorAll("#lf_list .lf-plus").forEach(btn => {
+    const id = btn.dataset.id;
+    const r = runners.find(rr => String(rr.id) === String(id));
+    if (!r || !r.lastTapAt) { btn.style.background = ""; return; }
+    const elapsedMs = now - r.lastTapAt;
+    if (elapsedMs >= LF_COOLDOWN_MS) { btn.style.background = ""; r.lastTapAt = null; return; }
+    const deg = (elapsedMs / LF_COOLDOWN_MS) * 360;
+    btn.style.background = `conic-gradient(#16a34a ${deg}deg, #f59e0b ${deg}deg 360deg)`;
+  });
+}, 150);
+
+const lfList = document.getElementById("lf_list");
+let lfDragState = null;
+lfList.addEventListener("pointerdown", (e) => {
+  if (e.target.closest("button")) return;
+  const content = e.target.closest(".lf-runner-content");
+  if (!content) return;
+  lfDragState = { id: content.dataset.id, startX: e.clientX, el: content, currentX: 0 };
+  content.style.transition = "none";
+});
+lfList.addEventListener("pointermove", (e) => {
+  if (!lfDragState) return;
+  let dx = e.clientX - lfDragState.startX;
+  dx = Math.min(0, Math.max(dx, -LF_SWIPE_MAX));
+  lfDragState.currentX = dx;
+  lfDragState.el.style.transform = `translateX(${dx}px)`;
+});
+function lfEndDrag() {
+  if (!lfDragState) return;
+  const el = lfDragState.el;
+  el.style.transition = "transform 0.2s ease";
+  el.style.transform = lfDragState.currentX <= -LF_SWIPE_THRESHOLD ? `translateX(-${LF_SWIPE_MAX}px)` : "translateX(0)";
+  lfDragState = null;
+}
+lfList.addEventListener("pointerup", lfEndDrag);
+lfList.addEventListener("pointercancel", lfEndDrag);
+
+let lfHoldTimer = null;
+lfList.addEventListener("pointerdown", (e) => {
+  const btn = e.target.closest(".lf-interval-btn");
+  if (!btn) return;
+  lfHoldTimer = setTimeout(() => showLfIntervalPopover(btn.dataset.id), 300);
+});
+["pointerup", "pointerleave", "pointercancel"].forEach(evt => {
+  lfList.addEventListener(evt, () => { clearTimeout(lfHoldTimer); hideLfIntervalPopover(); });
+});
+function showLfIntervalPopover(id) {
+  const r = runners.find(rr => String(rr.id) === String(id));
+  if (!r) return;
+  document.getElementById("lfIntervalTitle").textContent = `Intervalle – ${r.name}`;
+  const ts = r.lapTimestamps || [];
+  const listEl = document.getElementById("lfIntervalList");
+  if (ts.length < 2) {
+    listEl.innerHTML = '<p style="color:#94a3b8;">Noch nicht genug Runden für Intervalle.</p>';
+  } else {
+    let rows = "";
+    for (let i = 1; i < ts.length; i++) {
+      const deltaSec = Math.round((ts[i] - ts[i - 1]) / 1000);
+      rows += `<div>Runde ${i} → ${i + 1}: ${formatTime(deltaSec)}</div>`;
+    }
+    listEl.innerHTML = rows;
+  }
+  document.getElementById("lfIntervalOverlay").classList.remove("hidden");
+}
+function hideLfIntervalPopover() { document.getElementById("lfIntervalOverlay").classList.add("hidden"); }
+document.getElementById("lfIntervalClose").addEventListener("click", hideLfIntervalPopover);
+
+lfList.addEventListener("click", (e) => {
+  const dz = e.target.closest(".lf-delete-zone");
+  if (dz) {
+    const id = dz.dataset.id;
+    const runner = runners.find(r => String(r.id) === String(id));
+    const contentEl = lfList.querySelector(`.lf-runner-content[data-id="${CSS.escape(String(id))}"]`);
+    if (!runner) return;
+    openConfirm(`"${runner.name}" wirklich löschen?`, () => removeRunner(id),
+      () => { if (contentEl) { contentEl.style.transition = "transform 0.2s ease"; contentEl.style.transform = "translateX(0)"; } },
+      "Löschen");
+    return;
+  }
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.action === "plus") tapLapPlus(id);
+  if (btn.dataset.action === "minus") tapLapMinus(id);
+});
+
+function exportLaufResults() {
+  if (runners.length === 0) { openConfirm("Es gibt noch keine Läufer zum Exportieren.", null, null, "OK"); return; }
+  const sorted = [...runners].sort((a, b) => b.laps - a.laps);
+  const lines = ["12-Minuten-Lauf – Ergebnisse", ...sorted.map((r, i) => `${i + 1}. ${r.name} – ${r.laps} Runden`)];
+  const text = lines.join("\n");
+  if (navigator.share) navigator.share({ text }).catch(() => {});
+  else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => openConfirm("Ergebnisse wurden in die Zwischenablage kopiert.", null, null, "OK"));
+  } else window.prompt("Ergebnisse kopieren:", text);
+}
+
+document.getElementById("lf_addBtn").addEventListener("click", () => {
+  const input = document.getElementById("lf_nameInput");
+  addRunner(input.value); input.value = ""; input.focus();
+});
+document.getElementById("lf_nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("lf_addBtn").click(); });
+document.getElementById("lf_allPlusBtn").addEventListener("click", addLapAll);
+document.getElementById("lf_sortBtn").addEventListener("click", sortRunners);
+document.getElementById("lf_resetLapsBtn").addEventListener("click", () => openConfirm("Alle Rundenzahlen auf 0 zurücksetzen?", resetAllLaps, null, "Zurücksetzen"));
+document.getElementById("lf_exportBtn").addEventListener("click", exportLaufResults);
+document.getElementById("lf_startBtn").addEventListener("click", startLaufTimer);
+document.getElementById("lf_pauseBtn").addEventListener("click", pauseLaufTimer);
+document.getElementById("lf_resetTimerBtn").addEventListener("click", () => openConfirm("Timer wirklich auf 12:00 zurücksetzen?", resetLaufTimer, null, "Zurücksetzen"));
+document.getElementById("lf_classesBtn").addEventListener("click", () => {
+  openClassesModal((names) => {
+    const existing = new Set(runners.map(r => r.name));
+    names.forEach(n => {
+      if (existing.has(n) || runners.length >= LAUF_MAX_RUNNERS) return;
+      runners.push({ id: uid(), name: n, laps: 0, lapTimestamps: [], lastTapAt: null });
+      existing.add(n);
+    });
+    renderLaufList(); laufSave();
+  });
+});
+document.getElementById("lf_saveResultsBtn").addEventListener("click", () => {
+  if (runners.length === 0) { openConfirm("Keine Läufer zum Sichern.", null, null, "OK"); return; }
+  openConfirm("Aktuelle Resultate aller Läufer in die Leistungen übernehmen?", () => {
+    runners.forEach(r => pushHistory(r.name, "Lauf", "12-Minuten-Lauf", `${r.laps} Runden`));
+    openConfirm("Resultate wurden in die Leistungen übernommen.", null, null, "OK");
+  }, null, "Sichern");
+});
+
+/* =========================================================================
+   SCHWIMM-TOOL
+   ========================================================================= */
+const SCHWIMM_STORAGE_KEY = "spt_schwimm_state_v1";
+
+let swimmers = [];
+let targetLengths = 16;
+let distanceMeters = 400;
+let schwimmElapsed = 0;
+let schwimmTimerInterval = null;
+let schwimmTimerRunning = false;
+
+function schwimmSave() { saveJSON(SCHWIMM_STORAGE_KEY, { swimmers, targetLengths, distanceMeters, schwimmElapsed }); }
+function schwimmLoad() {
+  const data = loadJSON(SCHWIMM_STORAGE_KEY, null);
+  if (!data) return;
+  if (Array.isArray(data.swimmers)) swimmers = data.swimmers;
+  if (typeof data.targetLengths === "number") targetLengths = data.targetLengths;
+  if (typeof data.distanceMeters === "number") distanceMeters = data.distanceMeters;
+  if (typeof data.schwimmElapsed === "number") schwimmElapsed = data.schwimmElapsed;
+}
+function renderSchwimmTimer() { document.getElementById("sw_timerDisplay").textContent = formatTime(schwimmElapsed); }
+function startSchwimmTimer() {
+  if (schwimmTimerRunning) return;
+  schwimmTimerRunning = true;
+  schwimmTimerInterval = setInterval(() => { schwimmElapsed++; renderSchwimmTimer(); schwimmSave(); }, 1000);
+}
+function pauseSchwimmTimer() { schwimmTimerRunning = false; clearInterval(schwimmTimerInterval); }
+function resetSchwimmRace() {
+  pauseSchwimmTimer();
+  schwimmElapsed = 0;
+  swimmers.forEach(s => { s.lengths = 0; s.finishTime = null; });
+  renderSchwimmTimer(); renderSwimAll(); schwimmSave();
+}
+function setDistance(meters, lengths) {
+  distanceMeters = meters; targetLengths = lengths;
+  renderDistanceButtons(); schwimmSave();
+}
+function renderDistanceButtons() {
+  document.querySelectorAll(".sw-distance-btn").forEach(btn => btn.classList.toggle("active", Number(btn.dataset.meters) === distanceMeters));
+}
+document.querySelectorAll(".sw-distance-btn").forEach(btn => btn.addEventListener("click", () => setDistance(Number(btn.dataset.meters), Number(btn.dataset.lengths))));
+
+function addSwimmer(name, lane) {
+  if (!name.trim()) return;
+  swimmers.push({ id: uid(), name: name.trim(), lengths: 0, finishTime: null, lane: lane || 0 });
+  renderSwimAll(); schwimmSave();
+}
+function removeSwimmer(id) { swimmers = swimmers.filter(s => String(s.id) !== String(id)); renderSwimAll(); schwimmSave(); }
+function changeLength(id, delta) {
+  const s = swimmers.find(s => String(s.id) === String(id));
+  if (!s) return;
+  const prev = s.lengths;
+  s.lengths = Math.max(0, s.lengths + delta);
+  if (delta > 0 && prev < targetLengths && s.lengths >= targetLengths && s.finishTime === null) s.finishTime = schwimmElapsed;
+  renderSwimAll(); schwimmSave(); checkAllFinished();
+}
+function resetAllResults() { swimmers.forEach(s => { s.lengths = 0; s.finishTime = null; }); renderSwimAll(); schwimmSave(); }
+function checkAllFinished() {
+  const active = swimmers.filter(s => s.lane);
+  if (active.length === 0) return;
+  if (active.every(s => s.lengths >= targetLengths) && schwimmTimerRunning) pauseSchwimmTimer();
+}
+
+const SWIM_GRADE_TABLES = {
+  300: [[6,429],[5.75,442],[5.5,455],[5.25,469],[5,483],[4.75,498],[4.5,513],[4.25,529],[4,545],[3.75,562],[3.5,584],[3.25,606],[3,628],[2.75,650],[2.5,672]],
+  400: [[6,525],[5.75,540],[5.5,557],[5.25,573],[5,590],[4.75,608],[4.5,626],[4.25,645],[4,665],[3.75,685],[3.5,705],[3.25,726],[3,748],[2.75,760],[2.5,784]],
+  500: [[6,600],[5.75,615],[5.5,630],[5.25,650],[5,670],[4.75,700],[4.5,730],[4.25,760],[4,790],[3.75,820],[3.5,850],[3.25,880],[3,910],[2.75,940],[2.5,970]]
+};
+function computeSwimGrade(meters, seconds) {
+  const table = SWIM_GRADE_TABLES[meters];
+  if (!table) return null;
+  if (seconds <= table[0][1]) return 6;
+  for (let i = 0; i < table.length - 1; i++) {
+    const [n1, t1] = table[i]; const [n2, t2] = table[i + 1];
+    if (seconds >= t1 && seconds <= t2) { const frac = (seconds - t1) / (t2 - t1); return n1 - frac * (n1 - n2); }
+  }
+  const [nLast, tLast] = table[table.length - 1]; const [nPrev, tPrev] = table[table.length - 2];
+  const rate = (nPrev - nLast) / (tLast - tPrev);
+  return Math.max(1, nLast - rate * (seconds - tLast));
+}
+function swimGradeToNote3Deficit(meters, seconds) {
+  const table = SWIM_GRADE_TABLES[meters];
+  const note3 = table.find(([n]) => n === 3);
+  return note3 ? Math.max(0, seconds - note3[1]) : 0;
+}
+
+function renderSwimAll() {
+  const pool = document.getElementById("sw_poolZone");
+  const lanes = [1, 2, 3, 4].map(n => document.getElementById("sw_lane" + n));
+  const poolSwimmers = swimmers.filter(s => !s.lane);
+  pool.innerHTML = poolSwimmers.length === 0 ? '<div class="sw-empty-hint">Alle zugeteilt.</div>' : poolSwimmers.map(s => `
+    <div class="sw-chip" data-id="${s.id}"><span>${escapeHtml(s.name)}</span><button data-action="delete" data-id="${s.id}">✕</button></div>
+  `).join("");
+  lanes.forEach((laneEl, i) => {
+    const laneNum = i + 1;
+    const laneSwimmers = swimmers.filter(s => s.lane === laneNum);
+    laneEl.innerHTML = laneSwimmers.length === 0 ? '<div class="sw-empty-hint">Hierher ziehen...</div>' : laneSwimmers.map(s => {
+      let resultHtml = "", deficitHtml = "";
+      if (s.finishTime !== null) {
+        const note = roundToQuarter(computeSwimGrade(distanceMeters, s.finishTime));
+        resultHtml = `<div class="sw-result">${formatTime(s.finishTime)} · Note ${formatNote(note)}</div>`;
+        if (note < 3) deficitHtml = `<div class="sw-deficit">−${formatTime(swimGradeToNote3Deficit(distanceMeters, s.finishTime))} bis Note 3</div>`;
+      }
+      return `
+      <div class="sw-card" data-id="${s.id}">
+        <div class="sw-top"><div class="sw-name">${escapeHtml(s.name)}</div>${resultHtml}</div>
+        ${deficitHtml}
+        <div class="sw-bottom">
+          <button class="sw-lenbtn minus" data-action="minus" data-id="${s.id}">−</button>
+          <div class="sw-lengths">${s.lengths}/${targetLengths}</div>
+          <button class="sw-lenbtn plus1" data-action="plus1" data-id="${s.id}">+1</button>
+          <button class="sw-lenbtn plus2" data-action="plus2" data-id="${s.id}">+2</button>
+          <button class="sw-del" data-action="delete" data-id="${s.id}">✕</button>
+        </div>
+      </div>`;
+    }).join("");
+  });
+}
+document.getElementById("schwimmView").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const id = btn.dataset.id, action = btn.dataset.action;
+  if (action === "plus1") changeLength(id, 1);
+  else if (action === "plus2") changeLength(id, 2);
+  else if (action === "minus") changeLength(id, -1);
+  else if (action === "delete") {
+    const s = swimmers.find(s => String(s.id) === String(id));
+    if (!s) return;
+    openConfirm(`"${s.name}" wirklich entfernen?`, () => removeSwimmer(id), null, "Entfernen");
+  }
+});
+
+let swDraggingId = null, swDragGhost = null, swCurrentHoverZone = null;
+document.getElementById("schwimmView").addEventListener("pointerdown", (e) => {
+  if (e.target.closest("button")) return;
+  const card = e.target.closest(".sw-card, .sw-chip");
+  if (!card) return;
+  swDraggingId = card.dataset.id;
+  const s = swimmers.find(s => String(s.id) === String(swDraggingId));
+  const ghost = document.createElement("div");
+  ghost.className = "sw-drag-ghost";
+  ghost.textContent = s ? s.name : "";
+  document.body.appendChild(ghost);
+  swDragGhost = ghost;
+  swPositionGhost(e.clientX, e.clientY);
+  e.preventDefault();
+});
+function swPositionGhost(x, y) { if (swDragGhost) { swDragGhost.style.left = x + "px"; swDragGhost.style.top = y + "px"; } }
+function swFindDropZone(x, y) { const el = document.elementFromPoint(x, y); return el ? el.closest(".sw-dropzone") : null; }
+document.addEventListener("pointermove", (e) => {
+  if (!swDraggingId) return;
+  swPositionGhost(e.clientX, e.clientY);
+  const zone = swFindDropZone(e.clientX, e.clientY);
+  if (swCurrentHoverZone && swCurrentHoverZone !== zone) swCurrentHoverZone.classList.remove("drop-hover");
+  if (zone) zone.classList.add("drop-hover");
+  swCurrentHoverZone = zone;
+});
+document.addEventListener("pointerup", (e) => {
+  if (!swDraggingId) return;
+  const zone = swFindDropZone(e.clientX, e.clientY);
+  if (zone) { const s = swimmers.find(s => String(s.id) === String(swDraggingId)); if (s) s.lane = Number(zone.dataset.lane); schwimmSave(); }
+  if (swCurrentHoverZone) swCurrentHoverZone.classList.remove("drop-hover");
+  swCurrentHoverZone = null;
+  if (swDragGhost) { swDragGhost.remove(); swDragGhost = null; }
+  swDraggingId = null;
+  renderSwimAll();
+});
+
+function exportSwimResults() {
+  if (swimmers.length === 0) { openConfirm("Es gibt noch keine Schwimmer zum Exportieren.", null, null, "OK"); return; }
+  const finished = swimmers.filter(s => s.finishTime !== null).sort((a, b) => a.finishTime - b.finishTime);
+  const unfinished = swimmers.filter(s => s.finishTime === null);
+  const lines = [`Schwimmen – ${distanceMeters} m (${targetLengths} Längen)`];
+  finished.forEach((s, i) => lines.push(`${i + 1}. ${s.name} – ${formatTime(s.finishTime)} (${s.lengths} Längen)`));
+  if (unfinished.length) { lines.push("Nicht beendet:"); unfinished.forEach(s => lines.push(`- ${s.name} (${s.lengths}/${targetLengths} Längen)`)); }
+  const text = lines.join("\n");
+  if (navigator.share) navigator.share({ text }).catch(() => {});
+  else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => openConfirm("Ergebnisse wurden in die Zwischenablage kopiert.", null, null, "OK"));
+  } else window.prompt("Ergebnisse kopieren:", text);
+}
+
+document.getElementById("sw_addBtn").addEventListener("click", () => {
+  const input = document.getElementById("sw_nameInput");
+  addSwimmer(input.value, 0); input.value = ""; input.focus();
+});
+document.getElementById("sw_nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("sw_addBtn").click(); });
+document.getElementById("sw_startBtn").addEventListener("click", startSchwimmTimer);
+document.getElementById("sw_pauseBtn").addEventListener("click", pauseSchwimmTimer);
+document.getElementById("sw_resetTimerBtn").addEventListener("click", () => openConfirm("Neues Rennen starten? Zeit und Längen werden zurückgesetzt (Bahnzuteilung bleibt erhalten).", resetSchwimmRace, null, "Zurücksetzen"));
+document.getElementById("sw_resetResultsBtn").addEventListener("click", () => openConfirm("Alle Längen und Zeiten zurücksetzen?", resetAllResults, null, "Zurücksetzen"));
+document.getElementById("sw_exportBtn").addEventListener("click", exportSwimResults);
+document.getElementById("sw_classesBtn").addEventListener("click", () => {
+  openClassesModal((names) => {
+    const existing = new Set(swimmers.map(s => s.name));
+    names.forEach(n => { if (!existing.has(n)) { swimmers.push({ id: uid(), name: n, lengths: 0, finishTime: null, lane: 0 }); existing.add(n); } });
+    renderSwimAll(); schwimmSave();
+  });
+});
+document.getElementById("sw_saveResultsBtn").addEventListener("click", () => {
+  if (swimmers.length === 0) { openConfirm("Keine Schwimmer zum Sichern.", null, null, "OK"); return; }
+  openConfirm("Aktuelle Resultate aller Schwimmer in die Leistungen übernehmen?", () => {
+    swimmers.forEach(s => {
+      const detail = s.finishTime !== null
+        ? `${formatTime(s.finishTime)} · Note ${formatNote(roundToQuarter(computeSwimGrade(distanceMeters, s.finishTime)))} (${s.lengths} Längen)`
+        : `${s.lengths}/${targetLengths} Längen (nicht beendet)`;
+      pushHistory(s.name, "Schwimm", `${distanceMeters}m Schwimmen`, detail);
+    });
+    openConfirm("Resultate wurden in die Leistungen übernommen.", null, null, "OK");
+  }, null, "Sichern");
+});
+
+/* =========================================================================
+   KRITERIENRASTER & PRÜFUNG
+   ========================================================================= */
+const RUBRICS_KEY = "spt_rubrics_v1";
+const EXAMS_KEY = "spt_exams_v1";
+let rubrics = loadJSON(RUBRICS_KEY, []);
+let exams = loadJSON(EXAMS_KEY, []);
+function saveRubrics() { saveJSON(RUBRICS_KEY, rubrics); }
+function saveExams() { saveJSON(EXAMS_KEY, exams); }
+
+document.getElementById("tabRubrics").addEventListener("click", () => switchKrTab("rubrics"));
+document.getElementById("tabExams").addEventListener("click", () => switchKrTab("exams"));
+function switchKrTab(tab) {
+  document.getElementById("viewRubrics").classList.toggle("hidden", tab !== "rubrics");
+  document.getElementById("viewExams").classList.toggle("hidden", tab !== "exams");
+  if (tab === "exams") renderExamList();
+}
+function computeNote(points, maxSix) {
+  if (!maxSix || maxSix <= 0) return null;
+  return Math.max(1, Math.min(6, 1 + 5 * (points / maxSix)));
+}
+
+function renderRubricList() {
+  const el = document.getElementById("rubricList");
+  if (rubrics.length === 0) { el.innerHTML = '<div class="empty-hint">Noch kein Kriterienraster erstellt.</div>'; return; }
+  el.innerHTML = rubrics.map(r => {
+    const typeLabel = r.type === "checkboxes" ? "Ankreuzfelder" : `${r.levels.length} Stufen`;
+    const attemptsLabel = (r.attempts || 1) === 2 ? "2 Versuche" : "1 Versuch";
+    return `
+    <div class="card">
+      <div class="card-title">${escapeHtml(r.name)}</div>
+      <div class="card-sub">${r.criteria.length} Kriterien · ${typeLabel} · ${attemptsLabel} · Note 6 ab ${r.maxSix} Punkten</div>
+      <div class="card-actions">
+        <button class="btn btn-outline" data-action="edit" data-id="${r.id}">Bearbeiten</button>
+        <button class="btn btn-outline" data-action="export" data-id="${r.id}">Exportieren</button>
+        <button class="btn btn-danger" data-action="delete" data-id="${r.id}">Löschen</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+document.getElementById("rubricList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const rubric = rubrics.find(r => r.id === id);
+  if (btn.dataset.action === "edit") openRubricEditor(rubric);
+  else if (btn.dataset.action === "export") exportRubricCsv(rubric);
+  else if (btn.dataset.action === "delete") {
+    openConfirm(`Kriterienraster "${rubric.name}" wirklich löschen?`, () => { rubrics = rubrics.filter(r => r.id !== id); saveRubrics(); renderRubricList(); }, null, "Löschen");
+  }
+});
+document.getElementById("newRubricBtn").addEventListener("click", () => openRubricEditor(null));
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function sanitizeFilename(name) { return name.replace(/[\\/:*?"<>|]/g, "").trim() || "kriterienraster"; }
+function exportRubricCsv(rubric) {
+  const lines = [`#TYP=${rubric.type === "checkboxes" ? "ANKREUZFELDER" : "STUFEN"}`, `#NOTE6=${rubric.maxSix}`, `#VERSUCHE=${rubric.attempts || 1}`];
+  if (rubric.type === "checkboxes") {
+    const maxBoxes = Math.max(0, ...rubric.criteria.map(c => c.boxes.length));
+    const header = ["Kriterium", "Beschreibung"];
+    for (let i = 1; i <= maxBoxes; i++) header.push(`Feld${i}_Bezeichnung`, `Feld${i}_Punkte`);
+    lines.push(header.join(";"));
+    rubric.criteria.forEach(c => {
+      const row = [c.title, c.desc];
+      for (let i = 0; i < maxBoxes; i++) { const b = c.boxes[i]; row.push(b ? b.label : "", b ? b.points : ""); }
+      lines.push(row.join(";"));
+    });
+  } else {
+    lines.push(["Kriterium", "Beschreibung", ...rubric.levels].join(";"));
+    rubric.criteria.forEach(c => lines.push([c.title, c.desc, ...c.points].join(";")));
+  }
+  downloadTextFile(`${sanitizeFilename(rubric.name)}.csv`, lines.join("\n"));
+}
+document.getElementById("exportTemplateBtn").addEventListener("click", () => {
+  const lines = ["#TYP=STUFEN", "#NOTE6=24", "#VERSUCHE=1",
+    "Kriterium;Beschreibung;Trifft fast immer;Trifft meistens;Trifft manchmal;Trifft nicht zu",
+    "Beispiel-Kriterium;Kurze Beschreibung, was gut erfüllt aussieht;3;2;1;0"];
+  downloadTextFile("Kriterienraster-Vorlage.csv", lines.join("\n"));
+});
+
+let editingRubricId = null, draftType = "levels", draftAttempts = 1, draftLevels = [], draftCriteria = [];
+function openRubricEditor(rubric) {
+  if (rubric) {
+    editingRubricId = rubric.id;
+    document.getElementById("rubricEditorTitle").textContent = "Kriterienraster bearbeiten";
+    document.getElementById("rubricName").value = rubric.name;
+    document.getElementById("rubricMaxSix").value = rubric.maxSix;
+    draftType = rubric.type || "levels"; draftAttempts = rubric.attempts || 1;
+    draftLevels = (rubric.levels || []).slice();
+    draftCriteria = draftType === "checkboxes"
+      ? rubric.criteria.map(c => ({ id: c.id, title: c.title, desc: c.desc, boxes: (c.boxes || []).map(b => ({ ...b })) }))
+      : rubric.criteria.map(c => ({ id: c.id, title: c.title, desc: c.desc, points: c.points.slice() }));
+  } else {
+    editingRubricId = null;
+    document.getElementById("rubricEditorTitle").textContent = "Neues Kriterienraster";
+    document.getElementById("rubricName").value = ""; document.getElementById("rubricMaxSix").value = "";
+    draftType = "levels"; draftAttempts = 1;
+    draftLevels = ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"];
+    draftCriteria = [];
+  }
+  renderTypeToggle(); renderAttemptsToggle(); renderLevelsEditor(); renderCriteriaEditor();
+  document.getElementById("rubricEditorOverlay").classList.remove("hidden");
+}
+function closeRubricEditor() { document.getElementById("rubricEditorOverlay").classList.add("hidden"); }
+function renderTypeToggle() {
+  document.getElementById("levelsSection").classList.toggle("hidden", draftType !== "levels");
+  document.querySelectorAll("#typeToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.type === draftType));
+}
+function renderAttemptsToggle() {
+  document.querySelectorAll("#attemptsToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", Number(btn.dataset.attempts) === draftAttempts));
+}
+document.getElementById("typeToggle").addEventListener("click", (e) => {
+  const btn = e.target.closest(".toggle-btn"); if (!btn) return;
+  const newType = btn.dataset.type; if (newType === draftType) return;
+  const doSwitch = () => { draftType = newType; draftCriteria = []; renderTypeToggle(); renderCriteriaEditor(); };
+  if (draftCriteria.length > 0) openConfirm("Beim Wechsel der Bewertungsart werden die bereits erfassten Kriterien zurückgesetzt. Fortfahren?", doSwitch, null, "Wechseln");
+  else doSwitch();
+});
+document.getElementById("attemptsToggle").addEventListener("click", (e) => {
+  const btn = e.target.closest(".toggle-btn"); if (!btn) return;
+  draftAttempts = Number(btn.dataset.attempts); renderAttemptsToggle();
+});
+function renderLevelsEditor() {
+  document.getElementById("levelsEditor").innerHTML = draftLevels.map((lv, i) => `
+    <div class="level-chip"><input type="text" data-index="${i}" value="${escapeHtml(lv)}"><button data-index="${i}">✕</button></div>
+  `).join("");
+}
+document.getElementById("levelsEditor").addEventListener("input", (e) => {
+  const input = e.target.closest("input"); if (!input) return;
+  draftLevels[Number(input.dataset.index)] = input.value;
+});
+document.getElementById("levelsEditor").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-index]"); if (!btn) return;
+  const idx = Number(btn.dataset.index);
+  if (draftLevels.length <= 1) { openConfirm("Mindestens eine Stufe muss bestehen bleiben.", null, null, "OK"); return; }
+  draftLevels.splice(idx, 1);
+  draftCriteria.forEach(c => c.points.splice(idx, 1));
+  renderLevelsEditor(); renderCriteriaEditor();
+});
+document.getElementById("addLevelBtn").addEventListener("click", () => {
+  draftLevels.push("Neue Stufe");
+  draftCriteria.forEach(c => c.points.push(0));
+  renderLevelsEditor(); renderCriteriaEditor();
+});
+function renderCriteriaEditor() {
+  const container = document.getElementById("criteriaEditorContainer");
+  if (draftType === "checkboxes") {
+    container.innerHTML = draftCriteria.map((c, ci) => `
+      <div class="checkbox-crit-card" data-ci="${ci}">
+        <div class="crit-head">
+          <input type="text" class="crit-title" placeholder="Titel, z.B. Badminton Clear" value="${escapeHtml(c.title)}">
+          <button class="crit-del-btn" data-ci="${ci}">✕ Kriterium</button>
+        </div>
+        <input type="text" class="crit-desc" placeholder="Beschreibung (optional)" value="${escapeHtml(c.desc)}" style="width:100%; margin-bottom:8px;">
+        ${c.boxes.map((b, bi) => `
+          <div class="box-row" data-bi="${bi}">
+            <input type="text" class="box-label" placeholder="Beschriftung, z.B. ist lang" value="${escapeHtml(b.label)}">
+            <input type="number" class="box-points" value="${b.points}"> Pt.
+            <button class="box-del-btn" data-ci="${ci}" data-bi="${bi}">✕</button>
+          </div>
+        `).join("")}
+        <button class="add-box-btn" data-ci="${ci}">+ Feld hinzufügen</button>
+      </div>
+    `).join("");
+  } else {
+    let html = "<table class='criteria-table'><thead><tr><th style='min-width:220px;'>Kriterium</th>";
+    draftLevels.forEach(lv => html += `<th>${escapeHtml(lv)}</th>`);
+    html += "<th></th></tr></thead><tbody>";
+    draftCriteria.forEach((c, ci) => {
+      html += `<tr data-ci="${ci}"><td>
+          <input type="text" class="crit-title" placeholder="Titel" value="${escapeHtml(c.title)}">
+          <input type="text" class="crit-desc" placeholder="Beschreibung" value="${escapeHtml(c.desc)}">
+        </td>`;
+      c.points.forEach((p, pi) => html += `<td><input type="number" class="crit-points" data-pi="${pi}" value="${p}"></td>`);
+      html += `<td><button class="crit-del-btn" data-ci="${ci}">✕</button></td></tr>`;
+    });
+    html += "</tbody></table>";
+    container.innerHTML = html;
+  }
+}
+document.getElementById("criteriaEditorContainer").addEventListener("input", (e) => {
+  if (draftType === "checkboxes") {
+    const card = e.target.closest(".checkbox-crit-card"); if (!card) return;
+    const ci = Number(card.dataset.ci); const c = draftCriteria[ci];
+    if (e.target.classList.contains("crit-title")) c.title = e.target.value;
+    else if (e.target.classList.contains("crit-desc")) c.desc = e.target.value;
+    else if (e.target.classList.contains("box-label") || e.target.classList.contains("box-points")) {
+      const row = e.target.closest(".box-row"); const bi = Number(row.dataset.bi);
+      if (e.target.classList.contains("box-label")) c.boxes[bi].label = e.target.value;
+      else c.boxes[bi].points = Number(e.target.value) || 0;
+    }
+  } else {
+    const tr = e.target.closest("tr[data-ci]"); if (!tr) return;
+    const ci = Number(tr.dataset.ci); const c = draftCriteria[ci];
+    if (e.target.classList.contains("crit-title")) c.title = e.target.value;
+    else if (e.target.classList.contains("crit-desc")) c.desc = e.target.value;
+    else if (e.target.classList.contains("crit-points")) { const pi = Number(e.target.dataset.pi); c.points[pi] = Number(e.target.value) || 0; }
+  }
+});
+document.getElementById("criteriaEditorContainer").addEventListener("click", (e) => {
+  if (draftType === "checkboxes") {
+    const addBoxBtn = e.target.closest(".add-box-btn");
+    if (addBoxBtn) { draftCriteria[Number(addBoxBtn.dataset.ci)].boxes.push({ label: "", points: 1 }); renderCriteriaEditor(); return; }
+    const boxDelBtn = e.target.closest(".box-del-btn");
+    if (boxDelBtn) { draftCriteria[Number(boxDelBtn.dataset.ci)].boxes.splice(Number(boxDelBtn.dataset.bi), 1); renderCriteriaEditor(); return; }
+    const critDelBtn = e.target.closest(".crit-del-btn");
+    if (critDelBtn) { draftCriteria.splice(Number(critDelBtn.dataset.ci), 1); renderCriteriaEditor(); return; }
+  } else {
+    const btn = e.target.closest(".crit-del-btn"); if (!btn) return;
+    draftCriteria.splice(Number(btn.dataset.ci), 1); renderCriteriaEditor();
+  }
+});
+document.getElementById("addCriterionBtn").addEventListener("click", () => {
+  draftCriteria.push(draftType === "checkboxes" ? { id: uid(), title: "", desc: "", boxes: [] } : { id: uid(), title: "", desc: "", points: draftLevels.map(() => 0) });
+  renderCriteriaEditor();
+});
+document.getElementById("rubricEditorCancel").addEventListener("click", closeRubricEditor);
+document.getElementById("rubricEditorSave").addEventListener("click", () => {
+  const name = document.getElementById("rubricName").value.trim();
+  const maxSix = Number(document.getElementById("rubricMaxSix").value);
+  if (!name) { openConfirm("Bitte einen Namen für das Raster eingeben.", null, null, "OK"); return; }
+  if (!maxSix || maxSix <= 0) { openConfirm("Bitte die Punktzahl für Note 6 angeben (grösser als 0).", null, null, "OK"); return; }
+  if (draftCriteria.length === 0) { openConfirm("Bitte mindestens ein Kriterium hinzufügen.", null, null, "OK"); return; }
+  const rubricObj = {
+    id: editingRubricId || uid(), name, maxSix, type: draftType, attempts: draftAttempts,
+    levels: draftType === "levels" ? draftLevels.slice() : [],
+    criteria: draftType === "checkboxes"
+      ? draftCriteria.map(c => ({ id: c.id, title: c.title || "Ohne Titel", desc: c.desc || "", boxes: c.boxes.map(b => ({ label: b.label || "Ohne Beschriftung", points: b.points })) }))
+      : draftCriteria.map(c => ({ id: c.id, title: c.title || "Ohne Titel", desc: c.desc || "", points: c.points.slice() }))
+  };
+  const idx = rubrics.findIndex(r => r.id === rubricObj.id);
+  if (idx >= 0) rubrics[idx] = rubricObj; else rubrics.push(rubricObj);
+  saveRubrics(); closeRubricEditor(); renderRubricList();
+});
+
+document.getElementById("importCsvBtn").addEventListener("click", () => document.getElementById("csvFileInput").click());
+document.getElementById("csvFileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = parseRubricCsv(String(reader.result));
+      draftType = parsed.type; draftAttempts = parsed.attempts || 1;
+      draftLevels = parsed.levels; draftCriteria = parsed.criteria;
+      editingRubricId = null;
+      const maxSix = parsed.maxSix != null ? parsed.maxSix : (parsed.type === "checkboxes"
+        ? parsed.criteria.reduce((sum, c) => sum + c.boxes.reduce((s, b) => s + b.points, 0), 0)
+        : parsed.criteria.reduce((sum, c) => sum + Math.max(...c.points, 0), 0));
+      document.getElementById("rubricEditorTitle").textContent = "Neues Kriterienraster (aus CSV)";
+      document.getElementById("rubricName").value = file.name.replace(/\.csv$/i, "");
+      document.getElementById("rubricMaxSix").value = maxSix;
+      renderTypeToggle(); renderAttemptsToggle(); renderLevelsEditor(); renderCriteriaEditor();
+      document.getElementById("rubricEditorOverlay").classList.remove("hidden");
+    } catch (err) {
+      openConfirm("CSV konnte nicht gelesen werden. Erwartetes Format: Kriterium;Beschreibung;Stufe1;Stufe2;... (oder eine mit dieser App exportierte Datei).", null, null, "OK");
+    }
+  };
+  reader.readAsText(file, "UTF-8"); e.target.value = "";
+});
+function parseRubricCsv(text) {
+  const rawLines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  const meta = { type: "levels", maxSix: null, attempts: 1 };
+  let i = 0;
+  while (i < rawLines.length && rawLines[i].trim().startsWith("#")) {
+    const eq = rawLines[i].indexOf("=");
+    if (eq > -1) {
+      const key = rawLines[i].slice(1, eq).trim().toUpperCase();
+      const val = rawLines[i].slice(eq + 1).trim();
+      if (key === "TYP") meta.type = val.toUpperCase() === "ANKREUZFELDER" ? "checkboxes" : "levels";
+      else if (key === "NOTE6") meta.maxSix = Number(val) || null;
+      else if (key === "VERSUCHE") meta.attempts = Number(val) === 2 ? 2 : 1;
+    }
+    i++;
+  }
+  const lines = rawLines.slice(i);
+  if (lines.length < 2) throw new Error("zu kurz");
+  const delim = (lines[0].split(";").length >= lines[0].split(",").length) ? ";" : ",";
+  const splitLine = (l) => l.split(delim).map(s => s.trim().replace(/^"|"$/g, ""));
+  if (meta.type === "checkboxes") {
+    const criteria = lines.slice(1).map(line => {
+      const cells = splitLine(line); const boxes = [];
+      for (let c = 2; c < cells.length; c += 2) { const label = cells[c]; if (label) boxes.push({ label, points: Number(cells[c + 1]) || 0 }); }
+      return { id: uid(), title: cells[0] || "", desc: cells[1] || "", boxes };
+    });
+    return { type: "checkboxes", maxSix: meta.maxSix, attempts: meta.attempts, levels: [], criteria };
+  }
+  const header = splitLine(lines[0]); const levels = header.slice(2);
+  if (levels.length === 0) throw new Error("keine Stufen gefunden");
+  const criteria = lines.slice(1).map(line => {
+    const cells = splitLine(line);
+    return { id: uid(), title: cells[0] || "", desc: cells[1] || "", points: levels.map((_, i2) => Number(cells[2 + i2]) || 0) };
+  });
+  return { type: "levels", maxSix: meta.maxSix, attempts: meta.attempts, levels, criteria };
+}
+
+function renderExamList() {
+  const el = document.getElementById("examList");
+  if (exams.length === 0) { el.innerHTML = '<div class="empty-hint">Noch keine Prüfung erstellt.</div>'; return; }
+  el.innerHTML = exams.map(ex => {
+    const rubric = rubrics.find(r => r.id === ex.rubricId);
+    const total = ex.students.length;
+    const done = ex.students.filter(s => ex.results[s] && ex.results[s].attempt1 && ex.results[s].attempt1.note != null).length;
+    return `
+    <div class="card">
+      <div class="card-title">${escapeHtml(ex.name)}</div>
+      <div class="card-sub">${rubric ? escapeHtml(rubric.name) : "(Raster gelöscht)"} · ${done}/${total} bewertet</div>
+      <div class="card-actions">
+        <button class="btn btn-outline" data-action="open" data-id="${ex.id}">Öffnen</button>
+        <button class="btn btn-danger" data-action="delete" data-id="${ex.id}">Löschen</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+document.getElementById("examList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]"); if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.action === "open") openExamDetail(id);
+  else if (btn.dataset.action === "delete") {
+    const ex = exams.find(x => x.id === id);
+    openConfirm(`Prüfung "${ex.name}" wirklich löschen?`, () => { exams = exams.filter(x => x.id !== id); saveExams(); renderExamList(); }, null, "Löschen");
+  }
+});
+document.getElementById("newExamBtn").addEventListener("click", () => {
+  if (rubrics.length === 0) { openConfirm("Bitte zuerst ein Kriterienraster erstellen.", null, null, "OK"); return; }
+  document.getElementById("examName").value = "";
+  document.getElementById("examRubricSelect").innerHTML = rubrics.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join("");
+  document.getElementById("newExamOverlay").classList.remove("hidden");
+});
+document.getElementById("newExamCancel").addEventListener("click", () => document.getElementById("newExamOverlay").classList.add("hidden"));
+document.getElementById("newExamSave").addEventListener("click", () => {
+  const name = document.getElementById("examName").value.trim();
+  const rubricId = document.getElementById("examRubricSelect").value;
+  if (!name) { openConfirm("Bitte einen Namen für die Prüfung eingeben.", null, null, "OK"); return; }
+  const exam = { id: uid(), name, rubricId, students: [], results: {} };
+  exams.push(exam); saveExams();
+  document.getElementById("newExamOverlay").classList.add("hidden");
+  renderExamList(); openExamDetail(exam.id);
+});
+
+let currentExamId = null;
+function openExamDetail(examId) {
+  currentExamId = examId;
+  const ex = exams.find(x => x.id === examId);
+  document.getElementById("examDetailTitle").textContent = ex.name;
+  renderExamStudentList();
+  document.getElementById("examDetailOverlay").classList.remove("hidden");
+}
+function attemptButtonLabel(attemptResult, attemptNum, showsNumberWhenEmpty) {
+  if (attemptResult && attemptResult.note != null) return `${formatNote(attemptResult.note)} (${attemptResult.points}/${attemptResult.maxSix} Pt.)`;
+  return showsNumberWhenEmpty ? `${attemptNum}. Versuch` : "Bewerten";
+}
+function renderExamStudentList() {
+  const ex = exams.find(x => x.id === currentExamId);
+  const rubric = rubrics.find(r => r.id === ex.rubricId);
+  const attempts = rubric ? (rubric.attempts || 1) : 1;
+  const el = document.getElementById("examStudentList");
+  if (ex.students.length === 0) { el.innerHTML = '<div class="empty-hint">Noch keine Schüler in dieser Prüfung.</div>'; return; }
+  el.innerHTML = ex.students.map(name => {
+    const res = ex.results[name] || {};
+    const a1 = res.attempt1, a2 = res.attempt2;
+    const a1Graded = a1 && a1.note != null, a2Graded = a2 && a2.note != null;
+    const btn1 = `<button class="attempt-btn${a1Graded ? " graded" : ""}${a1Graded && a1.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="1">${attemptButtonLabel(a1, 1, attempts === 2)}</button>`;
+    const btn2 = attempts === 2 ? `<button class="attempt-btn${a2Graded ? " graded" : ""}${a2Graded && a2.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="2">${attemptButtonLabel(a2, 2, true)}</button>` : "";
+    return `<div class="student-row"><div class="sname">${escapeHtml(name)}</div>${btn1}${btn2}<button class="btn btn-danger" data-action="remove" data-name="${escapeHtml(name)}">✕</button></div>`;
+  }).join("");
+}
+document.getElementById("examStudentList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]"); if (!btn) return;
+  const name = btn.dataset.name;
+  if (btn.dataset.action === "grade") openGrading(name, Number(btn.dataset.attempt) || 1);
+  else if (btn.dataset.action === "remove") {
+    openConfirm(`"${name}" aus dieser Prüfung entfernen?`, () => {
+      const ex = exams.find(x => x.id === currentExamId);
+      ex.students = ex.students.filter(s => s !== name);
+      delete ex.results[name]; saveExams(); renderExamStudentList();
+    }, null, "Entfernen");
+  }
+});
+document.getElementById("examAddNameBtn").addEventListener("click", () => {
+  const input = document.getElementById("examAddNameInput");
+  const name = input.value.trim(); if (!name) return;
+  const ex = exams.find(x => x.id === currentExamId);
+  if (!ex.students.includes(name)) ex.students.push(name);
+  saveExams(); input.value = ""; renderExamStudentList();
+});
+document.getElementById("examAddNameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("examAddNameBtn").click(); });
+document.getElementById("examDetailClose").addEventListener("click", () => { document.getElementById("examDetailOverlay").classList.add("hidden"); renderExamList(); });
+document.getElementById("examLoadClassBtn").addEventListener("click", () => {
+  openClassesModal((names) => {
+    const ex = exams.find(x => x.id === currentExamId);
+    names.forEach(n => { if (!ex.students.includes(n)) ex.students.push(n); });
+    saveExams(); renderExamStudentList();
+  });
+});
+document.getElementById("examExportBtn").addEventListener("click", () => {
+  const ex = exams.find(x => x.id === currentExamId);
+  const rubric = rubrics.find(r => r.id === ex.rubricId);
+  const attempts = rubric ? (rubric.attempts || 1) : 1;
+  if (ex.students.length === 0) { openConfirm("Keine Schüler zum Exportieren.", null, null, "OK"); return; }
+  const lines = [`Prüfung: ${ex.name}`];
+  ex.students.forEach(name => {
+    const res = ex.results[name] || {};
+    const parts = [];
+    const a1 = res.attempt1;
+    parts.push(a1 && a1.note != null ? `1. Versuch: Note ${formatNote(a1.note)} (${a1.points}/${a1.maxSix} Pt.)` : "1. Versuch: nicht bewertet");
+    if (attempts === 2) { const a2 = res.attempt2; parts.push(a2 && a2.note != null ? `2. Versuch: Note ${formatNote(a2.note)} (${a2.points}/${a2.maxSix} Pt.)` : "2. Versuch: nicht bewertet"); }
+    lines.push(`${name} – ${parts.join(" · ")}`);
+  });
+  const text = lines.join("\n");
+  if (navigator.share) navigator.share({ text }).catch(() => {});
+  else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => openConfirm("Ergebnisse in die Zwischenablage kopiert.", null, null, "OK"));
+  else window.prompt("Ergebnisse kopieren:", text);
+});
+
+let gradingName = null, gradingAttempt = 1, gradingSelections = [], gradingChecked = [], gradingComments = [];
+function openGrading(name, attemptNum) {
+  gradingName = name; gradingAttempt = attemptNum || 1;
+  const ex = exams.find(x => x.id === currentExamId);
+  const rubric = rubrics.find(r => r.id === ex.rubricId);
+  if (!rubric) { openConfirm("Das Kriterienraster dieser Prüfung wurde gelöscht.", null, null, "OK"); return; }
+  const existing = (ex.results[name] || {})["attempt" + gradingAttempt];
+  gradingComments = rubric.criteria.map((c, i) => (existing && existing.comments) ? (existing.comments[i] || "") : "");
+  if (rubric.type === "checkboxes") gradingChecked = rubric.criteria.map((c, i) => new Set(existing && existing.checked ? existing.checked[i] : []));
+  else gradingSelections = rubric.criteria.map((c, i) => (existing && existing.selections) ? existing.selections[i] : null);
+  const attemptSuffix = (rubric.attempts || 1) === 2 ? ` – ${gradingAttempt}. Versuch` : "";
+  document.getElementById("gradingTitle").textContent = `${rubric.name} – ${name}${attemptSuffix}`;
+  renderGradingTable(rubric); updateGradingSummary(rubric);
+  document.getElementById("gradingOverlay").classList.remove("hidden");
+}
+function levelColor(index, total) {
+  if (total <= 1) return "hsl(140,55%,80%)";
+  const hue = 140 - (140 / (total - 1)) * index;
+  return `hsl(${hue},60%,80%)`;
+}
+function renderGradingTable(rubric) {
+  const table = document.getElementById("gradingTable");
+  if (rubric.type === "checkboxes") {
+    let html = "<thead><tr><th style='text-align:left;'>Kriterium</th><th>Auswahl</th><th>Kommentar</th></tr></thead><tbody>";
+    rubric.criteria.forEach((c, ci) => {
+      html += `<tr data-ci="${ci}">
+        <td class="crit-title-cell"><span class="t">${escapeHtml(c.title)}</span><span class="d">${escapeHtml(c.desc)}</span></td>
+        <td class="checkbox-cell">${c.boxes.map((b, bi) => {
+          const checked = gradingChecked[ci].has(bi);
+          return `<span class="box-cell${checked ? " selected" : ""}" data-ci="${ci}" data-bi="${bi}">${escapeHtml(b.label)}<span class="bp">${b.points} Pt.</span></span>`;
+        }).join("")}</td>
+        <td class="comment-cell"><textarea data-ci="${ci}" placeholder="Notiz...">${escapeHtml(gradingComments[ci])}</textarea></td>
+      </tr>`;
+    });
+    html += "</tbody>";
+    table.outerHTML = `<table class="grading-table" id="gradingTable">${html}</table>`;
+  } else {
+    let html = "<thead><tr><th style='text-align:left;'>Kriterium</th>";
+    rubric.levels.forEach(lv => html += `<th>${escapeHtml(lv)}</th>`);
+    html += "<th>Kommentar</th></tr></thead><tbody>";
+    rubric.criteria.forEach((c, ci) => {
+      html += `<tr data-ci="${ci}"><td class="crit-title-cell"><span class="t">${escapeHtml(c.title)}</span><span class="d">${escapeHtml(c.desc)}</span></td>`;
+      c.points.forEach((p, li) => {
+        const selected = gradingSelections[ci] === li;
+        const bg = selected ? levelColor(li, c.points.length) : "white";
+        html += `<td class="level-cell${selected ? " selected" : ""}" style="background:${bg}" data-ci="${ci}" data-li="${li}">${p} Pt.</td>`;
+      });
+      html += `<td class="comment-cell"><textarea data-ci="${ci}" placeholder="Notiz...">${escapeHtml(gradingComments[ci])}</textarea></td></tr>`;
+    });
+    html += "</tbody>";
+    table.outerHTML = `<table class="grading-table" id="gradingTable">${html}</table>`;
+  }
+}
+document.getElementById("gradingOverlay").addEventListener("click", (e) => {
+  const ex = exams.find(x => x.id === currentExamId);
+  const rubric = rubrics.find(r => r.id === ex.rubricId);
+  const cell = e.target.closest(".level-cell");
+  if (cell) {
+    const ci = Number(cell.dataset.ci), li = Number(cell.dataset.li);
+    gradingSelections[ci] = gradingSelections[ci] === li ? null : li;
+    renderGradingTable(rubric); updateGradingSummary(rubric); return;
+  }
+  const chip = e.target.closest(".box-cell");
+  if (chip) {
+    const ci = Number(chip.dataset.ci), bi = Number(chip.dataset.bi);
+    if (gradingChecked[ci].has(bi)) gradingChecked[ci].delete(bi); else gradingChecked[ci].add(bi);
+    renderGradingTable(rubric); updateGradingSummary(rubric);
+  }
+});
+document.getElementById("gradingOverlay").addEventListener("input", (e) => {
+  const ta = e.target.closest("textarea[data-ci]"); if (!ta) return;
+  gradingComments[Number(ta.dataset.ci)] = ta.value;
+});
+function currentGradingPoints(rubric) {
+  if (rubric.type === "checkboxes") {
+    return rubric.criteria.reduce((sum, c, ci) => { let s = 0; gradingChecked[ci].forEach(bi => s += c.boxes[bi].points); return sum + s; }, 0);
+  }
+  return rubric.criteria.reduce((sum, c, ci) => { const li = gradingSelections[ci]; return sum + (li != null ? c.points[li] : 0); }, 0);
+}
+function updateGradingSummary(rubric) {
+  const points = currentGradingPoints(rubric);
+  const note = computeNote(points, rubric.maxSix);
+  document.getElementById("gradingPointsLabel").textContent = `${points} / ${rubric.maxSix} Punkte`;
+  document.getElementById("gradingNoteLabel").textContent = note != null ? formatNote(note) : "–";
+}
+document.getElementById("gradingCancel").addEventListener("click", () => document.getElementById("gradingOverlay").classList.add("hidden"));
+document.getElementById("gradingSave").addEventListener("click", () => {
+  const ex = exams.find(x => x.id === currentExamId);
+  const rubric = rubrics.find(r => r.id === ex.rubricId);
+  const points = currentGradingPoints(rubric);
+  const note = computeNote(points, rubric.maxSix);
+  const attemptResult = { comments: gradingComments.slice(), points, maxSix: rubric.maxSix, note: note != null ? roundToQuarter(note) : null };
+  if (rubric.type === "checkboxes") attemptResult.checked = gradingChecked.map(set => Array.from(set));
+  else attemptResult.selections = gradingSelections.slice();
+  if (!ex.results[gradingName]) ex.results[gradingName] = {};
+  ex.results[gradingName]["attempt" + gradingAttempt] = attemptResult;
+  saveExams();
+  document.getElementById("gradingOverlay").classList.add("hidden");
+  renderExamStudentList();
+  pushHistory(gradingName, "Kriterienraster", `${rubric.name}${(rubric.attempts || 1) === 2 ? ` – ${gradingAttempt}. Versuch` : ""}`,
+    attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${points}/${rubric.maxSix} Pt.)` : "nicht bewertet");
+});
+
+/* =========================================================================
+   SEILSPRINGEN
+   ========================================================================= */
+let seilCount = 0, seilDuration = 60, seilRemaining = 60, seilInterval = null, seilRunning = false;
+
+function renderSeilClassOptions() {
+  const sel = document.getElementById("sl_classSelect");
+  sel.innerHTML = '<option value="">Manuell eingeben</option>' + Object.keys(classes).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  document.getElementById("sl_studentSelect").classList.add("hidden");
+  document.getElementById("sl_nameInput").classList.remove("hidden");
+}
+document.getElementById("sl_classSelect").addEventListener("change", () => {
+  const cls = document.getElementById("sl_classSelect").value;
+  const studentSel = document.getElementById("sl_studentSelect");
+  const nameInput = document.getElementById("sl_nameInput");
+  if (!cls) { studentSel.classList.add("hidden"); nameInput.classList.remove("hidden"); return; }
+  nameInput.classList.add("hidden"); studentSel.classList.remove("hidden");
+  studentSel.innerHTML = (classes[cls] || []).map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+});
+function currentSeilName() {
+  const cls = document.getElementById("sl_classSelect").value;
+  if (cls) return document.getElementById("sl_studentSelect").value;
+  return document.getElementById("sl_nameInput").value.trim();
+}
+document.querySelectorAll(".sl-duration-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (seilRunning) return;
+    seilDuration = Number(btn.dataset.sec);
+    seilRemaining = seilDuration;
+    document.querySelectorAll(".sl-duration-btn").forEach(b => b.classList.toggle("active", b === btn));
+    renderSeilTimer();
+  });
+});
+function renderSeilTimer() { document.getElementById("sl_timerDisplay").textContent = formatTime(seilRemaining); }
+function renderSeilCount() { document.getElementById("sl_countDisplay").textContent = seilCount; }
+function seilStart() {
+  if (seilRunning) return;
+  if (seilRemaining <= 0) seilRemaining = seilDuration;
+  seilRunning = true;
+  document.getElementById("sl_tapBtn").disabled = false;
+  document.getElementById("sl_saveBtn").classList.add("hidden");
+  seilInterval = setInterval(() => {
+    seilRemaining--; renderSeilTimer();
+    if (seilRemaining <= 0) seilFinish();
+  }, 1000);
+}
+function seilFinish() {
+  clearInterval(seilInterval); seilRunning = false;
+  document.getElementById("sl_tapBtn").disabled = true;
+  document.getElementById("sl_saveBtn").classList.remove("hidden");
+}
+function seilReset() {
+  clearInterval(seilInterval); seilRunning = false; seilCount = 0; seilRemaining = seilDuration;
+  document.getElementById("sl_tapBtn").disabled = true;
+  document.getElementById("sl_saveBtn").classList.add("hidden");
+  renderSeilCount(); renderSeilTimer();
+}
+document.getElementById("sl_tapBtn").addEventListener("pointerdown", () => { if (!seilRunning) return; seilCount++; renderSeilCount(); });
+document.getElementById("sl_startBtn").addEventListener("click", seilStart);
+document.getElementById("sl_resetBtn").addEventListener("click", seilReset);
+document.getElementById("sl_saveBtn").addEventListener("click", () => {
+  const name = currentSeilName();
+  if (!name) { openConfirm("Bitte einen Namen angeben oder aus einer Klasse wählen.", null, null, "OK"); return; }
+  pushHistory(name, "Seilspringen", `Seilspringen ${seilDuration}s`, `${seilCount} Sprünge`);
+  openConfirm(`Ergebnis für ${name} gespeichert (${seilCount} Sprünge).`, null, null, "OK");
+});
+
+/* =========================================================================
+   MULTISTOPPUHR
+   ========================================================================= */
+const MS_STORAGE_KEY = "spt_multistoppuhr_v1";
+let stopwatches = loadJSON(MS_STORAGE_KEY, []);
+function msSave() { saveJSON(MS_STORAGE_KEY, stopwatches); }
+function msElapsedMs(sw) { return sw.accumulated + (sw.running ? Date.now() - sw.startedAt : 0); }
+function msFormat(ms) {
+  const totalCentis = Math.floor(ms / 10);
+  const m = Math.floor(totalCentis / 6000);
+  const s = Math.floor((totalCentis % 6000) / 100);
+  const c = totalCentis % 100;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(c).padStart(2, "0")}`;
+}
+function msAdd(name) {
+  if (!name.trim()) return;
+  stopwatches.push({ id: uid(), name: name.trim(), running: false, startedAt: null, accumulated: 0, laps: [] });
+  renderMsList(); msSave();
+}
+function msToggle(id) {
+  const sw = stopwatches.find(s => String(s.id) === String(id));
+  if (!sw) return;
+  if (sw.running) { sw.accumulated += Date.now() - sw.startedAt; sw.running = false; }
+  else { sw.startedAt = Date.now(); sw.running = true; }
+  renderMsList(); msSave();
+}
+function msReset(id) {
+  const sw = stopwatches.find(s => String(s.id) === String(id));
+  if (!sw) return;
+  sw.running = false; sw.accumulated = 0; sw.startedAt = null; sw.laps = [];
+  renderMsList(); msSave();
+}
+function msLap(id) {
+  const sw = stopwatches.find(s => String(s.id) === String(id));
+  if (!sw) return;
+  sw.laps.push(msElapsedMs(sw));
+  renderMsList(); msSave();
+}
+function msRemove(id) { stopwatches = stopwatches.filter(s => String(s.id) !== String(id)); renderMsList(); msSave(); }
+function renderMsList() {
+  const el = document.getElementById("ms_list");
+  if (stopwatches.length === 0) { el.innerHTML = '<div class="empty-hint">Noch keine Stoppuhr hinzugefügt.</div>'; return; }
+  el.innerHTML = stopwatches.map(sw => `
+    <div class="ms-row" data-id="${sw.id}">
+      <div class="ms-name">${escapeHtml(sw.name)}</div>
+      <div class="ms-time" data-id="${sw.id}">${msFormat(msElapsedMs(sw))}</div>
+      <button class="ms-toggle${sw.running ? " running" : ""}" data-action="toggle" data-id="${sw.id}">${sw.running ? "Stopp" : "Start"}</button>
+      <button class="ms-lap" data-action="lap" data-id="${sw.id}">Lap</button>
+      <button class="ms-reset" data-action="reset" data-id="${sw.id}">Reset</button>
+      <button class="ms-del" data-action="delete" data-id="${sw.id}">✕</button>
+      ${sw.laps.length ? `<div class="ms-laps">${sw.laps.map((l, i) => `L${i + 1}: ${msFormat(l)}`).join(" · ")}</div>` : ""}
+    </div>
+  `).join("");
+}
+setInterval(() => {
+  if (document.getElementById("multiView").classList.contains("hidden")) return;
+  stopwatches.forEach(sw => {
+    if (!sw.running) return;
+    const el = document.querySelector(`.ms-time[data-id="${CSS.escape(String(sw.id))}"]`);
+    if (el) el.textContent = msFormat(msElapsedMs(sw));
+  });
+}, 50);
+document.getElementById("ms_list").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const id = btn.dataset.id, action = btn.dataset.action;
+  if (action === "toggle") msToggle(id);
+  else if (action === "lap") msLap(id);
+  else if (action === "reset") openConfirm("Diese Stoppuhr zurücksetzen?", () => msReset(id), null, "Zurücksetzen");
+  else if (action === "delete") openConfirm("Diese Stoppuhr entfernen?", () => msRemove(id), null, "Entfernen");
+});
+document.getElementById("ms_addBtn").addEventListener("click", () => {
+  const input = document.getElementById("ms_nameInput");
+  msAdd(input.value); input.value = ""; input.focus();
+});
+document.getElementById("ms_nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("ms_addBtn").click(); });
+document.getElementById("ms_startAllBtn").addEventListener("click", () => {
+  stopwatches.forEach(sw => { if (!sw.running) { sw.startedAt = Date.now(); sw.running = true; } });
+  renderMsList(); msSave();
+});
+document.getElementById("ms_stopAllBtn").addEventListener("click", () => {
+  stopwatches.forEach(sw => { if (sw.running) { sw.accumulated += Date.now() - sw.startedAt; sw.running = false; } });
+  renderMsList(); msSave();
+});
+document.getElementById("ms_resetAllBtn").addEventListener("click", () => {
+  if (stopwatches.length === 0) return;
+  openConfirm("Alle Stoppuhren zurücksetzen?", () => {
+    stopwatches.forEach(sw => { sw.running = false; sw.accumulated = 0; sw.startedAt = null; sw.laps = []; });
+    renderMsList(); msSave();
+  }, null, "Zurücksetzen");
+});
+
+/* =========================================================================
+   PARKOURBENOTUNG
+   ========================================================================= */
+const PK_COURSES_KEY = "spt_pk_courses_v1";
+const PK_RUNS_KEY = "spt_pk_runs_v1";
+let pkCourses = loadJSON(PK_COURSES_KEY, []);
+let pkRuns = loadJSON(PK_RUNS_KEY, []);
+function pkSaveCourses() { saveJSON(PK_COURSES_KEY, pkCourses); }
+function pkSaveRuns() { saveJSON(PK_RUNS_KEY, pkRuns); }
+
+document.getElementById("pkTabCourses").addEventListener("click", () => pkSwitchTab("courses"));
+document.getElementById("pkTabRuns").addEventListener("click", () => pkSwitchTab("runs"));
+function pkSwitchTab(tab) {
+  document.getElementById("pkViewCourses").classList.toggle("hidden", tab !== "courses");
+  document.getElementById("pkViewRuns").classList.toggle("hidden", tab !== "runs");
+  if (tab === "runs") renderRunList();
+}
+function computeParkourNote(course, effectiveTime) {
+  if (course.worstTime === course.bestTime) return null;
+  const note = 6 - 5 * ((effectiveTime - course.bestTime) / (course.worstTime - course.bestTime));
+  return Math.max(1, Math.min(6, note));
+}
+function pkFormatSec(sec) { return `${sec.toFixed(1)} s`; }
+
+function renderCourseList() {
+  const el = document.getElementById("courseList");
+  if (pkCourses.length === 0) { el.innerHTML = '<div class="empty-hint">Noch kein Parcours erstellt.</div>'; return; }
+  el.innerHTML = pkCourses.map(c => `
+    <div class="card">
+      <div class="card-title">${escapeHtml(c.name)}</div>
+      <div class="card-sub">Note 6 ab ${c.bestTime}s · Note 1 ab ${c.worstTime}s · Strafzeit ${c.penaltyPerDeduction}s/Abzug</div>
+      <div class="card-actions">
+        <button class="btn btn-outline" data-action="edit" data-id="${c.id}">Bearbeiten</button>
+        <button class="btn btn-danger" data-action="delete" data-id="${c.id}">Löschen</button>
+      </div>
+    </div>`).join("");
+}
+document.getElementById("courseList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]"); if (!btn) return;
+  const id = btn.dataset.id;
+  const course = pkCourses.find(c => c.id === id);
+  if (btn.dataset.action === "edit") openCourseEditor(course);
+  else if (btn.dataset.action === "delete") openConfirm(`Parcours "${course.name}" wirklich löschen?`, () => { pkCourses = pkCourses.filter(c => c.id !== id); pkSaveCourses(); renderCourseList(); }, null, "Löschen");
+});
+document.getElementById("newCourseBtn").addEventListener("click", () => openCourseEditor(null));
+let editingCourseId = null;
+function openCourseEditor(course) {
+  editingCourseId = course ? course.id : null;
+  document.getElementById("courseEditorTitle").textContent = course ? "Parcours bearbeiten" : "Neuer Parcours";
+  document.getElementById("courseName").value = course ? course.name : "";
+  document.getElementById("courseBestTime").value = course ? course.bestTime : "";
+  document.getElementById("courseWorstTime").value = course ? course.worstTime : "";
+  document.getElementById("coursePenalty").value = course ? course.penaltyPerDeduction : 2;
+  document.getElementById("courseEditorOverlay").classList.remove("hidden");
+}
+document.getElementById("courseEditorCancel").addEventListener("click", () => document.getElementById("courseEditorOverlay").classList.add("hidden"));
+document.getElementById("courseEditorSave").addEventListener("click", () => {
+  const name = document.getElementById("courseName").value.trim();
+  const bestTime = Number(document.getElementById("courseBestTime").value);
+  const worstTime = Number(document.getElementById("courseWorstTime").value);
+  const penaltyPerDeduction = Number(document.getElementById("coursePenalty").value) || 0;
+  if (!name) { openConfirm("Bitte einen Namen für den Parcours eingeben.", null, null, "OK"); return; }
+  if (!(worstTime > bestTime)) { openConfirm("Die schwächste Zeit muss grösser sein als die Bestzeit.", null, null, "OK"); return; }
+  const obj = { id: editingCourseId || uid(), name, bestTime, worstTime, penaltyPerDeduction };
+  const idx = pkCourses.findIndex(c => c.id === obj.id);
+  if (idx >= 0) pkCourses[idx] = obj; else pkCourses.push(obj);
+  pkSaveCourses();
+  document.getElementById("courseEditorOverlay").classList.add("hidden");
+  renderCourseList();
+});
+
+function renderRunList() {
+  const el = document.getElementById("runList");
+  if (pkRuns.length === 0) { el.innerHTML = '<div class="empty-hint">Noch kein Durchgang erstellt.</div>'; return; }
+  el.innerHTML = pkRuns.map(run => {
+    const course = pkCourses.find(c => c.id === run.courseId);
+    const total = run.students.length;
+    const done = run.students.filter(s => run.results[s] && run.results[s].attempt1 && run.results[s].attempt1.note != null).length;
+    return `
+    <div class="card">
+      <div class="card-title">${escapeHtml(run.name)}</div>
+      <div class="card-sub">${course ? escapeHtml(course.name) : "(Parcours gelöscht)"} · ${done}/${total} bewertet</div>
+      <div class="card-actions">
+        <button class="btn btn-outline" data-action="open" data-id="${run.id}">Öffnen</button>
+        <button class="btn btn-danger" data-action="delete" data-id="${run.id}">Löschen</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+document.getElementById("runList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]"); if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.action === "open") openRunDetail(id);
+  else if (btn.dataset.action === "delete") {
+    const run = pkRuns.find(r => r.id === id);
+    openConfirm(`Durchgang "${run.name}" wirklich löschen?`, () => { pkRuns = pkRuns.filter(r => r.id !== id); pkSaveRuns(); renderRunList(); }, null, "Löschen");
+  }
+});
+document.getElementById("newRunBtn").addEventListener("click", () => {
+  if (pkCourses.length === 0) { openConfirm("Bitte zuerst einen Parcours erstellen.", null, null, "OK"); return; }
+  document.getElementById("runName").value = "";
+  document.getElementById("runCourseSelect").innerHTML = pkCourses.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+  document.getElementById("newRunOverlay").classList.remove("hidden");
+});
+document.getElementById("newRunCancel").addEventListener("click", () => document.getElementById("newRunOverlay").classList.add("hidden"));
+document.getElementById("newRunSave").addEventListener("click", () => {
+  const name = document.getElementById("runName").value.trim();
+  const courseId = document.getElementById("runCourseSelect").value;
+  if (!name) { openConfirm("Bitte einen Namen für den Durchgang eingeben.", null, null, "OK"); return; }
+  const run = { id: uid(), name, courseId, students: [], results: {} };
+  pkRuns.push(run); pkSaveRuns();
+  document.getElementById("newRunOverlay").classList.add("hidden");
+  renderRunList(); openRunDetail(run.id);
+});
+
+let currentRunId = null;
+function openRunDetail(runId) {
+  currentRunId = runId;
+  const run = pkRuns.find(r => r.id === runId);
+  document.getElementById("runDetailTitle").textContent = run.name;
+  renderRunStudentList();
+  document.getElementById("runDetailOverlay").classList.remove("hidden");
+}
+function pkAttemptLabel(attemptResult, attemptNum) {
+  if (attemptResult && attemptResult.note != null) return `${formatNote(attemptResult.note)} (${attemptResult.effectiveTime.toFixed(1)}s)`;
+  return `${attemptNum}. Versuch`;
+}
+function renderRunStudentList() {
+  const run = pkRuns.find(r => r.id === currentRunId);
+  const el = document.getElementById("runStudentList");
+  if (run.students.length === 0) { el.innerHTML = '<div class="empty-hint">Noch keine Schüler in diesem Durchgang.</div>'; return; }
+  el.innerHTML = run.students.map(name => {
+    const res = run.results[name] || {};
+    const a1 = res.attempt1, a2 = res.attempt2;
+    const a1g = a1 && a1.note != null, a2g = a2 && a2.note != null;
+    return `<div class="student-row">
+      <div class="sname">${escapeHtml(name)}</div>
+      <button class="attempt-btn${a1g ? " graded" : ""}${a1g && a1.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="1">${pkAttemptLabel(a1, 1)}</button>
+      <button class="attempt-btn${a2g ? " graded" : ""}${a2g && a2.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="2">${pkAttemptLabel(a2, 2)}</button>
+      <button class="btn btn-danger" data-action="remove" data-name="${escapeHtml(name)}">✕</button>
+    </div>`;
+  }).join("");
+}
+document.getElementById("runStudentList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]"); if (!btn) return;
+  const name = btn.dataset.name;
+  if (btn.dataset.action === "grade") openPkGrading(name, Number(btn.dataset.attempt) || 1);
+  else if (btn.dataset.action === "remove") {
+    openConfirm(`"${name}" aus diesem Durchgang entfernen?`, () => {
+      const run = pkRuns.find(r => r.id === currentRunId);
+      run.students = run.students.filter(s => s !== name);
+      delete run.results[name]; pkSaveRuns(); renderRunStudentList();
+    }, null, "Entfernen");
+  }
+});
+document.getElementById("runAddNameBtn").addEventListener("click", () => {
+  const input = document.getElementById("runAddNameInput");
+  const name = input.value.trim(); if (!name) return;
+  const run = pkRuns.find(r => r.id === currentRunId);
+  if (!run.students.includes(name)) run.students.push(name);
+  pkSaveRuns(); input.value = ""; renderRunStudentList();
+});
+document.getElementById("runAddNameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("runAddNameBtn").click(); });
+document.getElementById("runDetailClose").addEventListener("click", () => { document.getElementById("runDetailOverlay").classList.add("hidden"); renderRunList(); });
+document.getElementById("runLoadClassBtn").addEventListener("click", () => {
+  openClassesModal((names) => {
+    const run = pkRuns.find(r => r.id === currentRunId);
+    names.forEach(n => { if (!run.students.includes(n)) run.students.push(n); });
+    pkSaveRuns(); renderRunStudentList();
+  });
+});
+document.getElementById("runExportBtn").addEventListener("click", () => {
+  const run = pkRuns.find(r => r.id === currentRunId);
+  if (run.students.length === 0) { openConfirm("Keine Schüler zum Exportieren.", null, null, "OK"); return; }
+  const lines = [`Durchgang: ${run.name}`];
+  run.students.forEach(name => {
+    const res = run.results[name] || {};
+    const parts = [];
+    const a1 = res.attempt1;
+    parts.push(a1 && a1.note != null ? `1. Versuch: Note ${formatNote(a1.note)} (${a1.effectiveTime.toFixed(1)}s, ${a1.deductions} Abzüge)` : "1. Versuch: nicht bewertet");
+    const a2 = res.attempt2;
+    parts.push(a2 && a2.note != null ? `2. Versuch: Note ${formatNote(a2.note)} (${a2.effectiveTime.toFixed(1)}s, ${a2.deductions} Abzüge)` : "2. Versuch: nicht bewertet");
+    lines.push(`${name} – ${parts.join(" · ")}`);
+  });
+  const text = lines.join("\n");
+  if (navigator.share) navigator.share({ text }).catch(() => {});
+  else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => openConfirm("Ergebnisse in die Zwischenablage kopiert.", null, null, "OK"));
+  else window.prompt("Ergebnisse kopieren:", text);
+});
+
+let pkGradingName = null, pkGradingAttempt = 1, pkStopwatchMs = 0, pkStopwatchRunning = false, pkStopwatchStartedAt = null, pkStopwatchInterval = null, pkDeductions = 0;
+function openPkGrading(name, attemptNum) {
+  pkGradingName = name; pkGradingAttempt = attemptNum || 1;
+  const run = pkRuns.find(r => r.id === currentRunId);
+  const course = pkCourses.find(c => c.id === run.courseId);
+  if (!course) { openConfirm("Der Parcours dieses Durchgangs wurde gelöscht.", null, null, "OK"); return; }
+  const existing = (run.results[name] || {})["attempt" + pkGradingAttempt];
+  pkStopwatchMs = existing ? existing.timeSec * 1000 : 0;
+  pkStopwatchRunning = false; pkStopwatchStartedAt = null;
+  pkDeductions = existing ? existing.deductions : 0;
+  document.getElementById("pkGradingTitle").textContent = `${course.name} – ${name} – ${pkGradingAttempt}. Versuch`;
+  document.getElementById("pkManualTime").value = (pkStopwatchMs / 1000).toFixed(1);
+  document.getElementById("pkStartStopBtn").textContent = "Start";
+  renderPkTime(); renderPkDeductions(); updatePkSummary(course);
+  document.getElementById("pkGradingOverlay").classList.remove("hidden");
+}
+function pkCurrentMs() { return pkStopwatchMs + (pkStopwatchRunning ? Date.now() - pkStopwatchStartedAt : 0); }
+function renderPkTime() { document.getElementById("pkTimeDisplay").textContent = (pkCurrentMs() / 1000).toFixed(1); }
+function renderPkDeductions() { document.getElementById("pkDeductionCount").textContent = pkDeductions; }
+function currentPkCourse() {
+  const run = pkRuns.find(r => r.id === currentRunId);
+  return pkCourses.find(c => c.id === run.courseId);
+}
+function updatePkSummary(course) {
+  const timeSec = pkCurrentMs() / 1000;
+  const effectiveTime = timeSec + pkDeductions * (course.penaltyPerDeduction || 0);
+  const note = computeParkourNote(course, effectiveTime);
+  document.getElementById("pkEffectiveTimeLabel").textContent = `${effectiveTime.toFixed(1)} s effektiv`;
+  document.getElementById("pkNoteLabel").textContent = note != null ? formatNote(roundToQuarter(note)) : "–";
+}
+document.getElementById("pkStartStopBtn").addEventListener("click", () => {
+  if (pkStopwatchRunning) {
+    pkStopwatchMs += Date.now() - pkStopwatchStartedAt;
+    pkStopwatchRunning = false;
+    clearInterval(pkStopwatchInterval);
+    document.getElementById("pkStartStopBtn").textContent = "Start";
+  } else {
+    pkStopwatchStartedAt = Date.now();
+    pkStopwatchRunning = true;
+    document.getElementById("pkStartStopBtn").textContent = "Stopp";
+    pkStopwatchInterval = setInterval(() => { renderPkTime(); updatePkSummary(currentPkCourse()); }, 50);
+  }
+  document.getElementById("pkManualTime").value = (pkCurrentMs() / 1000).toFixed(1);
+  renderPkTime(); updatePkSummary(currentPkCourse());
+});
+document.getElementById("pkTimeResetBtn").addEventListener("click", () => {
+  pkStopwatchRunning = false; clearInterval(pkStopwatchInterval); pkStopwatchMs = 0; pkStopwatchStartedAt = null;
+  document.getElementById("pkStartStopBtn").textContent = "Start";
+  document.getElementById("pkManualTime").value = "0.0";
+  renderPkTime(); updatePkSummary(currentPkCourse());
+});
+document.getElementById("pkManualTime").addEventListener("input", (e) => {
+  pkStopwatchRunning = false; clearInterval(pkStopwatchInterval);
+  document.getElementById("pkStartStopBtn").textContent = "Start";
+  pkStopwatchMs = (Number(e.target.value) || 0) * 1000;
+  renderPkTime(); updatePkSummary(currentPkCourse());
+});
+document.getElementById("pkDeductionPlus").addEventListener("click", () => { pkDeductions++; renderPkDeductions(); updatePkSummary(currentPkCourse()); });
+document.getElementById("pkDeductionMinus").addEventListener("click", () => { if (pkDeductions > 0) pkDeductions--; renderPkDeductions(); updatePkSummary(currentPkCourse()); });
+document.getElementById("pkGradingCancel").addEventListener("click", () => { clearInterval(pkStopwatchInterval); document.getElementById("pkGradingOverlay").classList.add("hidden"); });
+document.getElementById("pkGradingSave").addEventListener("click", () => {
+  clearInterval(pkStopwatchInterval);
+  const run = pkRuns.find(r => r.id === currentRunId);
+  const course = currentPkCourse();
+  const timeSec = pkCurrentMs() / 1000;
+  const effectiveTime = timeSec + pkDeductions * (course.penaltyPerDeduction || 0);
+  const note = computeParkourNote(course, effectiveTime);
+  const attemptResult = { timeSec, deductions: pkDeductions, effectiveTime, note: note != null ? roundToQuarter(note) : null };
+  if (!run.results[pkGradingName]) run.results[pkGradingName] = {};
+  run.results[pkGradingName]["attempt" + pkGradingAttempt] = attemptResult;
+  pkSaveRuns();
+  document.getElementById("pkGradingOverlay").classList.add("hidden");
+  renderRunStudentList();
+  pushHistory(pkGradingName, "Parkour", `${course.name} – ${pkGradingAttempt}. Versuch`,
+    attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${effectiveTime.toFixed(1)}s, ${pkDeductions} Abzüge)` : "nicht bewertet");
+});
+
+/* =========================================================================
+   SCOREBOARD (kein Bezug zu Leistungen)
+   ========================================================================= */
+const SB_KEY = "spt_scoreboard_v1";
+const SB_MAX = 50;
+let sbLeft = 0, sbRight = 0, sbLeftName = "Team A", sbRightName = "Team B";
+function sbLoad() {
+  const data = loadJSON(SB_KEY, null);
+  if (!data) return;
+  sbLeft = data.sbLeft || 0; sbRight = data.sbRight || 0;
+  sbLeftName = data.sbLeftName || "Team A"; sbRightName = data.sbRightName || "Team B";
+}
+function sbSave() { saveJSON(SB_KEY, { sbLeft, sbRight, sbLeftName, sbRightName }); }
+function sbRender() {
+  document.getElementById("sb_leftScore").textContent = sbLeft;
+  document.getElementById("sb_rightScore").textContent = sbRight;
+  document.getElementById("sb_leftName").value = sbLeftName;
+  document.getElementById("sb_rightName").value = sbRightName;
+}
+function sbChange(side, delta) {
+  if (side === "left") sbLeft = Math.max(0, Math.min(SB_MAX, sbLeft + delta));
+  else sbRight = Math.max(0, Math.min(SB_MAX, sbRight + delta));
+  sbRender(); sbSave();
+}
+document.getElementById("sb_leftName").addEventListener("input", (e) => { sbLeftName = e.target.value; sbSave(); });
+document.getElementById("sb_rightName").addEventListener("input", (e) => { sbRightName = e.target.value; sbSave(); });
+document.getElementById("sb_resetBtn").addEventListener("click", () => {
+  openConfirm("Spielstand wirklich zurücksetzen?", () => { sbLeft = 0; sbRight = 0; sbRender(); sbSave(); }, null, "Zurücksetzen");
+});
+
+const sbMain = document.querySelector(".sb-main");
+let sb3Touch = null;
+function sbAvgY(touches) { let s = 0; for (let i = 0; i < touches.length; i++) s += touches[i].clientY; return s / touches.length; }
+function sbAvgX(touches) { let s = 0; for (let i = 0; i < touches.length; i++) s += touches[i].clientX; return s / touches.length; }
+sbMain.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 3) {
+    const x = sbAvgX(e.touches);
+    const side = x < window.innerWidth / 2 ? "left" : "right";
+    sb3Touch = { y: sbAvgY(e.touches), side, triggered: false };
+  } else {
+    sb3Touch = null;
+  }
+}, { passive: true });
+sbMain.addEventListener("touchmove", (e) => {
+  if (!sb3Touch || sb3Touch.triggered) return;
+  if (e.touches.length !== 3) return;
+  e.preventDefault();
+  const dy = sbAvgY(e.touches) - sb3Touch.y;
+  const THRESH = 70;
+  if (dy < -THRESH) { sbChange(sb3Touch.side, 1); sb3Touch.triggered = true; }
+  else if (dy > THRESH) { sbChange(sb3Touch.side, -1); sb3Touch.triggered = true; }
+}, { passive: false });
+sbMain.addEventListener("touchend", (e) => { if (e.touches.length < 3) sb3Touch = null; });
+sbMain.addEventListener("touchcancel", () => { sb3Touch = null; });
+
+/* =========================================================================
+   TEAMERSTELLUNG (kein Bezug zu Leistungen)
+   ========================================================================= */
+const TM_KEY = "spt_teambuilder_v1";
+let tmParticipants = loadJSON(TM_KEY, []);
+function tmSave() { saveJSON(TM_KEY, tmParticipants); }
+function tmAdd(name) {
+  if (!name.trim()) return;
+  if (tmParticipants.some(p => p.name === name.trim())) return;
+  tmParticipants.push({ id: uid(), name: name.trim(), rating: 0 });
+  renderTmList(); tmSave();
+}
+function tmRemove(id) { tmParticipants = tmParticipants.filter(p => String(p.id) !== String(id)); renderTmList(); tmSave(); }
+function tmChangeRating(id, delta) {
+  const p = tmParticipants.find(p => String(p.id) === String(id));
+  if (!p) return;
+  p.rating = Math.max(-5, Math.min(5, p.rating + delta));
+  renderTmList(); tmSave();
+}
+function renderTmList() {
+  const el = document.getElementById("tm_participantList");
+  if (tmParticipants.length === 0) { el.innerHTML = '<div class="empty-hint">Noch keine Schüler hinzugefügt.</div>'; return; }
+  el.innerHTML = tmParticipants.map(p => {
+    const cls = p.rating > 0 ? "pos" : (p.rating < 0 ? "neg" : "");
+    return `
+    <div class="tm-participant" data-id="${p.id}">
+      <div class="tm-name">${escapeHtml(p.name)}</div>
+      <div class="tm-rating-controls">
+        <button data-action="rminus" data-id="${p.id}">−</button>
+        <div class="tm-rating-value ${cls}">${p.rating > 0 ? "+" : ""}${p.rating}</div>
+        <button data-action="rplus" data-id="${p.id}">+</button>
+      </div>
+      <button class="btn btn-danger" data-action="remove" data-id="${p.id}" style="padding:6px 10px;">✕</button>
+    </div>`;
+  }).join("");
+}
+document.getElementById("tm_participantList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]"); if (!btn) return;
+  const id = btn.dataset.id, action = btn.dataset.action;
+  if (action === "rplus") tmChangeRating(id, 1);
+  else if (action === "rminus") tmChangeRating(id, -1);
+  else if (action === "remove") tmRemove(id);
+});
+document.getElementById("tm_addBtn").addEventListener("click", () => {
+  const input = document.getElementById("tm_nameInput");
+  tmAdd(input.value); input.value = ""; input.focus();
+});
+document.getElementById("tm_nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("tm_addBtn").click(); });
+document.getElementById("tm_clearBtn").addEventListener("click", () => {
+  if (tmParticipants.length === 0) return;
+  openConfirm("Alle Teilnehmer entfernen?", () => { tmParticipants = []; renderTmList(); tmSave(); document.getElementById("tm_teamsResult").innerHTML = ""; }, null, "Entfernen");
+});
+document.getElementById("tm_classesBtn").addEventListener("click", () => {
+  openClassesModal((names) => {
+    names.forEach(n => { if (!tmParticipants.some(p => p.name === n)) tmParticipants.push({ id: uid(), name: n, rating: 0 }); });
+    renderTmList(); tmSave();
+  });
+});
+document.getElementById("tm_buildBtn").addEventListener("click", () => {
+  if (tmParticipants.length < 2) { openConfirm("Bitte mindestens zwei Schüler hinzufügen.", null, null, "OK"); return; }
+  const numTeams = Math.max(2, Math.min(8, Number(document.getElementById("tm_numTeams").value) || 2));
+  const shuffled = tmParticipants.map(p => ({ ...p, jitter: Math.random() })).sort((a, b) => (b.rating - a.rating) || (a.jitter - b.jitter));
+  const teams = Array.from({ length: numTeams }, () => ({ members: [], total: 0 }));
+  shuffled.forEach(p => {
+    const minSize = Math.min(...teams.map(t => t.members.length));
+    const sizeCandidates = teams.filter(t => t.members.length === minSize);
+    const minTotal = Math.min(...sizeCandidates.map(t => t.total));
+    const candidates = sizeCandidates.filter(t => t.total === minTotal);
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+    chosen.members.push(p);
+    chosen.total += p.rating;
+  });
+  const el = document.getElementById("tm_teamsResult");
+  el.innerHTML = teams.map((t, i) => `
+    <div class="tm-team-card">
+      <h3>Team ${i + 1}</h3>
+      ${t.members.map(m => `<div class="tm-member">${escapeHtml(m.name)}</div>`).join("")}
+      <div class="tm-team-total">Summe Bewertung: ${t.total > 0 ? "+" : ""}${t.total}</div>
+    </div>
+  `).join("");
+});
+
+/* =========================================================================
+   ERGEBNIS ALS FOTO SICHERN (Kamera-Buttons)
+   ========================================================================= */
+function drawResultsCanvas(title, lines) {
+  const lineHeight = 32, padding = 24, headerHeight = 76, width = 700;
+  const safeLines = lines.length ? lines : ["(keine Daten)"];
+  const height = headerHeight + safeLines.length * lineHeight + padding * 1.5;
+  const canvas = document.createElement("canvas");
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#2563eb"; ctx.fillRect(0, 0, width, headerHeight);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 24px -apple-system, Helvetica, Arial, sans-serif";
+  ctx.fillText(title, padding, 34);
+  ctx.font = "14px -apple-system, Helvetica, Arial, sans-serif";
+  ctx.fillText(new Date().toLocaleDateString("de-CH"), padding, 58);
+  ctx.fillStyle = "#0f172a";
+  ctx.font = "18px -apple-system, Helvetica, Arial, sans-serif";
+  safeLines.forEach((line, i) => {
+    ctx.fillText(line, padding, headerHeight + padding + i * lineHeight + 14);
+  });
+  return canvas;
+}
+function shareCanvasAsImage(canvas, filename) {
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const file = new File([blob], filename, { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: filename }).catch(() => {});
+    } else {
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    }
+  }, "image/png");
+}
+document.getElementById("lf_camBtn").addEventListener("click", () => {
+  if (runners.length === 0) { openConfirm("Keine Läufer vorhanden.", null, null, "OK"); return; }
+  const sorted = [...runners].sort((a, b) => b.laps - a.laps);
+  const lines = sorted.map((r, i) => `${i + 1}. ${r.name} – ${r.laps} Runden`);
+  shareCanvasAsImage(drawResultsCanvas("12-Minuten-Lauf – Ergebnisse", lines), "lauf-ergebnisse.png");
+});
+document.getElementById("sw_camBtn").addEventListener("click", () => {
+  if (swimmers.length === 0) { openConfirm("Keine Schwimmer vorhanden.", null, null, "OK"); return; }
+  const finished = swimmers.filter(s => s.finishTime !== null).sort((a, b) => a.finishTime - b.finishTime);
+  const unfinished = swimmers.filter(s => s.finishTime === null);
+  const lines = [
+    ...finished.map((s, i) => `${i + 1}. ${s.name} – ${formatTime(s.finishTime)} (${s.lengths} Längen)`),
+    ...unfinished.map(s => `- ${s.name} (${s.lengths}/${targetLengths} Längen)`)
+  ];
+  shareCanvasAsImage(drawResultsCanvas(`Schwimmen – ${distanceMeters}m`, lines), "schwimm-ergebnisse.png");
+});
+document.getElementById("tm_camBtn").addEventListener("click", () => {
+  const teamsResult = document.getElementById("tm_teamsResult");
+  if (!teamsResult.innerHTML.trim()) { openConfirm("Bitte zuerst Teams bilden.", null, null, "OK"); return; }
+  const lines = [];
+  teamsResult.querySelectorAll(".tm-team-card").forEach(card => {
+    lines.push(card.querySelector("h3").textContent + ":");
+    card.querySelectorAll(".tm-member").forEach(m => lines.push("  " + m.textContent));
+    lines.push(card.querySelector(".tm-team-total").textContent);
+    lines.push("");
+  });
+  shareCanvasAsImage(drawResultsCanvas("Teamerstellung", lines), "teams.png");
+});
+
+/* ================= Init ================= */
+laufLoad(); renderLaufTimer(); renderLaufList();
+schwimmLoad(); renderSchwimmTimer(); renderDistanceButtons(); renderSwimAll();
+renderRubricList();
+renderSeilTimer(); renderSeilCount();
+renderMsList();
+sbLoad(); sbRender();
+renderTmList();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+}
+</script>
+</body>
+</html>
