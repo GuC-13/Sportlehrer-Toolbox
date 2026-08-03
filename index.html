@@ -547,8 +547,30 @@
 <div class="modal-overlay hidden" id="classListOverlay">
   <div class="modal-box">
     <div class="modal-header"><p>Klassen</p><button id="classAddBtn">+ Neue Klasse</button></div>
+    <button class="btn btn-secondary" id="classImportBtn" style="width:100%; margin-bottom:10px;">📥 Aus Excel/CSV importieren</button>
     <div class="scroll-list" id="classListScroll"></div>
     <div class="modal-actions"><button class="btn btn-secondary" id="classListClose">Schliessen</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="importClassOverlay">
+  <div class="modal-box">
+    <h2>Klasse aus Excel/CSV importieren</h2>
+    <p style="color:var(--muted); font-size:0.85rem; margin-top:-6px;">Unterstützt .xlsx und .csv. Es werden nur Vor- und Nachname übernommen.</p>
+    <input type="file" id="importClassFileInput" accept=".xlsx,.csv">
+    <div id="importClassMappingArea" class="hidden" style="margin-top:12px;">
+      <label style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:10px 0 4px;">Kopfzeile (Zeile mit Spaltentiteln)</label>
+      <input type="number" id="importClassHeaderRow" min="1" value="1">
+      <label style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:10px 0 4px;">Spalte für Nachname</label>
+      <select id="importClassColLast"></select>
+      <label style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:10px 0 4px;">Spalte für Vorname</label>
+      <select id="importClassColFirst"></select>
+      <div id="importClassPreview" style="overflow-x:auto; margin-top:10px;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="importClassCancelBtn">Abbrechen</button>
+      <button class="btn" id="importClassApplyBtn">Übernehmen</button>
+    </div>
   </div>
 </div>
 
@@ -904,6 +926,204 @@ document.getElementById("classListClose").addEventListener("click", () => {
   classesPickCallback = null;
 });
 document.getElementById("homeClassesBtn").addEventListener("click", () => openClassesModal(null));
+
+/* ---- Klasse aus Excel/CSV importieren ---- */
+let importClassGrid = [];
+document.getElementById("classImportBtn").addEventListener("click", () => {
+  importClassGrid = [];
+  document.getElementById("importClassFileInput").value = "";
+  document.getElementById("importClassMappingArea").classList.add("hidden");
+  document.getElementById("classListOverlay").classList.add("hidden");
+  document.getElementById("importClassOverlay").classList.remove("hidden");
+});
+document.getElementById("importClassCancelBtn").addEventListener("click", () => {
+  document.getElementById("importClassOverlay").classList.add("hidden");
+  document.getElementById("classListOverlay").classList.remove("hidden");
+});
+document.getElementById("importClassFileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const onGrid = (grid) => {
+    importClassGrid = grid;
+    if (importClassGrid.length === 0) { openConfirm("Keine Daten in der Datei gefunden.", null, null, "OK"); return; }
+    document.getElementById("importClassHeaderRow").value = guessHeaderRowIndex(importClassGrid) + 1;
+    renderImportClassPreview();
+    document.getElementById("importClassMappingArea").classList.remove("hidden");
+  };
+  const onError = (err) => openConfirm("Datei konnte nicht gelesen werden: " + err.message, null, null, "OK");
+  if (file.name.toLowerCase().endsWith(".csv")) parseCsvFile(file).then(onGrid, onError);
+  else parseXlsxFile(file).then(onGrid, onError);
+});
+document.getElementById("importClassHeaderRow").addEventListener("change", renderImportClassPreview);
+function renderImportClassPreview() {
+  const headerRowIdx = Math.max(0, Number(document.getElementById("importClassHeaderRow").value) - 1);
+  const headerRow = importClassGrid[headerRowIdx] || [];
+  const maxCols = Math.max(1, ...importClassGrid.map(r => (r || []).length));
+  function fillSelect(selectEl, autoMatchRegex) {
+    selectEl.innerHTML = '<option value="-1">− keine −</option>' + Array.from({ length: maxCols }).map((_, i) => `<option value="${i}">${escapeHtml(headerRow[i] || ("Spalte " + (i + 1)))}</option>`).join("");
+    const idx = headerRow.findIndex(h => autoMatchRegex.test(String(h || "")));
+    if (idx >= 0) selectEl.value = String(idx);
+  }
+  fillSelect(document.getElementById("importClassColLast"), /^name$/i);
+  fillSelect(document.getElementById("importClassColFirst"), /vorname/i);
+  const previewRows = importClassGrid.slice(headerRowIdx, headerRowIdx + 8);
+  document.getElementById("importClassPreview").innerHTML = `<table style="border-collapse:collapse; font-size:0.78rem; width:100%;">${previewRows.map((row, ri) => `
+    <tr style="${ri === 0 ? "font-weight:800; background:var(--bg);" : ""}">
+      ${Array.from({ length: maxCols }).map((_, ci) => `<td style="border:1px solid var(--border); padding:4px 8px; white-space:nowrap;">${escapeHtml((row || [])[ci] || "")}</td>`).join("")}
+    </tr>`).join("")}</table>`;
+}
+document.getElementById("importClassApplyBtn").addEventListener("click", () => {
+  if (importClassGrid.length === 0) { openConfirm("Bitte zuerst eine Datei wählen.", null, null, "OK"); return; }
+  const headerRowIdx = Math.max(0, Number(document.getElementById("importClassHeaderRow").value) - 1);
+  const lastCol = Number(document.getElementById("importClassColLast").value);
+  const firstCol = Number(document.getElementById("importClassColFirst").value);
+  if (firstCol < 0 && lastCol < 0) { openConfirm("Bitte mindestens Vorname oder Nachname zuordnen.", null, null, "OK"); return; }
+  const dataRows = importClassGrid.slice(headerRowIdx + 1);
+  const names = [];
+  dataRows.forEach(row => {
+    row = row || [];
+    const firstName = firstCol >= 0 ? String(row[firstCol] || "").trim() : "";
+    const lastName = lastCol >= 0 ? String(row[lastCol] || "").trim() : "";
+    const full = `${firstName} ${lastName}`.trim();
+    if (full) names.push(full);
+  });
+  if (names.length === 0) { openConfirm("Keine gültigen Namen gefunden.", null, null, "OK"); return; }
+  const guessedName = guessClassName(importClassGrid);
+  document.getElementById("importClassOverlay").classList.add("hidden");
+  editingClassName = null;
+  newClassEntries = names;
+  document.getElementById("createClassModalTitle").textContent = "Neue Klasse erstellen";
+  document.getElementById("createClassName").value = guessedName || "";
+  document.getElementById("createClassNameInput").value = "";
+  renderNewClassNames();
+  document.getElementById("createClassOverlay").classList.remove("hidden");
+});
+function guessHeaderRowIndex(grid) {
+  for (let i = 0; i < Math.min(grid.length, 20); i++) {
+    if ((grid[i] || []).some(c => /^name$/i.test(String(c || "").trim()) || /vorname/i.test(String(c || "")))) return i;
+  }
+  return 0;
+}
+function guessClassName(grid) {
+  for (const row of grid) {
+    for (const cell of row || []) {
+      const m = String(cell || "").match(/Klasse\s+([A-Za-z0-9.]+)/);
+      if (m) return m[1];
+    }
+  }
+  return "";
+}
+function parseCsvFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = String(reader.result);
+        const firstLine = text.split(/\r?\n/)[0] || "";
+        const delim = firstLine.split(";").length > firstLine.split(",").length ? ";" : ",";
+        const lines = text.split(/\r?\n/).filter(l => l.length > 0);
+        resolve(lines.map(line => parseCsvLine(line, delim)));
+      } catch (e) { reject(e); }
+    };
+    reader.onerror = () => reject(new Error("Lesefehler"));
+    reader.readAsText(file, "utf-8");
+  });
+}
+function parseCsvLine(line, delim) {
+  const result = []; let cur = ""; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQuotes = false; }
+      else cur += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === delim) { result.push(cur); cur = ""; }
+      else cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+function parseXlsxFile(file) {
+  return new Promise((resolve, reject) => {
+    if (typeof DecompressionStream === "undefined") { reject(new Error("Dieser Browser unterstützt keinen xlsx-Import. Bitte die Datei als CSV speichern und erneut versuchen.")); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      unzipXlsxEntries(reader.result).then(entries => {
+        const sheetName = Object.keys(entries).find(n => /^xl\/worksheets\/sheet\d*\.xml$/.test(n));
+        if (!sheetName) { reject(new Error("Kein Arbeitsblatt in der Datei gefunden.")); return; }
+        const sharedStrings = entries["xl/sharedStrings.xml"] ? parseSharedStrings(entries["xl/sharedStrings.xml"]) : [];
+        resolve(parseSheetXml(entries[sheetName], sharedStrings));
+      }, reject);
+    };
+    reader.onerror = () => reject(new Error("Lesefehler"));
+    reader.readAsArrayBuffer(file);
+  });
+}
+async function unzipXlsxEntries(arrayBuffer) {
+  const view = new DataView(arrayBuffer);
+  const bytes = new Uint8Array(arrayBuffer);
+  const results = {};
+  let offset = 0;
+  while (offset + 4 <= bytes.length) {
+    const sig = view.getUint32(offset, true);
+    if (sig !== 0x04034b50) break;
+    const compMethod = view.getUint16(offset + 8, true);
+    const compSize = view.getUint32(offset + 18, true);
+    const nameLen = view.getUint16(offset + 26, true);
+    const extraLen = view.getUint16(offset + 28, true);
+    const name = new TextDecoder().decode(bytes.slice(offset + 30, offset + 30 + nameLen));
+    const dataStart = offset + 30 + nameLen + extraLen;
+    const compData = bytes.slice(dataStart, dataStart + compSize);
+    if (name === "xl/sharedStrings.xml" || /^xl\/worksheets\/sheet\d*\.xml$/.test(name)) {
+      let outBytes;
+      if (compMethod === 0) outBytes = compData;
+      else {
+        const stream = new Blob([compData]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+        outBytes = new Uint8Array(await new Response(stream).arrayBuffer());
+      }
+      results[name] = new TextDecoder("utf-8").decode(outBytes);
+    }
+    offset = dataStart + compSize;
+  }
+  return results;
+}
+function parseSharedStrings(xml) {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  return [...doc.getElementsByTagName("si")].map(si => si.textContent || "");
+}
+function colLettersToIndex(letters) {
+  let idx = 0;
+  for (const ch of letters) idx = idx * 26 + (ch.charCodeAt(0) - 64);
+  return idx - 1;
+}
+function parseSheetXml(xml, sharedStrings) {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const rows = [...doc.getElementsByTagName("row")];
+  const grid = [];
+  rows.forEach(rowEl => {
+    const rowNum = Number(rowEl.getAttribute("r")) - 1;
+    const rowArr = [];
+    [...rowEl.getElementsByTagName("c")].forEach(c => {
+      const ref = c.getAttribute("r") || "A1";
+      const letters = (ref.match(/[A-Z]+/) || ["A"])[0];
+      const colIdx = colLettersToIndex(letters);
+      const type = c.getAttribute("t");
+      const vEl = c.getElementsByTagName("v")[0];
+      const tEl = c.getElementsByTagName("t")[0];
+      let value = "";
+      if (type === "s" && vEl) value = sharedStrings[Number(vEl.textContent)] || "";
+      else if (type === "inlineStr" && tEl) value = tEl.textContent || "";
+      else if (vEl) value = vEl.textContent || "";
+      rowArr[colIdx] = value;
+    });
+    grid[rowNum] = rowArr;
+  });
+  const result = [];
+  for (let i = 0; i < grid.length; i++) result.push(grid[i] ? grid[i].map(v => (v == null ? "" : v)) : []);
+  return result;
+}
 
 let selectStudentsClassName = null;
 let selectStudentsChecked = new Set();
