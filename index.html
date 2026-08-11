@@ -219,6 +219,7 @@
   .sw-lenbtn.plus1, .sw-lenbtn.plus2 { background: #0284c7; }
   .sw-lengths { font-size: 0.9rem; font-weight: 800; min-width: 40px; text-align: center; flex: 1; color: #0c4a6e; }
   .sw-del { border: none; border-radius: 6px; background: transparent; color: #5b7c94; font-size: 0.95rem; padding: 2px 4px; }
+  .sw-interval-btn { border: none; background: #334155; color: #cbd5e1; border-radius: 50%; width: 28px; height: 28px; font-size: 0.85rem; flex-shrink: 0; }
   .sw-drag-ghost { position: fixed; top: 0; left: 0; transform: translate(-50%,-50%); background: #0ea5e9; color: white; font-weight: 700; padding: 10px 16px; border-radius: 10px; z-index: 300; pointer-events: none; }
   @media (orientation: landscape) {
     .sw-card { padding: 10px 12px; gap: 6px; }
@@ -775,6 +776,7 @@
       <button class="btn btn-outline" id="examAddNameBtn">+ Hinzufügen</button>
       <button class="btn btn-outline" id="examLoadClassBtn">Klasse laden</button>
       <button class="btn btn-outline" id="examExportBtn">Exportieren</button>
+      <button class="btn btn-outline" id="examPdfBtn">📄 PDF für SuS</button>
     </div>
     <div id="examStudentList"></div>
     <div class="modal-actions"><button class="btn btn-secondary" id="examDetailClose">Schliessen</button></div>
@@ -1809,7 +1811,7 @@ function pauseSchwimmTimer() { schwimmTimerRunning = false; clearInterval(schwim
 function resetSchwimmRace() {
   pauseSchwimmTimer();
   schwimmElapsed = 0;
-  swimmers.forEach(s => { s.lengths = 0; s.finishTime = null; });
+  swimmers.forEach(s => { s.lengths = 0; s.finishTime = null; s.lengthTimes = []; s.lastTapAt = null; s.lastTapBtn = null; });
   renderSchwimmTimer(); renderSwimAll(); schwimmSave();
 }
 function setDistance(meters, lengths) {
@@ -1823,7 +1825,7 @@ document.querySelectorAll(".sw-distance-btn").forEach(btn => btn.addEventListene
 
 function addSwimmer(name, lane) {
   if (!name.trim()) return;
-  swimmers.push({ id: uid(), name: name.trim(), lengths: 0, finishTime: null, lane: lane || 0, position: null });
+  swimmers.push({ id: uid(), name: name.trim(), lengths: 0, finishTime: null, lane: lane || 0, position: null, lengthTimes: [], lastTapAt: null, lastTapBtn: null });
   renderSwimAll(); schwimmSave();
 }
 function removeSwimmer(id) {
@@ -1833,19 +1835,30 @@ function removeSwimmer(id) {
   if (schwimmMode === "staggered" && oldLane > 0) renumberLane(oldLane);
   renderSwimAll(); schwimmSave();
 }
+function currentElapsedForSwimmer(s) {
+  return (schwimmMode === "staggered" && s.position) ? staggeredTimers[s.position - 1].elapsed : schwimmElapsed;
+}
+const SW_COOLDOWN_MS = 30000;
 function changeLength(id, delta) {
   const s = swimmers.find(s => String(s.id) === String(id));
   if (!s) return;
   const prev = s.lengths;
   s.lengths = Math.max(0, s.lengths + delta);
-  if (delta > 0 && prev < targetLengths && s.lengths >= targetLengths && s.finishTime === null) {
-    s.finishTime = (schwimmMode === "staggered" && s.position) ? staggeredTimers[s.position - 1].elapsed : schwimmElapsed;
+  if (!s.lengthTimes) s.lengthTimes = [];
+  if (delta > 0) {
+    s.lastTapAt = Date.now();
+    s.lastTapBtn = delta === 1 ? "plus1" : "plus2";
+    const elapsedNow = currentElapsedForSwimmer(s);
+    for (let i = 0; i < delta; i++) s.lengthTimes.push(elapsedNow);
+    if (prev < targetLengths && s.lengths >= targetLengths && s.finishTime === null) s.finishTime = elapsedNow;
+  } else if (delta < 0) {
+    if (s.lengthTimes.length) s.lengthTimes.pop();
   }
   renderSwimAll(); schwimmSave();
   if (schwimmMode === "staggered" && s.position) checkStaggeredAllFinished(s.position - 1);
   else checkAllFinished();
 }
-function resetAllResults() { swimmers.forEach(s => { s.lengths = 0; s.finishTime = null; }); renderSwimAll(); schwimmSave(); }
+function resetAllResults() { swimmers.forEach(s => { s.lengths = 0; s.finishTime = null; s.lengthTimes = []; s.lastTapAt = null; s.lastTapBtn = null; }); renderSwimAll(); schwimmSave(); }
 function checkAllFinished() {
   const active = swimmers.filter(s => s.lane);
   if (active.length === 0) return;
@@ -1902,6 +1915,7 @@ function renderSwimAll() {
         <div class="sw-top"><div class="sw-name">${escapeHtml(s.name)}</div>${resultHtml}</div>
         ${deficitHtml}
         <div class="sw-bottom">
+          <button class="sw-interval-btn" data-id="${s.id}" title="Längenzeiten (gedrückt halten)">⏱</button>
           <button class="sw-lenbtn minus" data-action="minus" data-id="${s.id}">−</button>
           <div class="sw-lengths">${s.lengths}/${targetLengths}</div>
           <button class="sw-lenbtn plus1" data-action="plus1" data-id="${s.id}">+1</button>
@@ -1924,6 +1938,48 @@ document.getElementById("schwimmView").addEventListener("click", (e) => {
     if (!s) return;
     openConfirm(`"${s.name}" wirklich entfernen?`, () => removeSwimmer(id), null, "Entfernen");
   }
+});
+
+setInterval(() => {
+  if (document.getElementById("schwimmView").classList.contains("hidden")) return;
+  const now = Date.now();
+  swimmers.forEach(s => {
+    if (!s.lastTapAt || !s.lastTapBtn) return;
+    const btn = document.querySelector(`.sw-card[data-id="${CSS.escape(String(s.id))}"] .sw-lenbtn.${s.lastTapBtn}`);
+    const elapsedMs = now - s.lastTapAt;
+    if (elapsedMs >= SW_COOLDOWN_MS) { if (btn) btn.style.background = ""; s.lastTapAt = null; s.lastTapBtn = null; return; }
+    const deg = (elapsedMs / SW_COOLDOWN_MS) * 360;
+    if (btn) btn.style.background = `conic-gradient(#16a34a ${deg}deg, #f59e0b ${deg}deg 360deg)`;
+  });
+}, 150);
+
+function showSwIntervalPopover(id) {
+  const s = swimmers.find(x => String(x.id) === String(id));
+  if (!s) return;
+  document.getElementById("lfIntervalTitle").textContent = `Längenzeiten – ${s.name}`;
+  const ts = s.lengthTimes || [];
+  const listEl = document.getElementById("lfIntervalList");
+  if (ts.length < 2) {
+    listEl.innerHTML = '<p style="color:#94a3b8;">Noch nicht genug Längen für Intervalle.</p>';
+  } else {
+    let rows = "";
+    for (let i = 1; i < ts.length; i++) {
+      const deltaSec = Math.max(0, Math.round(ts[i] - ts[i - 1]));
+      rows += `<div>Länge ${i} → ${i + 1}: ${formatTime(deltaSec)}</div>`;
+    }
+    listEl.innerHTML = rows;
+  }
+  document.getElementById("lfIntervalOverlay").classList.remove("hidden");
+}
+function hideSwIntervalPopover() { document.getElementById("lfIntervalOverlay").classList.add("hidden"); }
+let swHoldTimer = null;
+document.getElementById("schwimmView").addEventListener("pointerdown", (e) => {
+  const btn = e.target.closest(".sw-interval-btn");
+  if (!btn) return;
+  swHoldTimer = setTimeout(() => showSwIntervalPopover(btn.dataset.id), 300);
+});
+["pointerup", "pointerleave", "pointercancel"].forEach(evt => {
+  document.getElementById("schwimmView").addEventListener(evt, () => { clearTimeout(swHoldTimer); hideSwIntervalPopover(); });
 });
 
 let swDraggingId = null, swDragGhost = null, swCurrentHoverZone = null;
@@ -2020,7 +2076,7 @@ document.getElementById("sw_exportBtn").addEventListener("click", exportSwimResu
 document.getElementById("sw_classesBtn").addEventListener("click", () => {
   openClassesModal((names) => {
     const existing = new Set(swimmers.map(s => s.name));
-    names.forEach(n => { if (!existing.has(n)) { swimmers.push({ id: uid(), name: n, lengths: 0, finishTime: null, lane: 0, position: null }); existing.add(n); } });
+    names.forEach(n => { if (!existing.has(n)) { swimmers.push({ id: uid(), name: n, lengths: 0, finishTime: null, lane: 0, position: null, lengthTimes: [], lastTapAt: null, lastTapBtn: null }); existing.add(n); } });
     renderSwimAll(); schwimmSave();
   });
 });
@@ -2044,6 +2100,236 @@ const RUBRICS_KEY = "spt_rubrics_v1";
 const EXAMS_KEY = "spt_exams_v1";
 let rubrics = loadJSON(RUBRICS_KEY, []);
 let exams = loadJSON(EXAMS_KEY, []);
+
+/* ---- Vorgefertigte Kriterienraster-Vorlagen (einmalig eingefügt) ---- */
+const DEFAULT_RUBRICS_SEEDED_KEY = "spt_default_rubrics_seeded_v1";
+const DEFAULT_RUBRICS = [
+  {
+    name: `Badminton`,
+    maxSix: 17,
+    type: "checkboxes",
+    attempts: 1,
+    levels: [],
+    criteria: [
+      { title: `Anspiel`, desc: ``, boxes: [{"label": "kurz und flach", "points": 1}, {"label": "hoch und lang", "points": 1}, {"label": "wenig Fehler", "points": 1}] },
+      { title: `Clears`, desc: ``, boxes: [{"label": "präzis", "points": 1}, {"label": "grundsätzlich hoch", "points": 1}, {"label": "grundsätzlich lang", "points": 1}] },
+      { title: `Drops`, desc: ``, boxes: [{"label": "präzis", "points": 1}, {"label": "grundsätzlich kurz", "points": 1}, {"label": "grundsätzlich flach", "points": 1}] },
+      { title: `Stellungsspiel`, desc: ``, boxes: [{"label": "Rückkehr zur Mitte nach jedem Schlag", "points": 1}] },
+      { title: `Taktik`, desc: ``, boxes: [{"label": "Spielt taktisch korrekt", "points": 1}, {"label": "Lässt den Gegner laufen", "points": 1}] },
+      { title: `Smash`, desc: ``, boxes: [{"label": "Saubere Ausführung (seitliche Haltung, Treffpunkt vor dem Körper)", "points": 1}, {"label": "ist normalerweise erfolgreich (Punktgewinn)", "points": 1}] },
+      { title: `Regeln`, desc: ``, boxes: [{"label": "Kennt die Regeln", "points": 1}, {"label": "Kennt die Zählweise", "points": 1}] },
+      { title: `Einsatz`, desc: ``, boxes: [{"label": "Zeigt vollen Einsatz", "points": 1}] },
+      { title: `Backhand (Zusatz)`, desc: `Zusatzpunkte`, boxes: [{"label": "Technisch sauber und platziert", "points": 1}] },
+      { title: `Beinarbeit (Zusatz)`, desc: ``, boxes: [{"label": "Saubere Ausführung und kraftsparend", "points": 1}] },
+    ]
+  },
+  {
+    name: `Volleyball`,
+    maxSix: 30,
+    type: "levels",
+    attempts: 1,
+    levels: ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"],
+    criteria: [
+      { title: `Annahme`, desc: `Ich kann den Ball gut annehmen und zum Passeur spielen.`, points: [3, 2, 1, 0] },
+      { title: `Zuspiel (exaktes hohes Zuspiel)`, desc: `Ich kann das obere Zuspiel im Spiel anwenden und so den Ball im eigenen Team behalten.`, points: [3, 2, 1, 0] },
+      { title: `Zuspiel ans Netz`, desc: `Ich kann präzise ans Netz passen und so den Mitspielern gute Vorlagen geben.`, points: [3, 2, 1, 0] },
+      { title: `Angriff`, desc: `Ich kann den Ball im Spiel beim Angriff smashen.`, points: [3, 2, 1, 0] },
+      { title: `Übersicht`, desc: `Ich sehe die Lücken im Spielfeld des Gegners und kann den Ball dorthin spielen.`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Teamfähigkeit`, desc: `Ich bleibe auf meiner Position oder nahe am Gegenspieler und erfülle meine Aufgabe im Spielzug (Passeur, Angriff, Block).`, points: [3, 2, 1, 0] },
+      { title: `Service`, desc: `Ich kann kontrolliert und präzise servieren.`, points: [3, 2, 1, 0] },
+      { title: `Teamfähigkeit`, desc: `Positiver Umgang mit Mitspielern über mehrere Spiele hinweg.`, points: [3, 2, 1, 0] },
+      { title: `Positiver Umgang mit Mitspielern`, desc: ``, points: [3, 2, 1, 0] },
+      { title: `Einsatz`, desc: ``, points: [3, 2, 1, 0] },
+    ]
+  },
+  {
+    name: `Ringturnen (max. 6 Elemente)`,
+    maxSix: 18,
+    type: "checkboxes",
+    attempts: 2,
+    levels: [],
+    criteria: [
+      { title: `A-Element ½ Drehung`, desc: ``, boxes: [{"label": "Vorschwung C+ Pose, Rückschwung C- Pose", "points": 1}, {"label": "Kontrollierte 180° Drehungen im Umkehrpunkt", "points": 1}, {"label": "Drehung aus Hüfte", "points": 1}] },
+      { title: `A-Element Beugehang`, desc: ``, boxes: [{"label": "C+-Pose vorher", "points": 1}, {"label": "I-Pose während", "points": 1}, {"label": "Wechsel an Umkehrpunkt", "points": 1}] },
+      { title: `B-Element Sturzhang vorne`, desc: ``, boxes: [{"label": "Zügiges Aufschwingen", "points": 1}, {"label": "Horizontale, gestreckte Beine", "points": 1}, {"label": "Blick zu den Knien", "points": 1}] },
+      { title: `B-Element Senken aus Beugehang mit ½ Drehung`, desc: ``, boxes: [{"label": "Zügiges Drehen", "points": 1}, {"label": "Kontrollierte 180° Drehung im Umkehrpunkt", "points": 1}, {"label": "Drehung aus Hüfte", "points": 1}] },
+      { title: `C-Element Ganze Drehung`, desc: ``, boxes: [{"label": "Vorschwung C+ Pose, Rückschwung C- Pose", "points": 1}, {"label": "Kontrollierte 180° Drehungen im Umkehrpunkt", "points": 1}, {"label": "Drehung aus Hüfte", "points": 1}] },
+      { title: `C-Element Sturzhang hinten`, desc: ``, boxes: [{"label": "Zügiges Aufschwingen", "points": 1}, {"label": "Horizontale, gestreckte Beine", "points": 1}, {"label": "Blick zu den Knien", "points": 1}] },
+      { title: `A-Element Rückschwung zum Niedersprung`, desc: ``, boxes: [{"label": "Rückschwung in C- Pose", "points": 1}, {"label": "Loslassen im Umkehrpunkt", "points": 1}, {"label": "Über C+ Pose zur stabilen Landung", "points": 1}] },
+      { title: `B-Element Vorderschwung mit Niedersprung mit ½ Drehung`, desc: ``, boxes: [{"label": "Kontrolliertes Drehen und Loslassen im Umkehrpunkt", "points": 1}, {"label": "Über leichten Hüftwinkel C+ zur stabilen Landung", "points": 1}, {"label": "Landung in Knien", "points": 1}] },
+      { title: `C-Element Saltoabgang`, desc: ``, boxes: [{"label": "Loslassen der Hände vor dem Umkehrpunkt", "points": 1}, {"label": "Aktives Strecken des Körpers in der Landephase", "points": 1}, {"label": "Stabile Landung", "points": 1}] },
+      { title: `B-Element Sturzhang mit halber Drehung`, desc: ``, boxes: [{"label": "Gestreckte Haltung", "points": 1}, {"label": "Kontrollierte 180° Drehung im Umkehrpunkt", "points": 1}, {"label": "Drehung aus Hüfte", "points": 1}] },
+      { title: `Stilnote`, desc: ``, boxes: [{"label": "gute Spannung", "points": 1}, {"label": "kann Schwung beibehalten", "points": 1}, {"label": "jeweils zwei rhythmische Schritte auf der Matte", "points": 1}] },
+    ]
+  },
+  {
+    name: `Boden-Reck`,
+    maxSix: 18,
+    type: "checkboxes",
+    attempts: 2,
+    levels: [],
+    criteria: [
+      { title: `C-Element Handstand abrollen`, desc: ``, boxes: [{"label": "Gerade Körperlinie (I-Pose)", "points": 1}, {"label": "Halten deutlich erkennbar", "points": 1}, {"label": "Harmonisches Abrollen, Aufstehen ohne Hilfe der Hände", "points": 1}] },
+      { title: `B-Element Felgaufschwung gehockt zum Stütz`, desc: ``, boxes: [{"label": "Kontinuierliches Drehen", "points": 1}, {"label": "Gehockte Beine und gestreckte Fussgelenke", "points": 1}, {"label": "Gespannter Stütz (2 Sek.)", "points": 1}] },
+      { title: `C-Element Felge rw (Bauchwelle)`, desc: ``, boxes: [{"label": "Deutliches Lösen von der Reckstange", "points": 1}, {"label": "Kontinuierliches Drehen", "points": 1}, {"label": "Gespannter Stütz (2 Sek.)", "points": 1}] },
+      { title: `A-Element Unterschwung`, desc: ``, boxes: [{"label": "Unterschwung im C", "points": 1}, {"label": "Hüfte mind. auf Stangenhöhe", "points": 1}, {"label": "Kontrollierte Landung", "points": 1}] },
+      { title: `A-Element Rolle vw`, desc: ``, boxes: [{"label": "Harmonische und geradlinige Rollbewegung", "points": 1}, {"label": "Gestreckte Beine", "points": 1}, {"label": "Aufstehen ohne Hilfe der Hände", "points": 1}] },
+      { title: `C-Element Rad`, desc: ``, boxes: [{"label": "Arme und Beine sind in einer Achse", "points": 1}, {"label": "Mind. 90° Beinwinkel", "points": 1}, {"label": "Rhythmisches Aufsetzen Hand-Hand-Fuss-Fuss", "points": 1}] },
+      { title: `Stilnote`, desc: ``, boxes: [{"label": "gute Spannung", "points": 1}, {"label": "rhythmische und elegante Kür", "points": 1}, {"label": "Elemente werden fertig geturnt (Stopp nach Element)", "points": 1}] },
+    ]
+  },
+  {
+    name: `Basketball`,
+    maxSix: 27,
+    type: "levels",
+    attempts: 1,
+    levels: ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"],
+    criteria: [
+      { title: `Ballannahme`, desc: `Ich kann den Ball gut annehmen und sichern (Ball fangen und Sternschritt).`, points: [3, 2, 1, 0] },
+      { title: `Ballführung`, desc: `Ich kann mit dem Ball laufen und dribbeln.`, points: [3, 2, 1, 0] },
+      { title: `Punktgefährlichkeit`, desc: `Ich kann gut und erfolgreich werfen (Korbwurf, Powermove, Korbleger).`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Koordination`, desc: `Ich kann mich so freistellen und anbieten, dass ich den Ball zugespielt erhalte.`, points: [3, 2, 1, 0] },
+      { title: `Übersicht`, desc: `Ich sehe frei stehende Mitspieler und spiele sie an (Abspielen, Orientierung).`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Teamfähigkeit`, desc: `Ich bleibe auf meiner Position oder nahe am Gegenspieler und erfülle meine Aufgabe im Team.`, points: [3, 2, 1, 0] },
+      { title: `Einsatz`, desc: `Pluspunkte für starken Einsatz`, points: [1, 0, -1, -2] },
+      { title: `Fairplay`, desc: ``, points: [1, 0, -1, -2] },
+      { title: `Positiver Umgang mit Mitspielern`, desc: ``, points: [1, 0, -1, -2] },
+    ]
+  },
+  {
+    name: `Salto`,
+    maxSix: 10,
+    type: "checkboxes",
+    attempts: 2,
+    levels: [],
+    criteria: [
+      { title: `Stilnote`, desc: ``, boxes: [{"label": "Ruhige, kontrollierte Bewegung", "points": 1}, {"label": "Gute Körperspannung", "points": 1}] },
+      { title: `Absprung`, desc: ``, boxes: [{"label": "Armschwung von hinten nach vorne oben", "points": 1}, {"label": "Kräftiger, dynamischer Absprung", "points": 1}] },
+      { title: `Flug`, desc: ``, boxes: [{"label": "Hände umfassen die Schienbeine", "points": 1}, {"label": "Kontrollierte, getimte Rotation", "points": 1}] },
+      { title: `Landung`, desc: ``, boxes: [{"label": "Gehockte Körperstellung", "points": 1}, {"label": "Ruhiger, stabiler Stand", "points": 1}] },
+      { title: `Dynamik`, desc: ``, boxes: [{"label": "Zügiger Anlauf", "points": 1}, {"label": "Ausreichende Sprunghöhe", "points": 1}] },
+    ]
+  },
+  {
+    name: `Fussball`,
+    maxSix: 27,
+    type: "levels",
+    attempts: 1,
+    levels: ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"],
+    criteria: [
+      { title: `Ball stoppen und halten`, desc: `Ich kann den Ball gut annehmen und sichern.`, points: [3, 2, 1, 0] },
+      { title: `Ballführung`, desc: `Ich kann mit dem Ball laufen und dribbeln.`, points: [3, 2, 1, 0] },
+      { title: `Pass- und Schussfähigkeit`, desc: `Ich kann gut und präzise passen und stark schiessen.`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Koordination`, desc: `Ich kann mich so freistellen und anbieten, dass ich den Ball zugespielt erhalte.`, points: [3, 2, 1, 0] },
+      { title: `Übersicht`, desc: `Ich sehe frei stehende Mitspieler und spiele sie an.`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Teamfähigkeit`, desc: `Ich bleibe auf meiner Position oder nahe am Gegenspieler und erfülle meine Aufgabe im Team.`, points: [3, 2, 1, 0] },
+      { title: `Einsatz`, desc: ``, points: [1, 0, -1, -2] },
+      { title: `Fairplay`, desc: ``, points: [1, 0, -1, -2] },
+      { title: `Positiver Umgang mit Mitspielern`, desc: ``, points: [1, 0, -1, -2] },
+    ]
+  },
+  {
+    name: `Brustgleichschlag`,
+    maxSix: 15,
+    type: "checkboxes",
+    attempts: 1,
+    levels: [],
+    criteria: [
+      { title: `Beinschlag`, desc: ``, boxes: [{"label": "Kräftig", "points": 1}, {"label": "Eng", "points": 1}, {"label": "Füsse nach aussen gedreht", "points": 1}, {"label": "Schwungvolle Bewegung", "points": 1}, {"label": "Starker Antrieb", "points": 1}] },
+      { title: `Armzug`, desc: ``, boxes: [{"label": "Kräftiger Armzug", "points": 1}, {"label": "Nur bis zu den Schultern (ca. 90°)", "points": 1}, {"label": "Saubere Ziehbewegung", "points": 1}, {"label": "Armzug-Atmen-Kopf eintauchen", "points": 1}] },
+      { title: `Rhythmus`, desc: ``, boxes: [{"label": "Stetige, kraftvolle Bewegung", "points": 1}, {"label": "Richtige Reihenfolge Arm/Bein", "points": 1}, {"label": "Passende Gleitphasenlänge", "points": 1}] },
+      { title: `Gleitphase`, desc: ``, boxes: [{"label": "Gestreckt", "points": 1}, {"label": "Gespannt", "points": 1}, {"label": "Kopf zwischen den Armen", "points": 1}] },
+    ]
+  },
+  {
+    name: `Handball`,
+    maxSix: 27,
+    type: "levels",
+    attempts: 1,
+    levels: ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"],
+    criteria: [
+      { title: `Ballannahme`, desc: `Ich kann den Ball gut annehmen und sichern (Ball fangen und Sternschritt).`, points: [3, 2, 1, 0] },
+      { title: `Ballführung`, desc: `Ich kann mit dem Ball laufen und dribbeln.`, points: [3, 2, 1, 0] },
+      { title: `Torgefährlichkeit`, desc: `Ich kann gut und erfolgreich werfen (Sprungwurf).`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Koordination`, desc: `Ich kann mich so freistellen und anbieten, dass ich den Ball zugespielt erhalte.`, points: [3, 2, 1, 0] },
+      { title: `Übersicht`, desc: `Ich sehe frei stehende Mitspieler und spiele sie an (Abspielen, Orientierung).`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Teamfähigkeit`, desc: `Ich bleibe auf meiner Position oder nahe am Gegenspieler und erfülle meine Aufgabe im Team.`, points: [3, 2, 1, 0] },
+      { title: `Einsatz`, desc: ``, points: [1, 0, -1, -2] },
+      { title: `Fairplay`, desc: ``, points: [1, 0, -1, -2] },
+      { title: `Positiver Umgang mit Mitspielern`, desc: ``, points: [1, 0, -1, -2] },
+    ]
+  },
+  {
+    name: `Bodenturnen`,
+    maxSix: 16.5,
+    type: "checkboxes",
+    attempts: 2,
+    levels: [],
+    criteria: [
+      { title: `C-Element Handstand abrollen`, desc: ``, boxes: [{"label": "Gerade Körperlinie (I-Pose)", "points": 1}, {"label": "Halten deutlich erkennbar", "points": 1}, {"label": "Harmonisches Abrollen, Aufstehen ohne Hilfe der Hände", "points": 1}] },
+      { title: `A-Element Rolle vw`, desc: ``, boxes: [{"label": "Harmonische und geradlinige Rollbewegung", "points": 1}, {"label": "Gestreckte Beine", "points": 1}, {"label": "Aufstehen ohne Hilfe der Hände", "points": 1}] },
+      { title: `B-Element Strecksprung mit 1/2-Drehung`, desc: ``, boxes: [{"label": "Armschwung vor-hoch, Hüfte gestreckt", "points": 1}, {"label": "Halbe Drehung mit gestreckter Hüfte (I-Pose)", "points": 1}, {"label": "Abfedern durch Beugen der Beine (1 Schritt erlaubt)", "points": 1}] },
+      { title: `B-Element Rolle rw`, desc: ``, boxes: [{"label": "Harmonische und geradlinige Rollbewegung", "points": 1}, {"label": "Runder Rücken, Blick Richtung Knie", "points": 1}, {"label": "Landung auf den Füssen", "points": 1}] },
+      { title: `B-Element Sprungrolle`, desc: ``, boxes: [{"label": "Flugphase ersichtlich", "points": 1}, {"label": "Harmonisches Abrollen mit rundem Körper", "points": 1}, {"label": "Aufstehen ohne Hilfe der Hände", "points": 1}] },
+      { title: `Stilnote`, desc: ``, boxes: [{"label": "gute Spannung", "points": 1}, {"label": "rhythmische und elegante Kür", "points": 1}, {"label": "Elemente werden fertiggeturnt", "points": 1}] },
+    ]
+  },
+  {
+    name: `Unihockey`,
+    maxSix: 27,
+    type: "levels",
+    attempts: 1,
+    levels: ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"],
+    criteria: [
+      { title: `Ball stoppen und halten`, desc: `Ich kann den Ball gut annehmen und sichern.`, points: [3, 2, 1, 0] },
+      { title: `Ballführung`, desc: `Ich kann mit dem Ball laufen und dribbeln.`, points: [3, 2, 1, 0] },
+      { title: `Pass- und Schussfähigkeit`, desc: `Ich kann gut und präzise passen und stark schiessen.`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Koordination`, desc: `Ich kann mich so freistellen und anbieten, dass ich den Ball zugespielt erhalte.`, points: [3, 2, 1, 0] },
+      { title: `Übersicht`, desc: `Ich sehe frei stehende Mitspieler und spiele sie an.`, points: [3, 2, 1, 0] },
+      { title: `Taktik, Teamfähigkeit`, desc: `Ich bleibe auf meiner Position oder nahe am Gegenspieler und erfülle meine Aufgabe im Team.`, points: [3, 2, 1, 0] },
+      { title: `Einsatz`, desc: ``, points: [1, 0, -1, -2] },
+      { title: `Fairplay`, desc: ``, points: [1, 0, -1, -2] },
+      { title: `Positiver Umgang mit Mitspielern`, desc: ``, points: [1, 0, -1, -2] },
+    ]
+  },
+  {
+    name: `Strecksprung`,
+    maxSix: 12,
+    type: "checkboxes",
+    attempts: 1,
+    levels: [],
+    criteria: [
+      { title: `Strecksprung`, desc: `Bewertung der einzelnen Ausführungsmerkmale`, boxes: [{"label": "Dynamischer Anlauf", "points": 1}, {"label": "Kräftiger Absprung", "points": 1}, {"label": "Höhe – Sprung in die Höhe", "points": 1}, {"label": "Streckung – ganzkörperlich gestreckte Haltung", "points": 1}, {"label": "Blick nach vorne", "points": 1}, {"label": "Zwischen gestreckten Armen", "points": 1}, {"label": "Spannung – gespannte Haltung", "points": 1}, {"label": "Füsse – gestreckt", "points": 1}, {"label": "Keine Rotation – keine Drehung des Körpers", "points": 1}, {"label": "Kontrollierte Punktlandung", "points": 1}, {"label": "Kontrolliert in die Knie", "points": 1}, {"label": "Ohne Schritte – Landung wird gehalten und gezeigt", "points": 1}] },
+    ]
+  },
+  {
+    name: `Startsprung`,
+    maxSix: 10,
+    type: "checkboxes",
+    attempts: 2,
+    levels: [],
+    criteria: [
+      { title: `Vor dem Sprung`, desc: ``, boxes: [{"label": "Korrekte Startposition – Schrittstellung, Hände am Block", "points": 1}, {"label": "Beginn Sprung – nach vorne ziehen, Gewichtsverlagerung", "points": 1}, {"label": "Kraftvolles Abspringen", "points": 1}] },
+      { title: `In der Luft`, desc: ``, boxes: [{"label": "Gestreckte Haltung", "points": 1}, {"label": "Spannung", "points": 1}, {"label": "Kopf zwischen Armen – Blick nach unten", "points": 1}] },
+      { title: `Beim Eintauchen`, desc: ``, boxes: [{"label": "Sauberes Eintauchen – Füsse gehen dort ins Wasser, wo der Kopf eintaucht", "points": 1}, {"label": "Spannung nach Eintauchen – Arme bleiben oben", "points": 1}, {"label": "Umlenken in Schwimmrichtung – Delfinschläge", "points": 1}, {"label": "Flüssiges Weiterschwimmen möglich – nicht zu tief, Armzug sobald an der Oberfläche", "points": 1}] },
+    ]
+  },
+];
+function seedDefaultRubrics() {
+  if (localStorage.getItem(DEFAULT_RUBRICS_SEEDED_KEY)) return;
+  DEFAULT_RUBRICS.forEach(r => {
+    rubrics.push({
+      id: uid(), name: r.name, maxSix: r.maxSix, type: r.type, attempts: r.attempts,
+      levels: r.levels.slice(),
+      criteria: r.criteria.map(c => r.type === "checkboxes"
+        ? { id: uid(), title: c.title, desc: c.desc, boxes: c.boxes.map(b => ({ ...b })) }
+        : { id: uid(), title: c.title, desc: c.desc, points: c.points.slice() })
+    });
+  });
+  saveRubrics();
+  localStorage.setItem(DEFAULT_RUBRICS_SEEDED_KEY, "1");
+}
+seedDefaultRubrics();
 function saveRubrics() { saveJSON(RUBRICS_KEY, rubrics); }
 function saveExams() { saveJSON(EXAMS_KEY, exams); }
 
@@ -2456,6 +2742,94 @@ document.getElementById("examExportBtn").addEventListener("click", () => {
   if (navigator.share) navigator.share({ text }).catch(() => {});
   else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => openConfirm("Ergebnisse in die Zwischenablage kopiert.", null, null, "OK"));
   else window.prompt("Ergebnisse kopieren:", text);
+});
+
+function levelColorPrint(index, total) {
+  if (total <= 1) return "hsl(140,55%,80%)";
+  const hue = 140 - (140 / (total - 1)) * index;
+  return `hsl(${hue},60%,80%)`;
+}
+function buildStudentReportSection(ex, rubric, name) {
+  const res = ex.results[name] || {};
+  const attempts = rubric.attempts || 1;
+  const attemptNums = attempts === 2 ? [1, 2] : [1];
+  let sections = "";
+  attemptNums.forEach(num => {
+    const a = res["attempt" + num];
+    const attemptLabel = attempts === 2 ? ` – ${num}. Versuch` : "";
+    let tableHtml;
+    if (!a) {
+      tableHtml = `<p class="pk-empty">Noch nicht bewertet.</p>`;
+    } else if (rubric.type === "checkboxes") {
+      tableHtml = `<table class="grid"><thead><tr><th>Kriterium</th><th>Bewertung</th></tr></thead><tbody>` +
+        rubric.criteria.map((c, ci) => {
+          const checkedSet = new Set(a.checked ? a.checked[ci] : []);
+          const boxesHtml = c.boxes.map((b, bi) => `<span class="box${checkedSet.has(bi) ? " on" : ""}">${checkedSet.has(bi) ? "✓ " : "☐ "}${escapeHtml(b.label)}</span>`).join(" ");
+          const comment = (a.comments && a.comments[ci]) ? `<div class="comment">${escapeHtml(a.comments[ci])}</div>` : "";
+          return `<tr><td class="crit"><b>${escapeHtml(c.title)}</b>${c.desc ? `<div class="desc">${escapeHtml(c.desc)}</div>` : ""}</td><td>${boxesHtml}${comment}</td></tr>`;
+        }).join("") + "</tbody></table>";
+    } else {
+      tableHtml = `<table class="grid"><thead><tr><th>Kriterium</th>${rubric.levels.map(lv => `<th>${escapeHtml(lv)}</th>`).join("")}</tr></thead><tbody>` +
+        rubric.criteria.map((c, ci) => {
+          const sel = a.selections ? a.selections[ci] : null;
+          const cells = c.points.map((p, li) => {
+            const isSel = sel === li;
+            const style = isSel ? ` style="background:${levelColorPrint(li, c.points.length)}; font-weight:800;"` : "";
+            return `<td${style}>${isSel ? "●" : ""}</td>`;
+          }).join("");
+          const comment = (a.comments && a.comments[ci]) ? `<div class="comment">${escapeHtml(a.comments[ci])}</div>` : "";
+          return `<tr><td class="crit"><b>${escapeHtml(c.title)}</b>${c.desc ? `<div class="desc">${escapeHtml(c.desc)}</div>` : ""}${comment}</td>${cells}</tr>`;
+        }).join("") + "</tbody></table>";
+    }
+    const summary = a && a.note != null ? `<div class="summary">Note <b>${formatNote(a.note)}</b> · ${a.points} / ${a.maxSix} Punkte</div>` : "";
+    sections += `
+      <section class="report-page">
+        <div class="report-header">
+          <div>
+            <h1>${escapeHtml(rubric.name)}${attemptLabel}</h1>
+            <div class="student">${escapeHtml(name)}</div>
+          </div>
+          <div class="date">${new Date().toLocaleDateString("de-CH")}</div>
+        </div>
+        ${tableHtml}
+        ${summary}
+      </section>`;
+  });
+  return sections;
+}
+document.getElementById("examPdfBtn").addEventListener("click", () => {
+  const ex = exams.find(x => x.id === currentExamId);
+  const rubric = rubrics.find(r => r.id === ex.rubricId);
+  if (!rubric) { openConfirm("Das Kriterienraster dieser Prüfung wurde gelöscht.", null, null, "OK"); return; }
+  if (ex.students.length === 0) { openConfirm("Keine Schüler zum Exportieren.", null, null, "OK"); return; }
+  const body = ex.students.map(name => buildStudentReportSection(ex, rubric, name)).join("");
+  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${escapeHtml(rubric.name)} – ${escapeHtml(ex.name)}</title>
+<style>
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; color:#0f172a; margin:0; }
+  .report-page { padding: 28px; page-break-after: always; }
+  .report-page:last-child { page-break-after: auto; }
+  .report-header { display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0f172a; padding-bottom:10px; margin-bottom:16px; }
+  .report-header h1 { font-size:1.3rem; margin:0 0 4px; }
+  .student { font-size:1.1rem; font-weight:700; }
+  .date { color:#64748b; font-size:0.85rem; }
+  table.grid { width:100%; border-collapse:collapse; margin-bottom:16px; }
+  table.grid th, table.grid td { border:1px solid #cbd5e1; padding:8px; font-size:0.85rem; text-align:center; vertical-align:top; }
+  table.grid th { background:#f1f5f9; }
+  td.crit { text-align:left; min-width:160px; }
+  td.crit .desc { font-weight:400; color:#64748b; font-size:0.78rem; margin-top:2px; }
+  .comment { font-style:italic; color:#475569; font-size:0.78rem; margin-top:4px; }
+  .box { display:inline-block; border:1px solid #cbd5e1; border-radius:6px; padding:3px 7px; margin:2px; font-size:0.8rem; }
+  .box.on { background:#bbf7d0; border-color:#16a34a; font-weight:700; }
+  .summary { font-size:1.05rem; font-weight:700; text-align:right; }
+  .pk-empty { color:#94a3b8; font-style:italic; }
+  @media print { .report-page { padding: 14mm; } }
+</style></head><body>${body}</body></html>`;
+  const w = window.open("", "_blank");
+  if (!w) { openConfirm("Das Fenster für den PDF-Export konnte nicht geöffnet werden (evtl. durch einen Pop-up-Blocker verhindert).", null, null, "OK"); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 300);
 });
 
 let gradingName = null, gradingAttempt = 1, gradingSelections = [], gradingChecked = [], gradingComments = [];
