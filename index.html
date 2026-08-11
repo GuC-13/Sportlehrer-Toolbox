@@ -78,6 +78,13 @@
   .tool-parkour { background: linear-gradient(135deg, #dc2626, #7f1d1d); }
   .tool-scoreboard { background: linear-gradient(135deg, #111827, #030712); }
   .tool-team { background: linear-gradient(135deg, #0d9488, #134e4a); }
+  .tool-planung { background: linear-gradient(135deg, #4338ca, #1e1b4b); }
+  .planung-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; transition: opacity 0.15s; }
+  .planung-item.done { opacity: 0.45; background: #f1f5f9; }
+  .planung-check { font-size: 1.5rem; flex-shrink: 0; cursor: pointer; padding: 4px; margin: -4px; }
+  .planung-date { font-weight: 800; min-width: 90px; color: var(--accent); flex-shrink: 0; cursor: pointer; }
+  .planung-item.done .planung-date { color: var(--muted); }
+  .planung-content { flex: 1; white-space: pre-wrap; cursor: pointer; }
   .home-actions { display: flex; gap: 10px; justify-content: center; }
 
   /* Modal (shared) */
@@ -558,6 +565,17 @@
     <button class="cam-btn" id="tm_camBtn" title="Teams als Foto sichern">📷</button>
   </div>
 
+  <!-- ============ PLANUNG ============ -->
+  <div id="planungView" class="view hidden">
+    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
+    <h1>📅 Planung</h1>
+    <div class="toolbar">
+      <button class="btn btn-outline" id="planungImportBtn">📥 Excel/CSV importieren</button>
+      <button class="btn btn-danger" id="planungClearBtn">Alles löschen</button>
+    </div>
+    <div id="planungList"></div>
+  </div>
+
   <!-- ============ VERLAUF ============ -->
   <div id="verlaufView" class="view hidden">
     <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
@@ -625,6 +643,43 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" id="importClassCancelBtn">Abbrechen</button>
       <button class="btn" id="importClassApplyBtn">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="planungImportOverlay">
+  <div class="modal-box">
+    <h2>Planung aus Excel/CSV importieren</h2>
+    <p style="color:var(--muted); font-size:0.85rem; margin-top:-6px;">Unterstützt .xlsx und .csv. Erwartetes Format: pro Zeile eine Lektion, in einer Spalte das Datum (z.B. 05.09.2026 oder 2026-09-05), in der Spalte direkt rechts davon der Lektionsinhalt als Text. Eine allfällige Kopfzeile (Spaltentitel) kann angegeben werden, Spalten lassen sich unten frei zuordnen.</p>
+    <p style="color:var(--danger); font-size:0.82rem; margin-top:-4px;">Ein bestehender Plan wird beim Übernehmen ersetzt.</p>
+    <input type="file" id="planungFileInput" accept=".xlsx,.csv">
+    <div id="planungMappingArea" class="hidden" style="margin-top:12px;">
+      <label style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:10px 0 4px;">Kopfzeile (Anzahl Zeilen, 0 = keine Kopfzeile)</label>
+      <input type="number" id="planungHeaderRow" min="0" value="0">
+      <label style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:10px 0 4px;">Spalte für Datum</label>
+      <select id="planungColDate"></select>
+      <label style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:10px 0 4px;">Spalte für Lektionsinhalt</label>
+      <select id="planungColContent"></select>
+      <div id="planungPreview" style="overflow-x:auto; margin-top:10px;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="planungImportCancelBtn">Abbrechen</button>
+      <button class="btn" id="planungImportApplyBtn">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="planungEditOverlay">
+  <div class="modal-box">
+    <p style="font-weight:800; margin-top:0;">Lektion bearbeiten</p>
+    <label class="field-label">Datum</label>
+    <input type="date" id="planungEditDate">
+    <label class="field-label">Lektionsinhalt</label>
+    <textarea id="planungEditContent" rows="4" style="width:100%; resize:vertical; font-family:inherit; font-size:1rem; padding:10px; border:1px solid var(--border); border-radius:8px;"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="planungEditDeleteBtn" style="margin-right:auto;">Löschen</button>
+      <button class="btn btn-secondary" id="planungEditCancelBtn">Abbrechen</button>
+      <button class="btn" id="planungEditSaveBtn">Speichern</button>
     </div>
   </div>
 </div>
@@ -862,7 +917,8 @@ const HOME_TOOLS = [
   { id: "multi", cls: "tool-multi", icon: "⏱️", title: "Multistoppuhr" },
   { id: "parkour", cls: "tool-parkour", icon: "🏑", title: "Parkourbenotung" },
   { id: "scoreboard", cls: "tool-scoreboard", icon: "📟", title: "Scoreboard" },
-  { id: "team", cls: "tool-team", icon: "👥", title: "Teamerstellung" }
+  { id: "team", cls: "tool-team", icon: "👥", title: "Teamerstellung" },
+  { id: "planung", cls: "tool-planung", icon: "📅", title: "Planung" }
 ];
 const HOME_PREFS_KEY = "spt_home_prefs_v1";
 function getHomePrefs() {
@@ -882,6 +938,7 @@ function activateTool(tool) {
   if (tool === "parkour") { renderCourseList(); }
   if (tool === "scoreboard") { sbRender(); }
   if (tool === "team") { renderTmList(); }
+  if (tool === "planung") { renderPlanungList(); setTimeout(scrollToFirstUndonePlanung, 50); }
 }
 function renderHomeTools() {
   const prefs = getHomePrefs();
@@ -3051,6 +3108,152 @@ sbMain.addEventListener("touchmove", (e) => {
 }, { passive: false });
 sbMain.addEventListener("touchend", (e) => { if (e.touches.length < 3) sb3Touch = null; });
 sbMain.addEventListener("touchcancel", () => { sb3Touch = null; });
+
+/* =========================================================================
+   PLANUNG (kein Bezug zu Leistungen)
+   ========================================================================= */
+const PLANUNG_KEY = "spt_planung_v1";
+let planungLessons = loadJSON(PLANUNG_KEY, []);
+function planungSave() { saveJSON(PLANUNG_KEY, planungLessons); }
+function excelSerialToISO(serial) {
+  const utcMs = Math.round((Number(serial) - 25569) * 86400 * 1000);
+  return new Date(utcMs).toISOString().slice(0, 10);
+}
+function normalizePlanungDate(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (/^\d+(\.\d+)?$/.test(s) && Number(s) > 10000 && Number(s) < 90000) return excelSerialToISO(s);
+  let m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+  if (m) { let [, d, mo, y] = m; if (y.length === 2) y = "20" + y; return `${y.padStart(4, "0")}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`; }
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) { let [, y, mo, d] = m; return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`; }
+  return s;
+}
+function formatPlanungDateDisplay(iso) {
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : (iso || "");
+}
+function renderPlanungList() {
+  const el = document.getElementById("planungList");
+  if (planungLessons.length === 0) { el.innerHTML = '<div class="empty-hint">Noch kein Plan importiert.</div>'; return; }
+  el.innerHTML = planungLessons.map(l => `
+    <div class="planung-item ${l.done ? "done" : ""}" data-id="${l.id}">
+      <span class="planung-date" data-edit="${l.id}">${escapeHtml(formatPlanungDateDisplay(l.date))}</span>
+      <span class="planung-content" data-edit="${l.id}">${escapeHtml(l.content)}</span>
+      <span class="planung-check" data-toggle="${l.id}" title="Als erledigt markieren">${l.done ? "✅" : "⬜"}</span>
+    </div>`).join("");
+  el.querySelectorAll("[data-edit]").forEach(elx => elx.addEventListener("click", () => openPlanungEdit(elx.dataset.edit)));
+  el.querySelectorAll("[data-toggle]").forEach(elx => elx.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const l = planungLessons.find(x => x.id === elx.dataset.toggle);
+    l.done = !l.done;
+    planungSave();
+    renderPlanungList();
+  }));
+}
+let planungEditingId = null;
+function openPlanungEdit(id) {
+  planungEditingId = id;
+  const l = planungLessons.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById("planungEditDate").value = /^\d{4}-\d{2}-\d{2}$/.test(l.date || "") ? l.date : "";
+  document.getElementById("planungEditContent").value = l.content || "";
+  document.getElementById("planungEditOverlay").classList.remove("hidden");
+}
+document.getElementById("planungEditCancelBtn").addEventListener("click", () => document.getElementById("planungEditOverlay").classList.add("hidden"));
+document.getElementById("planungEditSaveBtn").addEventListener("click", () => {
+  const l = planungLessons.find(x => x.id === planungEditingId);
+  if (!l) return;
+  const newDate = document.getElementById("planungEditDate").value;
+  if (newDate) l.date = newDate;
+  l.content = document.getElementById("planungEditContent").value.trim();
+  planungLessons.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  planungSave();
+  document.getElementById("planungEditOverlay").classList.add("hidden");
+  renderPlanungList();
+});
+document.getElementById("planungEditDeleteBtn").addEventListener("click", () => {
+  openConfirm("Diese Lektion löschen?", () => {
+    planungLessons = planungLessons.filter(x => x.id !== planungEditingId);
+    planungSave();
+    document.getElementById("planungEditOverlay").classList.add("hidden");
+    renderPlanungList();
+  }, null, "Löschen");
+});
+function scrollToFirstUndonePlanung() {
+  const firstUndone = document.querySelector(".planung-item:not(.done)");
+  if (firstUndone) firstUndone.scrollIntoView({ block: "center" });
+}
+document.getElementById("planungImportBtn").addEventListener("click", () => {
+  planungGrid = [];
+  document.getElementById("planungFileInput").value = "";
+  document.getElementById("planungMappingArea").classList.add("hidden");
+  document.getElementById("planungImportOverlay").classList.remove("hidden");
+});
+document.getElementById("planungImportCancelBtn").addEventListener("click", () => document.getElementById("planungImportOverlay").classList.add("hidden"));
+let planungGrid = [];
+document.getElementById("planungFileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const onGrid = (grid) => {
+    planungGrid = grid;
+    if (planungGrid.length === 0) { openConfirm("Keine Daten in der Datei gefunden.", null, null, "OK"); return; }
+    document.getElementById("planungHeaderRow").value = 0;
+    renderPlanungPreview();
+    document.getElementById("planungMappingArea").classList.remove("hidden");
+  };
+  const onError = (err) => openConfirm("Datei konnte nicht gelesen werden: " + err.message, null, null, "OK");
+  if (file.name.toLowerCase().endsWith(".csv")) parseCsvFile(file).then(onGrid, onError);
+  else parseXlsxFile(file).then(onGrid, onError);
+});
+document.getElementById("planungHeaderRow").addEventListener("input", renderPlanungPreview);
+function renderPlanungPreview() {
+  const headerRowCount = Math.max(0, Number(document.getElementById("planungHeaderRow").value) || 0);
+  const maxCols = Math.max(1, ...planungGrid.map(r => (r || []).length));
+  const headerRow = headerRowCount > 0 ? (planungGrid[headerRowCount - 1] || []) : [];
+  function fillSelect(selectEl, defaultIdx) {
+    selectEl.innerHTML = Array.from({ length: maxCols }).map((_, i) => `<option value="${i}">${escapeHtml(headerRow[i] || ("Spalte " + String.fromCharCode(65 + i)))}</option>`).join("");
+    selectEl.value = String(Math.min(defaultIdx, maxCols - 1));
+  }
+  fillSelect(document.getElementById("planungColDate"), 0);
+  fillSelect(document.getElementById("planungColContent"), 1);
+  const previewRows = planungGrid.slice(Math.max(0, headerRowCount - 1), Math.max(0, headerRowCount - 1) + 8);
+  document.getElementById("planungPreview").innerHTML = `<table style="border-collapse:collapse; font-size:0.78rem; width:100%;">${previewRows.map((row, ri) => `
+    <tr style="${(headerRowCount > 0 && ri === 0) ? "font-weight:800; background:var(--bg);" : ""}">
+      ${Array.from({ length: maxCols }).map((_, ci) => `<td style="border:1px solid var(--border); padding:4px 8px; white-space:nowrap;">${escapeHtml((row || [])[ci] || "")}</td>`).join("")}
+    </tr>`).join("")}</table>`;
+}
+document.getElementById("planungImportApplyBtn").addEventListener("click", () => {
+  if (planungGrid.length === 0) { openConfirm("Bitte zuerst eine Datei wählen.", null, null, "OK"); return; }
+  const headerRowCount = Math.max(0, Number(document.getElementById("planungHeaderRow").value) || 0);
+  const dateCol = Number(document.getElementById("planungColDate").value);
+  const contentCol = Number(document.getElementById("planungColContent").value);
+  const dataRows = planungGrid.slice(headerRowCount);
+  const lessons = [];
+  dataRows.forEach(row => {
+    row = row || [];
+    const content = String(row[contentCol] || "").trim();
+    const date = normalizePlanungDate(row[dateCol]);
+    if (!date && !content) return;
+    lessons.push({ id: uid(), date, content, done: false });
+  });
+  if (lessons.length === 0) { openConfirm("Keine gültigen Zeilen gefunden.", null, null, "OK"); return; }
+  lessons.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const applyImport = () => {
+    planungLessons = lessons;
+    planungSave();
+    document.getElementById("planungImportOverlay").classList.add("hidden");
+    renderPlanungList();
+    setTimeout(scrollToFirstUndonePlanung, 50);
+  };
+  if (planungLessons.length > 0) {
+    openConfirm(`Der bestehende Plan (${planungLessons.length} Lektionen) wird durch ${lessons.length} neue Lektionen ersetzt. Fortfahren?`, applyImport, null, "Ersetzen");
+  } else applyImport();
+});
+document.getElementById("planungClearBtn").addEventListener("click", () => {
+  if (planungLessons.length === 0) return;
+  openConfirm("Den gesamten Plan löschen?", () => { planungLessons = []; planungSave(); renderPlanungList(); }, null, "Löschen");
+});
 
 /* =========================================================================
    TEAMERSTELLUNG (kein Bezug zu Leistungen)
