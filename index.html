@@ -2125,7 +2125,7 @@ const DEFAULT_RUBRICS = [
   },
   {
     name: `Volleyball`,
-    maxSix: 30,
+    maxSix: 21,
     type: "levels",
     attempts: 1,
     levels: ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"],
@@ -2137,9 +2137,8 @@ const DEFAULT_RUBRICS = [
       { title: `Übersicht`, desc: `Ich sehe die Lücken im Spielfeld des Gegners und kann den Ball dorthin spielen.`, points: [3, 2, 1, 0] },
       { title: `Taktik, Teamfähigkeit`, desc: `Ich bleibe auf meiner Position oder nahe am Gegenspieler und erfülle meine Aufgabe im Spielzug (Passeur, Angriff, Block).`, points: [3, 2, 1, 0] },
       { title: `Service`, desc: `Ich kann kontrolliert und präzise servieren.`, points: [3, 2, 1, 0] },
-      { title: `Teamfähigkeit`, desc: `Positiver Umgang mit Mitspielern über mehrere Spiele hinweg.`, points: [3, 2, 1, 0] },
-      { title: `Positiver Umgang mit Mitspielern`, desc: ``, points: [3, 2, 1, 0] },
-      { title: `Einsatz`, desc: ``, points: [3, 2, 1, 0] },
+      { title: `Positiver Umgang mit Mitspielern`, desc: ``, points: [1, 0, -1, -2] },
+      { title: `Einsatz`, desc: ``, points: [1, 0, -1, -2] },
     ]
   },
   {
@@ -2294,12 +2293,14 @@ const DEFAULT_RUBRICS = [
   },
   {
     name: `Strecksprung`,
-    maxSix: 12,
+    maxSix: 11,
     type: "checkboxes",
     attempts: 1,
     levels: [],
     criteria: [
-      { title: `Strecksprung`, desc: `Bewertung der einzelnen Ausführungsmerkmale`, boxes: [{"label": "Dynamischer Anlauf", "points": 1}, {"label": "Kräftiger Absprung", "points": 1}, {"label": "Höhe – Sprung in die Höhe", "points": 1}, {"label": "Streckung – ganzkörperlich gestreckte Haltung", "points": 1}, {"label": "Blick nach vorne", "points": 1}, {"label": "Zwischen gestreckten Armen", "points": 1}, {"label": "Spannung – gespannte Haltung", "points": 1}, {"label": "Füsse – gestreckt", "points": 1}, {"label": "Keine Rotation – keine Drehung des Körpers", "points": 1}, {"label": "Kontrollierte Punktlandung", "points": 1}, {"label": "Kontrolliert in die Knie", "points": 1}, {"label": "Ohne Schritte – Landung wird gehalten und gezeigt", "points": 1}] },
+      { title: `Anlauf`, desc: ``, boxes: [{"label": "Dynamischer Anlauf", "points": 1}, {"label": "Kräftiger Absprung", "points": 1}, {"label": "Höhe – Sprung in die Höhe", "points": 1}] },
+      { title: `In der Luft`, desc: ``, boxes: [{"label": "Streckung – ganzkörperlich gestreckte Haltung", "points": 1}, {"label": "Blick nach vorne und zwischen gestreckten Armen", "points": 1}, {"label": "Spannung – gespannte Haltung", "points": 1}, {"label": "Füsse – gestreckt", "points": 1}, {"label": "Keine Rotation – keine Drehung des Körpers", "points": 1}] },
+      { title: `Landung`, desc: ``, boxes: [{"label": "Kontrollierte Punktlandung", "points": 1}, {"label": "Kontrolliert in die Knie", "points": 1}, {"label": "Ohne Schritte – Landung wird gehalten und gezeigt", "points": 1}] },
     ]
   },
   {
