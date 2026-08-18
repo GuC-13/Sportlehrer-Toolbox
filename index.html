@@ -113,6 +113,8 @@
   .class-row .edit-btn { background: #64748b; }
   .class-row .del-btn { background: var(--danger); }
   .new-name-item span { flex: 1; font-weight: 600; }
+  .new-name-item .editable-name { cursor: pointer; }
+  .new-name-item .editable-name-input { flex: 1; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; font-size: inherit; font-family: inherit; }
   .new-name-item button { background: var(--danger); }
   .check-item input { width: 20px; height: 20px; }
   .check-item span { font-weight: 600; }
@@ -203,15 +205,15 @@
   .sw-empty-hint { color: #5b7c94; font-size: 0.8rem; padding: 4px; }
   .sw-chip { background: #ffffff; border: 1px solid #bae6fd; border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; color: #0c4a6e; touch-action: none; }
   .sw-chip button { border: none; border-radius: 6px; background: #ef4444; color: white; font-weight: 700; padding: 1px 6px; }
-  .sw-lanes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  @media (max-width: 700px) { .sw-lanes-grid { grid-template-columns: repeat(2, 1fr); } }
-  .sw-lane-col { display: flex; flex-direction: column; gap: 4px; }
-  .sw-lane-box { display: flex; flex-direction: column; gap: 4px; }
-  .sw-card { background: #ffffff; border: 1px solid #bae6fd; border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; touch-action: none; position: relative; }
+  .sw-lanes-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  @media (max-width: 700px) { .sw-lanes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .sw-lane-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .sw-lane-box { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .sw-card { background: #ffffff; border: 1px solid #bae6fd; border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; touch-action: none; position: relative; min-width: 0; }
   .sw-pos-badge { position: absolute; top: -8px; left: -8px; background: #0284c7; color: white; font-weight: 800; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-  .sw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
-  .sw-name { font-size: 0.9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #0c4a6e; }
-  .sw-result { font-size: 0.75rem; font-weight: 700; color: #0284c7; white-space: nowrap; }
+  .sw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; min-width: 0; }
+  .sw-name { font-size: 0.9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #0c4a6e; min-width: 0; flex-shrink: 1; }
+  .sw-result { font-size: 0.75rem; font-weight: 700; color: #0284c7; white-space: normal; flex-shrink: 0; }
   .sw-deficit { font-size: 0.68rem; color: #b45309; font-weight: 600; }
   .sw-bottom { display: flex; align-items: center; gap: 4px; }
   .sw-lenbtn { border: none; border-radius: 50%; color: white; font-weight: 700; flex-shrink: 0; width: 34px; height: 34px; font-size: 1rem; }
@@ -355,7 +357,8 @@
 
   /* ===================== VERLAUF ===================== */
   .vl-student-row { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; font-weight: 600; }
-  .vl-student-row.active { border-color: var(--accent); background: #eff6ff; }
+  .vl-student-row.active { border-color: var(--accent); background: #eff6ff; border-radius: 8px 8px 0 0; margin-bottom: 0; }
+  .vl-inline-history:not(:empty) { border: 1px solid var(--accent); border-top: none; border-radius: 0 0 8px 8px; padding: 10px 10px 4px; margin-bottom: 6px; background: #f8fafc; }
 </style>
 </head>
 <body>
@@ -584,7 +587,6 @@
     <label class="field-label">Klasse</label>
     <select id="vl_classSelect" style="width:100%; margin-bottom:14px;"><option value="">Klasse wählen...</option></select>
     <div id="vl_studentList"></div>
-    <div id="vl_historyList"></div>
   </div>
 
 </div>
@@ -1114,7 +1116,7 @@ function renderNewClassNames() {
   const scroll = document.getElementById("createClassNamesScroll");
   scroll.innerHTML = newClassEntries.length === 0
     ? '<p style="color:var(--muted)">Noch keine Namen hinzugefügt.</p>'
-    : newClassEntries.map((n, i) => `<div class="new-name-item"><span>${escapeHtml(n)}</span><button data-index="${i}">✕</button></div>`).join("");
+    : newClassEntries.map((n, i) => `<div class="new-name-item"><span class="editable-name" title="Antippen zum Bearbeiten" data-index="${i}">${escapeHtml(n)}</span><button data-index="${i}">✕</button></div>`).join("");
 }
 document.getElementById("createClassNameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("createClassAddBtn").click(); });
 document.getElementById("createClassAddBtn").addEventListener("click", () => {
@@ -1127,9 +1129,25 @@ document.getElementById("createClassAddBtn").addEventListener("click", () => {
 });
 document.getElementById("createClassNamesScroll").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-index]");
-  if (!btn) return;
-  newClassEntries.splice(Number(btn.dataset.index), 1);
-  renderNewClassNames();
+  if (btn) { newClassEntries.splice(Number(btn.dataset.index), 1); renderNewClassNames(); return; }
+  const span = e.target.closest(".editable-name");
+  if (span) {
+    const idx = Number(span.dataset.index);
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = newClassEntries[idx];
+    input.className = "editable-name-input";
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+    const commit = () => {
+      const v = input.value.trim();
+      if (v) newClassEntries[idx] = v;
+      renderNewClassNames();
+    };
+    input.addEventListener("blur", commit);
+    input.addEventListener("keydown", (ev) => { if (ev.key === "Enter") input.blur(); });
+  }
 });
 document.getElementById("createClassCancel").addEventListener("click", () => document.getElementById("createClassOverlay").classList.add("hidden"));
 document.getElementById("createClassSave").addEventListener("click", () => {
@@ -1439,22 +1457,32 @@ function renderVerlaufClassSelect() {
   const sel = document.getElementById("vl_classSelect");
   sel.innerHTML = '<option value="">Klasse wählen...</option>' + Object.keys(classes).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
   document.getElementById("vl_studentList").innerHTML = "";
-  document.getElementById("vl_historyList").innerHTML = "";
 }
 document.getElementById("vl_classSelect").addEventListener("change", () => {
   const cls = document.getElementById("vl_classSelect").value;
-  document.getElementById("vl_historyList").innerHTML = "";
   const listEl = document.getElementById("vl_studentList");
   if (!cls) { listEl.innerHTML = ""; return; }
   const students = classes[cls] || [];
-  listEl.innerHTML = students.map(n => `<div class="vl-student-row" data-name="${escapeHtml(n)}">${escapeHtml(n)}</div>`).join("");
+  listEl.innerHTML = students.map(n => `
+    <div class="vl-student-row" data-name="${escapeHtml(n)}">${escapeHtml(n)}</div>
+    <div class="vl-inline-history" data-history-for="${escapeHtml(n)}"></div>
+  `).join("");
 });
 document.getElementById("vl_studentList").addEventListener("click", (e) => {
+  const delBtn = e.target.closest("button[data-action='delete-history']");
+  if (delBtn) {
+    const container = e.target.closest(".vl-inline-history");
+    const name = container.dataset.historyFor;
+    openConfirm("Diesen Leistungseintrag löschen?", () => { deleteHistoryEntry(name, delBtn.dataset.id); renderVlHistoryFor(name); }, null, "Löschen");
+    return;
+  }
   const row = e.target.closest(".vl-student-row");
   if (!row) return;
+  const name = row.dataset.name;
+  const wasActive = row.classList.contains("active");
   document.querySelectorAll(".vl-student-row").forEach(r => r.classList.remove("active"));
-  row.classList.add("active");
-  renderVlHistoryFor(row.dataset.name);
+  document.querySelectorAll(".vl-inline-history").forEach(c => c.innerHTML = "");
+  if (!wasActive) { row.classList.add("active"); renderVlHistoryFor(name); }
 });
 function renderVlHistoryFor(name) {
   const entries = history[name] || [];
@@ -1462,13 +1490,13 @@ function renderVlHistoryFor(name) {
   entries.forEach(en => { if (!en.id) { en.id = uid(); needsPersist = true; } });
   if (needsPersist) persistHistory();
   const sorted = entries.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
-  const el = document.getElementById("vl_historyList");
-  el.dataset.name = name;
+  const el = document.querySelector(`.vl-inline-history[data-history-for="${CSS.escape(name)}"]`);
+  if (!el) return;
   if (sorted.length === 0) {
     el.innerHTML = '<div class="empty-hint">Noch keine Resultate für diese Person.</div>';
     return;
   }
-  el.innerHTML = `<h3 style="margin:14px 0 8px;">${escapeHtml(name)}</h3>` + sorted.map(en => `
+  el.innerHTML = sorted.map(en => `
     <div class="card vl-history-card" data-id="${en.id}">
       <button class="vl-del" data-action="delete-history" data-id="${en.id}" title="Löschen">✕</button>
       <div class="card-title">${formatDateDE(en.date)} · ${escapeHtml(en.label)}</div>
@@ -1476,12 +1504,6 @@ function renderVlHistoryFor(name) {
     </div>
   `).join("");
 }
-document.getElementById("vl_historyList").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-action='delete-history']");
-  if (!btn) return;
-  const name = document.getElementById("vl_historyList").dataset.name;
-  openConfirm("Diesen Leistungseintrag löschen?", () => { deleteHistoryEntry(name, btn.dataset.id); renderVlHistoryFor(name); }, null, "Löschen");
-});
 
 /* =========================================================================
    LAUF-TOOL
@@ -1838,7 +1860,7 @@ function removeSwimmer(id) {
 function currentElapsedForSwimmer(s) {
   return (schwimmMode === "staggered" && s.position) ? staggeredTimers[s.position - 1].elapsed : schwimmElapsed;
 }
-const SW_COOLDOWN_MS = 30000;
+const SW_COOLDOWN_MS = 45000;
 function changeLength(id, delta) {
   const s = swimmers.find(s => String(s.id) === String(id));
   if (!s) return;
@@ -2054,7 +2076,7 @@ function exportSwimResults() {
   const finished = swimmers.filter(s => s.finishTime !== null).sort((a, b) => a.finishTime - b.finishTime);
   const unfinished = swimmers.filter(s => s.finishTime === null);
   const lines = [`Schwimmen – ${distanceMeters} m (${targetLengths} Längen)`];
-  finished.forEach((s, i) => lines.push(`${i + 1}. ${s.name} – ${formatTime(s.finishTime)} (${s.lengths} Längen)`));
+  finished.forEach((s, i) => { const note = roundToQuarter(computeSwimGrade(distanceMeters, s.finishTime)); lines.push(`${i + 1}. ${s.name} – ${formatTime(s.finishTime)} (${s.lengths} Längen) – Note ${formatNote(note)}`); });
   if (unfinished.length) { lines.push("Nicht beendet:"); unfinished.forEach(s => lines.push(`- ${s.name} (${s.lengths}/${targetLengths} Längen)`)); }
   const text = lines.join("\n");
   if (navigator.share) navigator.share({ text }).catch(() => {});
@@ -3772,7 +3794,7 @@ document.getElementById("sw_camBtn").addEventListener("click", () => {
   const finished = swimmers.filter(s => s.finishTime !== null).sort((a, b) => a.finishTime - b.finishTime);
   const unfinished = swimmers.filter(s => s.finishTime === null);
   const lines = [
-    ...finished.map((s, i) => `${i + 1}. ${s.name} – ${formatTime(s.finishTime)} (${s.lengths} Längen)`),
+    ...finished.map((s, i) => { const note = roundToQuarter(computeSwimGrade(distanceMeters, s.finishTime)); return `${i + 1}. ${s.name} – ${formatTime(s.finishTime)} (${s.lengths} Längen) – Note ${formatNote(note)}`; }),
     ...unfinished.map(s => `- ${s.name} (${s.lengths}/${targetLengths} Längen)`)
   ];
   shareCanvasAsImage(drawResultsCanvas(`Schwimmen – ${distanceMeters}m`, lines), "schwimm-ergebnisse.png");
