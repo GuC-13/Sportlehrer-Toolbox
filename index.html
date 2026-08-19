@@ -239,6 +239,25 @@
   .toggle-group { display: flex; gap: 8px; margin-bottom: 14px; }
   .toggle-btn { flex: 1; border: 1px solid var(--border); background: white; color: var(--text); border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer; }
   .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+  .sprint-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 26px 0; }
+  .sprint-big-btn { width: 200px; height: 200px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 1.15rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.25); touch-action: manipulation; user-select: none; padding: 10px; }
+  .sprint-big-btn.running { background: var(--danger); }
+  .sprint-big-btn.finished { background: #16a34a; }
+  .sprint-big-btn:active { transform: scale(0.96); }
+  .sprint-clock { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); min-height: 2.6rem; }
+  .sprint-status { font-size: 0.95rem; font-weight: 600; color: var(--muted); text-align: center; }
+  .sprint-results { display: flex; flex-direction: column; gap: 8px; max-width: 480px; margin: 0 auto; }
+  .sprint-result-row { display: flex; align-items: stretch; gap: 8px; }
+  .sprint-name-box { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-weight: 700; touch-action: none; }
+  .sprint-name-box .rank { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-weight: 600; }
+  .sprint-name-box .drag-handle { cursor: grab; color: var(--muted); font-size: 1.2rem; touch-action: none; flex-shrink: 0; }
+  .sprint-name-box.dragging { opacity: 0.85; box-shadow: 0 6px 16px rgba(0,0,0,0.25); position: relative; z-index: 10; }
+  .sprint-name-box.drop-target { border-color: var(--accent); background: rgba(37, 99, 235, 0.08); }
+  .sprint-time-box { display: flex; align-items: center; gap: 8px; flex-shrink: 0; background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-weight: 700; }
+  .sprint-time-box .time { font-variant-numeric: tabular-nums; color: var(--accent); }
+  .sprint-time-box .note { font-size: 0.85rem; font-weight: 700; color: var(--accent2, var(--accent)); background: rgba(0,0,0,0.06); border-radius: 6px; padding: 2px 8px; }
+  .sprint-row-save-btn { border: none; background: var(--accent); color: #fff; border-radius: 10px; width: 42px; flex-shrink: 0; font-size: 1.1rem; cursor: pointer; touch-action: manipulation; }
+  .sprint-row-save-btn.saved { background: #16a34a; }
   table.criteria-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
   table.criteria-table th, table.criteria-table td { border: 1px solid var(--border); padding: 6px; vertical-align: top; }
   table.criteria-table th { background: var(--bg); font-size: 0.8rem; }
@@ -504,15 +523,62 @@
   <div id="multiView" class="view hidden">
     <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
     <h1>⏱️ Multistoppuhr</h1>
-    <div class="toolbar">
-      <input type="text" id="ms_nameInput" placeholder="Name/Gruppe eingeben...">
-      <button class="btn" id="ms_addBtn">+ Hinzufügen</button>
-      <button class="btn btn-outline" id="ms_classesBtn">Klassen</button>
-      <button class="btn btn-outline" id="ms_startAllBtn">Alle starten</button>
-      <button class="btn btn-outline" id="ms_stopAllBtn">Alle stoppen</button>
-      <button class="btn btn-danger" id="ms_resetAllBtn">Alle zurücksetzen</button>
+    <div class="row" style="gap:8px; margin-bottom:14px;">
+      <button class="toggle-btn active" id="msTabEinzeln" style="flex:1;">Einzeln</button>
+      <button class="toggle-btn" id="msTabSprint" style="flex:1;">🏃 Sprint messen</button>
     </div>
-    <div id="ms_list"></div>
+    <div id="msViewEinzeln">
+      <div class="toolbar">
+        <input type="text" id="ms_nameInput" placeholder="Name/Gruppe eingeben...">
+        <button class="btn" id="ms_addBtn">+ Hinzufügen</button>
+        <button class="btn btn-outline" id="ms_classesBtn">Klassen</button>
+        <button class="btn btn-outline" id="ms_startAllBtn">Alle starten</button>
+        <button class="btn btn-outline" id="ms_stopAllBtn">Alle stoppen</button>
+        <button class="btn btn-danger" id="ms_resetAllBtn">Alle zurücksetzen</button>
+      </div>
+      <div id="ms_list"></div>
+    </div>
+    <div id="msViewSprint" class="hidden">
+      <div class="card" id="sprintSetupCard">
+        <label class="field-label">Klasse (für automatische Notenberechnung)</label>
+        <div class="row" id="sprintClassRow" style="gap:6px; margin-bottom:14px;">
+          <button class="toggle-btn active" data-sprintclass="none">Keine Note</button>
+          <button class="toggle-btn" data-sprintclass="1">1. Klasse (60 m)</button>
+          <button class="toggle-btn" data-sprintclass="3">3. Klasse (80 m)</button>
+        </div>
+        <label class="field-label">Läufer</label>
+        <div class="row" style="gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap;">
+          <button class="btn btn-outline" id="sprintPickRunnersBtn">👤 Läufer auswählen</button>
+          <span id="sprintRunnersLabel" style="font-size:0.85rem; color:var(--muted);"></span>
+          <button class="btn btn-outline" id="sprintClearRunnersBtn" style="display:none; padding:4px 10px; font-size:0.85rem;">✕ Namen entfernen</button>
+        </div>
+        <div id="sprintCountWrap">
+          <label class="field-label">Anzahl Läufer (gleichzeitig, ohne Namen)</label>
+          <div class="row" id="sprintCountRow" style="gap:6px; margin-bottom:14px;">
+            <button class="toggle-btn" data-sprintcount="1">1</button>
+            <button class="toggle-btn" data-sprintcount="2">2</button>
+            <button class="toggle-btn active" data-sprintcount="3">3</button>
+            <button class="toggle-btn" data-sprintcount="4">4</button>
+            <button class="toggle-btn" data-sprintcount="5">5</button>
+            <button class="toggle-btn" data-sprintcount="6">6</button>
+          </div>
+        </div>
+        <label class="field-label">Start-Modus</label>
+        <div class="row" id="sprintStartModeRow" style="gap:6px;">
+          <button class="toggle-btn active" data-sprintstart="press">Start bei Drücken</button>
+          <button class="toggle-btn" data-sprintstart="release">Start bei Loslassen</button>
+        </div>
+      </div>
+      <div class="sprint-stage">
+        <button id="sprintBigBtn" class="sprint-big-btn">Start</button>
+        <div class="sprint-clock" id="sprintClock"></div>
+        <div class="sprint-status" id="sprintStatus">Bereit</div>
+      </div>
+      <div class="sprint-results" id="sprintResults"></div>
+      <div class="row" style="justify-content:center; gap:10px; margin-top:14px;">
+        <button class="btn btn-outline" id="sprintNewBtn">↺ Neuer Sprint</button>
+      </div>
+    </div>
   </div>
 
   <!-- ============ PARKOURBENOTUNG ============ -->
@@ -1871,7 +1937,8 @@ function changeLength(id, delta) {
     s.lastTapAt = Date.now();
     s.lastTapBtn = delta === 1 ? "plus1" : "plus2";
     const elapsedNow = currentElapsedForSwimmer(s);
-    for (let i = 0; i < delta; i++) s.lengthTimes.push(elapsedNow);
+    const prevTime = s.lengthTimes.length ? s.lengthTimes[s.lengthTimes.length - 1] : 0;
+    for (let i = 0; i < delta; i++) s.lengthTimes.push(i === delta - 1 ? elapsedNow : prevTime);
     if (prev < targetLengths && s.lengths >= targetLengths && s.finishTime === null) s.finishTime = elapsedNow;
   } else if (delta < 0) {
     if (s.lengthTimes.length) s.lengthTimes.pop();
@@ -1981,14 +2048,11 @@ function showSwIntervalPopover(id) {
   document.getElementById("lfIntervalTitle").textContent = `Längenzeiten – ${s.name}`;
   const ts = s.lengthTimes || [];
   const listEl = document.getElementById("lfIntervalList");
-  if (ts.length < 2) {
-    listEl.innerHTML = '<p style="color:#94a3b8;">Noch nicht genug Längen für Intervalle.</p>';
+  if (ts.length === 0) {
+    listEl.innerHTML = '<p style="color:#94a3b8;">Noch keine Längen erfasst.</p>';
   } else {
     let rows = "";
-    for (let i = 1; i < ts.length; i++) {
-      const deltaSec = Math.max(0, Math.round(ts[i] - ts[i - 1]));
-      rows += `<div>Länge ${i} → ${i + 1}: ${formatTime(deltaSec)}</div>`;
-    }
+    ts.forEach((t, i) => { rows += `<div>Länge ${i + 1}: ${formatTime(Math.max(0, Math.round(t)))}</div>`; });
     listEl.innerHTML = rows;
   }
   document.getElementById("lfIntervalOverlay").classList.remove("hidden");
@@ -3086,6 +3150,7 @@ setInterval(() => {
     const el = document.querySelector(`.ms-time[data-id="${CSS.escape(String(sw.id))}"]`);
     if (el) el.textContent = msFormat(msElapsedMs(sw));
   });
+  if (sprintState.running && !document.getElementById("msViewSprint").classList.contains("hidden")) renderSprintClock();
 }, 50);
 document.getElementById("ms_list").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-action]");
@@ -3123,6 +3188,227 @@ document.getElementById("ms_resetAllBtn").addEventListener("click", () => {
     renderMsList(); msSave();
   }, null, "Zurücksetzen");
 });
+
+/* ---- Multistoppuhr: Sprint messen ---- */
+const SPRINT_KEY = "spt_sprint_v1";
+let sprintState = loadJSON(SPRINT_KEY, { count: 3, startMode: "press", running: false, startedAt: null, times: [], finished: false, gradeClass: "none", runnerNames: [], order: [], savedNames: [] });
+if (!sprintState.gradeClass) sprintState.gradeClass = "none";
+if (!sprintState.runnerNames) sprintState.runnerNames = [];
+if (!sprintState.order) sprintState.order = [];
+if (!sprintState.savedNames) sprintState.savedNames = [];
+function sprintSave() { saveJSON(SPRINT_KEY, sprintState); }
+function sprintFormatSec(sec) { return sec.toFixed(2) + " s"; }
+/* Notenskala Sekundarschule (Knaben), aus "Notentabelle 21'.xlsx": 1. Klasse 60m, 3. Klasse 80m */
+const SPRINT_GRADE_TABLES = {
+  "1": [[6, 8.8], [5.75, 8.9], [5.5, 9.1], [5.25, 9.3], [5, 9.4], [4.75, 9.5], [4.5, 9.7], [4.25, 9.8], [4, 10.0], [3.75, 10.2], [3.5, 10.5], [3.25, 10.8], [3, 11.0], [2.75, 11.2], [2.5, 11.5]],
+  "3": [[6, 10.0], [5.75, 10.3], [5.5, 10.5], [5.25, 10.8], [5, 11.0], [4.75, 11.3], [4.5, 11.6], [4.25, 12.0], [4, 12.2], [3.75, 12.5], [3.5, 12.8], [3.25, 13.1], [3, 13.5], [2.75, 13.8], [2.5, 14.1]]
+};
+const SPRINT_DISTANCE_BY_CLASS = { "1": 60, "3": 80 };
+function computeSprintGrade(klasse, seconds) {
+  const table = SPRINT_GRADE_TABLES[klasse];
+  if (!table) return null;
+  if (seconds <= table[0][1]) return 6;
+  for (let i = 0; i < table.length - 1; i++) {
+    const [n1, t1] = table[i]; const [n2, t2] = table[i + 1];
+    if (seconds >= t1 && seconds <= t2) { const frac = (seconds - t1) / (t2 - t1); return n1 - frac * (n1 - n2); }
+  }
+  const [nLast, tLast] = table[table.length - 1]; const [nPrev, tPrev] = table[table.length - 2];
+  const rate = (nPrev - nLast) / (tLast - tPrev);
+  return Math.max(1, nLast - rate * (seconds - tLast));
+}
+function renderSprintSetup() {
+  document.querySelectorAll("#sprintClassRow .toggle-btn").forEach(b => b.classList.toggle("active", b.dataset.sprintclass === sprintState.gradeClass));
+  document.querySelectorAll("#sprintCountRow .toggle-btn").forEach(b => b.classList.toggle("active", Number(b.dataset.sprintcount) === sprintState.count));
+  document.querySelectorAll("#sprintStartModeRow .toggle-btn").forEach(b => b.classList.toggle("active", b.dataset.sprintstart === sprintState.startMode));
+  document.getElementById("sprintSetupCard").classList.toggle("hidden", sprintState.running || sprintState.times.length > 0);
+  document.getElementById("sprintCountWrap").classList.toggle("hidden", sprintState.runnerNames.length > 0);
+  document.getElementById("sprintClearRunnersBtn").style.display = sprintState.runnerNames.length ? "" : "none";
+  const label = document.getElementById("sprintRunnersLabel");
+  label.textContent = sprintState.runnerNames.length ? `${sprintState.runnerNames.length} Läufer: ${sprintState.runnerNames.join(", ")}` : "Keine Läufer ausgewählt (anonym: Läufer 1, 2, 3 …)";
+}
+function renderSprintResults() {
+  const el = document.getElementById("sprintResults");
+  const named = sprintState.runnerNames.length === sprintState.times.length && sprintState.times.length > 0;
+  el.innerHTML = sprintState.times.map((t, i) => {
+    const runnerIdx = named ? sprintState.order[i] : null;
+    const runnerName = named ? sprintState.runnerNames[runnerIdx] : null;
+    const nameLabel = named ? escapeHtml(runnerName) : `Läufer ${i + 1}`;
+    const note = sprintState.gradeClass !== "none" ? computeSprintGrade(sprintState.gradeClass, t) : null;
+    const noteHtml = note != null ? `<span class="note">Note ${formatNote(roundToQuarter(note))}</span>` : "";
+    const saved = named && sprintState.savedNames.includes(runnerName);
+    const saveBtnHtml = named ? `<button class="sprint-row-save-btn${saved ? " saved" : ""}" data-slot="${i}" title="Ergebnis für ${escapeHtml(runnerName)} speichern">${saved ? "✓" : "💾"}</button>` : "";
+    return `<div class="sprint-result-row" data-slot="${i}">
+      <div class="sprint-name-box">${named ? '<span class="drag-handle">⠿</span>' : ""}<span class="rank">${nameLabel}</span></div>
+      <div class="sprint-time-box"><span class="time">${sprintFormatSec(t)}</span>${noteHtml}</div>
+      ${saveBtnHtml}
+    </div>`;
+  }).join("");
+  if (named) {
+    document.querySelectorAll("#sprintResults .sprint-result-row").forEach(row => wireSprintRowDrag(row));
+    document.querySelectorAll("#sprintResults .sprint-row-save-btn").forEach(btn => btn.addEventListener("click", () => sprintSaveRow(Number(btn.dataset.slot))));
+  }
+}
+function sprintSaveRow(slot) {
+  const t = sprintState.times[slot];
+  const runnerIdx = sprintState.order[slot];
+  const name = sprintState.runnerNames[runnerIdx];
+  const distLabel = sprintState.gradeClass !== "none" ? `${SPRINT_DISTANCE_BY_CLASS[sprintState.gradeClass]}m Sprint` : "Sprint";
+  const note = sprintState.gradeClass !== "none" ? computeSprintGrade(sprintState.gradeClass, t) : null;
+  const detail = `${sprintFormatSec(t)}${note != null ? ` · Note ${formatNote(roundToQuarter(note))}` : ""}`;
+  pushHistory(name, "Sprint", distLabel, detail);
+  if (!sprintState.savedNames.includes(name)) sprintState.savedNames.push(name);
+  sprintSave();
+  renderSprint();
+}
+function renderSprintButton() {
+  const btn = document.getElementById("sprintBigBtn");
+  btn.classList.toggle("running", sprintState.running);
+  btn.classList.toggle("finished", sprintState.finished);
+  if (sprintState.finished) btn.textContent = "Fertig ✓";
+  else if (sprintState.running) btn.textContent = `Ziel ${sprintState.times.length + 1}/${sprintState.count}`;
+  else if (sprintState.startMode === "release") btn.textContent = "Halten, dann Loslassen zum Start";
+  else btn.textContent = "Start";
+}
+function renderSprintStatus() {
+  const statusEl = document.getElementById("sprintStatus");
+  if (sprintState.finished) statusEl.textContent = "Alle Zeiten erfasst. Reihenfolge der Namen bei Bedarf per Ziehen anpassen.";
+  else if (sprintState.running) statusEl.textContent = `Noch ${sprintState.count - sprintState.times.length} Läufer im Ziel zu erfassen – bei jedem Zieleinlauf antippen.`;
+  else statusEl.textContent = sprintState.startMode === "release" ? "Knopf gedrückt halten und beim Start loslassen." : "Knopf drücken, um zu starten.";
+}
+function renderSprintClock() {
+  const clockEl = document.getElementById("sprintClock");
+  if (sprintState.running) { clockEl.textContent = sprintFormatSec((Date.now() - sprintState.startedAt) / 1000); return; }
+  clockEl.textContent = sprintState.times.length ? sprintFormatSec(sprintState.times[sprintState.times.length - 1]) : "";
+}
+function renderSprint() {
+  renderSprintSetup();
+  renderSprintButton();
+  renderSprintStatus();
+  renderSprintResults();
+  renderSprintClock();
+}
+function sprintStart() {
+  sprintState.running = true;
+  sprintState.startedAt = Date.now();
+  sprintState.times = [];
+  sprintState.finished = false;
+  sprintState.order = sprintState.runnerNames.map((_, i) => i);
+  sprintState.savedNames = [];
+  sprintSave();
+  renderSprint();
+}
+function sprintRecordLap() {
+  const t = (Date.now() - sprintState.startedAt) / 1000;
+  sprintState.times.push(t);
+  if (sprintState.times.length >= sprintState.count) { sprintState.running = false; sprintState.finished = true; }
+  sprintSave();
+  renderSprint();
+}
+function wireSprintRowDrag(rowEl) {
+  const nameBox = rowEl.querySelector(".sprint-name-box");
+  if (!nameBox) return;
+  let dragging = false, startY = 0, longPressTimer = null;
+  nameBox.addEventListener("pointerdown", (e) => {
+    longPressTimer = setTimeout(() => {
+      dragging = true;
+      nameBox.classList.add("dragging");
+      try { nameBox.setPointerCapture(e.pointerId); } catch (err) {}
+    }, 120);
+    startY = e.clientY;
+  });
+  nameBox.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    nameBox.style.transform = `translateY(${e.clientY - startY}px)`;
+    document.querySelectorAll(".sprint-name-box").forEach(b => b.classList.remove("drop-target"));
+    const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+    const dropBox = dropTarget ? dropTarget.closest(".sprint-name-box") : null;
+    if (dropBox && dropBox !== nameBox) dropBox.classList.add("drop-target");
+  });
+  nameBox.addEventListener("pointerup", (e) => {
+    clearTimeout(longPressTimer);
+    if (!dragging) return;
+    dragging = false;
+    nameBox.classList.remove("dragging");
+    nameBox.style.transform = "";
+    const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+    const dropBox = dropTarget ? dropTarget.closest(".sprint-name-box") : null;
+    document.querySelectorAll(".sprint-name-box").forEach(b => b.classList.remove("drop-target"));
+    if (dropBox && dropBox !== nameBox) {
+      const rowB = dropBox.closest(".sprint-result-row");
+      const slotA = Number(rowEl.dataset.slot), slotB = Number(rowB.dataset.slot);
+      const tmp = sprintState.order[slotA];
+      sprintState.order[slotA] = sprintState.order[slotB];
+      sprintState.order[slotB] = tmp;
+      sprintSave();
+    }
+    renderSprint();
+  });
+  nameBox.addEventListener("pointercancel", () => { clearTimeout(longPressTimer); dragging = false; nameBox.classList.remove("dragging"); nameBox.style.transform = ""; });
+}
+document.querySelectorAll("#sprintClassRow .toggle-btn").forEach(btn => btn.addEventListener("click", () => {
+  if (sprintState.running) return;
+  sprintState.gradeClass = btn.dataset.sprintclass;
+  sprintSave(); renderSprint();
+}));
+document.querySelectorAll("#sprintCountRow .toggle-btn").forEach(btn => btn.addEventListener("click", () => {
+  if (sprintState.running) return;
+  sprintState.count = Number(btn.dataset.sprintcount);
+  sprintSave(); renderSprint();
+}));
+document.querySelectorAll("#sprintStartModeRow .toggle-btn").forEach(btn => btn.addEventListener("click", () => {
+  if (sprintState.running) return;
+  sprintState.startMode = btn.dataset.sprintstart;
+  sprintSave(); renderSprint();
+}));
+document.getElementById("sprintPickRunnersBtn").addEventListener("click", () => {
+  if (sprintState.running) return;
+  openClassesModal((names) => {
+    if (names.length > 6) { openConfirm(`Es wurden ${names.length} Namen gewählt, es können aber höchstens 6 Läufer gleichzeitig erfasst werden. Es werden nur die ersten 6 übernommen.`, null, null, "OK"); }
+    sprintState.runnerNames = names.slice(0, 6);
+    sprintState.count = sprintState.runnerNames.length;
+    sprintState.order = sprintState.runnerNames.map((_, i) => i);
+    sprintState.savedNames = [];
+    sprintSave(); renderSprint();
+  });
+});
+document.getElementById("sprintClearRunnersBtn").addEventListener("click", () => {
+  if (sprintState.running) return;
+  sprintState.runnerNames = [];
+  sprintState.order = [];
+  sprintState.savedNames = [];
+  sprintSave(); renderSprint();
+});
+const sprintBtnEl = document.getElementById("sprintBigBtn");
+sprintBtnEl.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  if (sprintState.finished) return;
+  if (!sprintState.running) { if (sprintState.startMode === "press") sprintStart(); return; }
+  sprintRecordLap();
+});
+sprintBtnEl.addEventListener("pointerup", (e) => {
+  e.preventDefault();
+  if (sprintState.finished || sprintState.running) return;
+  if (sprintState.startMode === "release") sprintStart();
+});
+document.getElementById("sprintNewBtn").addEventListener("click", () => {
+  if (!sprintState.running && sprintState.times.length === 0) return;
+  openConfirm("Neuen Sprint starten? Aktuelle Zeiten werden gelöscht.", () => {
+    sprintState.running = false; sprintState.startedAt = null; sprintState.times = []; sprintState.finished = false;
+    sprintState.order = sprintState.runnerNames.map((_, i) => i);
+    sprintState.savedNames = [];
+    sprintSave(); renderSprint();
+  }, null, "Neu starten");
+});
+document.getElementById("msTabEinzeln").addEventListener("click", () => msSwitchTab("einzeln"));
+document.getElementById("msTabSprint").addEventListener("click", () => msSwitchTab("sprint"));
+function msSwitchTab(tab) {
+  document.getElementById("msViewEinzeln").classList.toggle("hidden", tab !== "einzeln");
+  document.getElementById("msViewSprint").classList.toggle("hidden", tab !== "sprint");
+  document.getElementById("msTabEinzeln").classList.toggle("active", tab === "einzeln");
+  document.getElementById("msTabSprint").classList.toggle("active", tab === "sprint");
+  if (tab === "sprint") renderSprint();
+}
+renderSprint();
 
 /* =========================================================================
    PARKOURBENOTUNG
