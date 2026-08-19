@@ -378,6 +378,16 @@
   .vl-student-row { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; font-weight: 600; }
   .vl-student-row.active { border-color: var(--accent); background: #eff6ff; border-radius: 8px 8px 0 0; margin-bottom: 0; }
   .vl-inline-history:not(:empty) { border: 1px solid var(--accent); border-top: none; border-radius: 0 0 8px 8px; padding: 10px 10px 4px; margin-bottom: 6px; background: #f8fafc; }
+  .vl-progress-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+  .vl-progress-table th, .vl-progress-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; white-space: nowrap; }
+  .vl-progress-table thead th { background: #2563eb; color: white; position: sticky; top: 0; z-index: 2; }
+  .vl-progress-table tbody th { background: var(--card); position: sticky; left: 0; z-index: 1; font-weight: 700; }
+  .vl-progress-table thead th:first-child { position: sticky; left: 0; top: 0; z-index: 3; }
+  .vl-progress-table tbody tr:nth-child(even) td, .vl-progress-table tbody tr:nth-child(even) th { background: #f8fafc; }
+  .vl-progress-table .vl-cell-entry { display: block; }
+  .vl-progress-table .vl-cell-entry + .vl-cell-entry { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border); }
+  .vl-progress-table .vl-cell-note { color: var(--accent); font-weight: 700; }
+  .vl-progress-table .vl-cell-empty { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -651,7 +661,10 @@
     <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
     <h1>📊 Leistungen</h1>
     <label class="field-label">Klasse</label>
-    <select id="vl_classSelect" style="width:100%; margin-bottom:14px;"><option value="">Klasse wählen...</option></select>
+    <div class="row" style="gap:8px; margin-bottom:14px;">
+      <select id="vl_classSelect" style="flex:1;"><option value="">Klasse wählen...</option></select>
+      <button class="btn btn-outline" id="vl_disciplineBtn" style="display:none; flex-shrink:0;">🏆 Disziplin</button>
+    </div>
     <div id="vl_studentList"></div>
   </div>
 
@@ -692,6 +705,27 @@
     <button class="btn btn-secondary" id="classImportBtn" style="width:100%; margin-bottom:10px;">📥 Aus Excel/CSV importieren</button>
     <div class="scroll-list" id="classListScroll"></div>
     <div class="modal-actions"><button class="btn btn-secondary" id="classListClose">Schliessen</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="vlDisciplineOverlay">
+  <div class="modal-box">
+    <div class="modal-header"><p>Disziplin wählen</p></div>
+    <div class="scroll-list" id="vlDisciplineScroll"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="vlDisciplineCloseBtn">Schliessen</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="vlTableOverlay">
+  <div class="modal-box wide">
+    <div class="modal-header">
+      <p id="vlTableTitle">Verlauf</p>
+      <button id="vlTable_camBtn" title="Tabelle als Foto sichern">📷</button>
+    </div>
+    <div id="vlTableScrollWrap" style="overflow-x:auto; max-height:60vh; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+      <table class="vl-progress-table" id="vlProgressTable"></table>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" id="vlTableCloseBtn">Schliessen</button></div>
   </div>
 </div>
 
@@ -1527,12 +1561,14 @@ function renderVerlaufClassSelect() {
 document.getElementById("vl_classSelect").addEventListener("change", () => {
   const cls = document.getElementById("vl_classSelect").value;
   const listEl = document.getElementById("vl_studentList");
-  if (!cls) { listEl.innerHTML = ""; return; }
+  const discBtn = document.getElementById("vl_disciplineBtn");
+  if (!cls) { listEl.innerHTML = ""; discBtn.style.display = "none"; return; }
   const students = classes[cls] || [];
   listEl.innerHTML = students.map(n => `
     <div class="vl-student-row" data-name="${escapeHtml(n)}">${escapeHtml(n)}</div>
     <div class="vl-inline-history" data-history-for="${escapeHtml(n)}"></div>
   `).join("");
+  discBtn.style.display = getVlDisciplinesForClass(cls).length ? "" : "none";
 });
 document.getElementById("vl_studentList").addEventListener("click", (e) => {
   const delBtn = e.target.closest("button[data-action='delete-history']");
@@ -1570,6 +1606,124 @@ function renderVlHistoryFor(name) {
     </div>
   `).join("");
 }
+
+/* ---- Verlauf: Disziplin-Übersicht (Tabelle pro Datum) ---- */
+let vlTableCurrentClass = null;
+let vlTableCurrentLabel = null;
+function getVlDisciplinesForClass(cls) {
+  const students = classes[cls] || [];
+  const labels = new Set();
+  students.forEach(n => (history[n] || []).forEach(en => labels.add(en.label)));
+  return [...labels].sort((a, b) => a.localeCompare(b, "de"));
+}
+document.getElementById("vl_disciplineBtn").addEventListener("click", () => {
+  const cls = document.getElementById("vl_classSelect").value;
+  if (!cls) return;
+  const labels = getVlDisciplinesForClass(cls);
+  const scroll = document.getElementById("vlDisciplineScroll");
+  scroll.innerHTML = labels.length === 0
+    ? '<p style="color:var(--muted)">Für diese Klasse sind noch keine Resultate vorhanden.</p>'
+    : labels.map(l => `<div class="class-row"><div class="cname" data-label="${escapeHtml(l)}">${escapeHtml(l)}</div></div>`).join("");
+  document.getElementById("vlDisciplineOverlay").classList.remove("hidden");
+});
+document.getElementById("vlDisciplineScroll").addEventListener("click", (e) => {
+  const target = e.target.closest("[data-label]");
+  if (!target) return;
+  const cls = document.getElementById("vl_classSelect").value;
+  document.getElementById("vlDisciplineOverlay").classList.add("hidden");
+  openVlProgressTable(cls, target.dataset.label);
+});
+document.getElementById("vlDisciplineCloseBtn").addEventListener("click", () => {
+  document.getElementById("vlDisciplineOverlay").classList.add("hidden");
+});
+function vlFormatCellDetail(detail) {
+  return escapeHtml(detail).replace(/(Note\s+[\d.,]+)/g, '<span class="vl-cell-note">$1</span>');
+}
+function openVlProgressTable(cls, label) {
+  vlTableCurrentClass = cls; vlTableCurrentLabel = label;
+  const students = classes[cls] || [];
+  const dates = new Set();
+  students.forEach(n => (history[n] || []).forEach(en => { if (en.label === label) dates.add(en.date); }));
+  const sortedDates = [...dates].sort();
+  document.getElementById("vlTableTitle").textContent = `${label} – ${cls}`;
+  const table = document.getElementById("vlProgressTable");
+  if (sortedDates.length === 0) {
+    table.innerHTML = '<tr><td style="color:var(--muted); border:none;">Keine Resultate vorhanden.</td></tr>';
+    document.getElementById("vlTableOverlay").classList.remove("hidden");
+    return;
+  }
+  let html = "<thead><tr><th>Name</th>" + sortedDates.map(d => `<th>${formatDateDE(d)}</th>`).join("") + "</tr></thead><tbody>";
+  students.forEach(n => {
+    const entries = (history[n] || []).filter(en => en.label === label);
+    html += `<tr><th>${escapeHtml(n)}</th>` + sortedDates.map(d => {
+      const dayEntries = entries.filter(en => en.date === d);
+      if (dayEntries.length === 0) return '<td><span class="vl-cell-empty">–</span></td>';
+      return `<td>${dayEntries.map(en => `<span class="vl-cell-entry">${vlFormatCellDetail(en.detail)}</span>`).join("")}</td>`;
+    }).join("") + "</tr>";
+  });
+  html += "</tbody>";
+  table.innerHTML = html;
+  document.getElementById("vlTableOverlay").classList.remove("hidden");
+}
+document.getElementById("vlTableCloseBtn").addEventListener("click", () => {
+  document.getElementById("vlTableOverlay").classList.add("hidden");
+});
+function drawProgressTableCanvas(title, dateHeaders, students, matrix) {
+  const nameColWidth = 170, colWidth = 190, lineHeight = 20, cellPaddingY = 10, cellPaddingX = 10;
+  const headerHeight = 76, tableHeaderHeight = 40;
+  const rowHeights = students.map((n, ri) => {
+    const maxLines = Math.max(1, ...dateHeaders.map((d, ci) => matrix[ri][ci].length || 1));
+    return maxLines * lineHeight + cellPaddingY * 2;
+  });
+  const width = nameColWidth + dateHeaders.length * colWidth;
+  const height = headerHeight + tableHeaderHeight + rowHeights.reduce((a, b) => a + b, 0) + 20;
+  const canvas = document.createElement("canvas");
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#2563eb"; ctx.fillRect(0, 0, width, headerHeight);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 22px -apple-system, Helvetica, Arial, sans-serif";
+  ctx.fillText(title, 20, 34);
+  ctx.font = "13px -apple-system, Helvetica, Arial, sans-serif";
+  ctx.fillText(new Date().toLocaleDateString("de-CH"), 20, 58);
+  let y = headerHeight;
+  ctx.fillStyle = "#1e40af"; ctx.fillRect(0, y, width, tableHeaderHeight);
+  ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px -apple-system, Helvetica, Arial, sans-serif";
+  ctx.fillText("Name", cellPaddingX, y + tableHeaderHeight / 2 + 4);
+  dateHeaders.forEach((d, ci) => { ctx.fillText(d, nameColWidth + ci * colWidth + cellPaddingX, y + tableHeaderHeight / 2 + 4); });
+  y += tableHeaderHeight;
+  students.forEach((n, ri) => {
+    const rh = rowHeights[ri];
+    if (ri % 2 === 1) { ctx.fillStyle = "#f1f5f9"; ctx.fillRect(0, y, width, rh); }
+    ctx.strokeStyle = "#cbd5e1"; ctx.strokeRect(0, y, nameColWidth, rh);
+    ctx.fillStyle = "#0f172a"; ctx.font = "bold 13px -apple-system, Helvetica, Arial, sans-serif";
+    ctx.fillText(n, cellPaddingX, y + cellPaddingY + 12);
+    dateHeaders.forEach((d, ci) => {
+      const x = nameColWidth + ci * colWidth;
+      ctx.strokeStyle = "#cbd5e1"; ctx.strokeRect(x, y, colWidth, rh);
+      const lines = matrix[ri][ci].length ? matrix[ri][ci] : ["–"];
+      ctx.fillStyle = "#334155"; ctx.font = "13px -apple-system, Helvetica, Arial, sans-serif";
+      lines.forEach((line, li) => { ctx.fillText(line, x + cellPaddingX, y + cellPaddingY + 12 + li * lineHeight); });
+    });
+    y += rh;
+  });
+  return canvas;
+}
+document.getElementById("vlTable_camBtn").addEventListener("click", () => {
+  if (!vlTableCurrentClass || !vlTableCurrentLabel) return;
+  const students = classes[vlTableCurrentClass] || [];
+  const dates = new Set();
+  students.forEach(n => (history[n] || []).forEach(en => { if (en.label === vlTableCurrentLabel) dates.add(en.date); }));
+  const sortedDates = [...dates].sort();
+  if (sortedDates.length === 0) { openConfirm("Keine Resultate vorhanden.", null, null, "OK"); return; }
+  const matrix = students.map(n => {
+    const entries = (history[n] || []).filter(en => en.label === vlTableCurrentLabel);
+    return sortedDates.map(d => entries.filter(en => en.date === d).map(en => en.detail));
+  });
+  const canvas = drawProgressTableCanvas(`${vlTableCurrentLabel} – ${vlTableCurrentClass}`, sortedDates.map(formatDateDE), students, matrix);
+  shareCanvasAsImage(canvas, `verlauf-${vlTableCurrentLabel.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.png`);
+});
 
 /* =========================================================================
    LAUF-TOOL
