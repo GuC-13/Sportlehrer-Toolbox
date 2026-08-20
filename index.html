@@ -210,6 +210,8 @@
   .sw-lane-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .sw-lane-box { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .sw-card { background: #ffffff; border: 1px solid #bae6fd; border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; touch-action: none; position: relative; min-width: 0; }
+  .sw-card.sw-almost-done { background: #f0fdf4; border: 2px solid #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.25); }
+  .sw-card.sw-almost-done .sw-lengths { color: #16a34a; }
   .sw-pos-badge { position: absolute; top: -8px; left: -8px; background: #0284c7; color: white; font-weight: 800; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
   .sw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; min-width: 0; }
   .sw-name { font-size: 0.9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #0c4a6e; min-width: 0; flex-shrink: 1; }
@@ -2152,8 +2154,10 @@ function renderSwimAll() {
         if (note < 3) deficitHtml = `<div class="sw-deficit">−${formatTime(swimGradeToNote3Deficit(distanceMeters, s.finishTime))} bis Note 3</div>`;
       }
       const posBadge = schwimmMode === "staggered" && s.position ? `<div class="sw-pos-badge">${s.position}</div>` : "";
+      const remaining = targetLengths - s.lengths;
+      const almostDone = s.finishTime === null && remaining > 0 && remaining <= 2;
       return `
-      <div class="sw-card" data-id="${s.id}">
+      <div class="sw-card${almostDone ? " sw-almost-done" : ""}" data-id="${s.id}">
         ${posBadge}
         <div class="sw-top"><div class="sw-name">${escapeHtml(s.name)}</div>${resultHtml}</div>
         ${deficitHtml}
