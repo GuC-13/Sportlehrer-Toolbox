@@ -6,16 +6,61 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Sportlehrer-Toolbox</title>
+<script>try { const t = localStorage.getItem("spt_theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
+  /* Farben nur über diese Variablen – Hell/Dunkel folgt der Geräteeinstellung oder der Wahl in ⚙️ (data-theme) */
   :root {
     --bg: #f1f5f9;
     --card: #ffffff;
+    --surface-2: #f8fafc;
+    --input-bg: #ffffff;
     --border: #e2e8f0;
     --text: #0f172a;
     --muted: #64748b;
     --accent: #2563eb;
     --accent-dark: #1d4ed8;
+    --accent-soft: #eff6ff;
     --danger: #dc2626;
+    --success: #16a34a;
+    --success-soft: #f0fdf4;
+    --warn: #f59e0b;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --surface-2: #273449;
+    --input-bg: #0f172a;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-dark: #2563eb;
+    --accent-soft: #1e3a5f;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --success-soft: #14321f;
+    --warn: #f59e0b;
+    color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --surface-2: #273449;
+    --input-bg: #0f172a;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-dark: #2563eb;
+    --accent-soft: #1e3a5f;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --success-soft: #14321f;
+    --warn: #f59e0b;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   .hidden { display: none !important; }
@@ -34,9 +79,19 @@
     font-weight: 600; cursor: pointer; color: white; background: var(--accent);
   }
   .btn:active { transform: scale(0.97); }
-  .btn-secondary { background: #64748b; }
+  /* Drei Rollen: .btn = Hauptaktion (gefüllt) · .btn-outline / .btn-secondary = Nebenaktion · .btn-danger = Löschen/Zurücksetzen */
+  .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
   .btn-danger { background: var(--danger); }
-  .btn-outline { background: white; color: var(--accent); border: 1px solid var(--accent); }
+  .btn-outline { background: var(--card); color: var(--accent); border: 1px solid var(--accent); }
+  .btn-lg { width: 100%; font-size: 1.15rem; padding: 14px; }
+  .btn-block { width: 100%; }
+  /* ⋯-Menü für seltene Aktionen */
+  .more-wrap { position: relative; margin-left: auto; }
+  .more-btn { font-size: 1.2rem; line-height: 1; padding: 8px 16px; }
+  .more-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 80; min-width: 230px; display: flex; flex-direction: column; padding: 6px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 28px rgba(0,0,0,0.25); }
+  .more-menu button { border: none; background: transparent; color: var(--text); text-align: left; font-size: 1rem; font-weight: 600; padding: 12px; border-radius: 8px; cursor: pointer; }
+  .more-menu button:active { background: var(--surface-2); }
+  .more-menu button.danger { color: var(--danger); }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .row.between { justify-content: space-between; }
   .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -51,7 +106,7 @@
   .empty-hint { color: var(--muted); text-align: center; padding: 30px; }
   input[type="text"], input[type="number"], textarea, select {
     border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 0.95rem;
-    background: white; color: var(--text); font-family: inherit;
+    background: var(--input-bg); color: var(--text); font-family: inherit;
   }
   label.field-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); display: block; margin-bottom: 3px; }
   .back-row { margin-bottom: 12px; }
@@ -67,7 +122,7 @@
   .tool-tile.dragging { opacity: 0.35; }
   .tool-tile-ghost { position: fixed; z-index: 500; pointer-events: none; opacity: 0.9; box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
   .tool-tile .ti { font-size: 2.4rem; }
-  .settings-fab { position: fixed; bottom: 18px; right: 18px; width: 52px; height: 52px; border-radius: 50%; background: #334155; color: white; border: none; font-size: 1.4rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; z-index: 40; }
+  .settings-fab { position: fixed; bottom: 18px; right: 18px; width: 52px; height: 52px; border-radius: 50%; background: #475569; color: white; border: none; font-size: 1.4rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; z-index: 40; }
   .settings-tile-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid var(--border); }
   .settings-tile-row:last-child { border-bottom: none; }
   .tool-lauf { background: linear-gradient(135deg, #16a34a, #14532d); }
@@ -80,7 +135,7 @@
   .tool-team { background: linear-gradient(135deg, #0d9488, #134e4a); }
   .tool-planung { background: linear-gradient(135deg, #4338ca, #1e1b4b); }
   .planung-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; transition: opacity 0.15s; }
-  .planung-item.done { opacity: 0.45; background: #f1f5f9; }
+  .planung-item.done { opacity: 0.45; background: var(--bg); }
   .planung-check { font-size: 1.5rem; flex-shrink: 0; cursor: pointer; padding: 4px; margin: -4px; }
   .planung-date { font-weight: 800; min-width: 90px; color: var(--accent); flex-shrink: 0; cursor: pointer; }
   .planung-item.done .planung-date { color: var(--muted); }
@@ -93,7 +148,7 @@
     display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px;
   }
   .modal-box {
-    background: var(--card); border-radius: 14px; padding: 20px; max-width: 720px; width: 100%;
+    background: var(--card); color: var(--text); border-radius: 14px; padding: 20px; max-width: 720px; width: 100%;
     max-height: 90vh; overflow-y: auto;
   }
   .modal-box.wide { max-width: 980px; }
@@ -120,111 +175,80 @@
   .check-item span { font-weight: 600; }
   .scroll-list { max-height: 40vh; overflow-y: auto; margin-bottom: 12px; }
   .select-actions { display: flex; gap: 8px; margin-bottom: 10px; }
-  .select-actions button { flex: 1; border: 1px solid var(--border); background: white; border-radius: 8px; padding: 8px; font-weight: 600; }
+  .select-actions button { flex: 1; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 8px; font-weight: 600; }
 
-  /* ===================== LAUF (dunkles Theme) ===================== */
-  #laufView { background: #0f172a; color: #f1f5f9; min-height: 100vh; margin: 0; max-width: none; padding: 10px; }
-  #laufView .lf-wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-  .lf-btn { border: none; border-radius: 10px; padding: 9px 14px; font-size: 0.9rem; font-weight: 700; color: white; cursor: pointer; }
-  .lf-btn:active { transform: scale(0.97); }
-  .lf-back { background: #334155; }
-  .lf-timer-box { background: #1e293b; border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .lf-timer-display { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 110px; }
-  .lf-btn-start { background: #22c55e; color: #052e12; }
-  .lf-btn-pause { background: #f59e0b; color: #3a2400; }
-  .lf-btn-reset { background: #475569; }
-  .lf-btn-all { background: #2563eb; width: 100%; font-size: 1.15rem; padding: 14px; }
-  .lf-action-row { display: flex; gap: 6px; }
-  .lf-action-row .lf-btn { flex: 1; font-size: 0.85rem; padding: 10px 6px; white-space: nowrap; }
-  .lf-btn-sort { background: #7c3aed; }
-  .lf-btn-resetlaps { background: #b45309; }
-  .lf-btn-export { background: #0891b2; }
-  .lf-btn-save { background: #059669; }
-  .lf-btn-classes { background: #4338ca; width: 100%; font-size: 1rem; padding: 12px; }
-  .lf-add-row { display: flex; gap: 8px; background: #1e293b; border-radius: 12px; padding: 8px; }
-  .lf-add-row input { flex: 1; border: none; border-radius: 8px; padding: 10px; font-size: 0.95rem; background: #0f172a; color: #f1f5f9; }
-  .lf-add-row button { background: #22c55e; color: #052e12; }
+  /* ===================== LAUF ===================== */
+  #laufView .lf-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .lf-timer-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .lf-timer-display { font-size: 2.4rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 130px; }
+  .lf-add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lf-add-row input { flex: 1; min-width: 140px; }
   .lf-list { display: flex; flex-direction: column; gap: 8px; }
   .lf-runner { position: relative; border-radius: 12px; overflow: hidden; }
-  .lf-delete-zone { position: absolute; inset: 0; background: #ef4444; display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; font-weight: 700; color: white; }
-  .lf-runner-content { position: relative; background: #1e293b; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; touch-action: pan-y; }
-  .lf-rank { width: 22px; text-align: center; color: #94a3b8; font-weight: 700; flex-shrink: 0; }
+  .lf-delete-zone { position: absolute; inset: 2px; border-radius: 12px; background: var(--danger); display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; font-weight: 700; color: white; }
+  .lf-runner-content { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; touch-action: pan-y; }
+  .lf-rank { width: 22px; text-align: center; color: var(--muted); font-weight: 700; flex-shrink: 0; }
   .lf-name { flex: 1; font-size: 1rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lf-interval-btn { border: none; background: #334155; color: #cbd5e1; border-radius: 50%; width: 36px; height: 36px; font-size: 1rem; flex-shrink: 0; }
+  .lf-interval-btn { border: none; background: var(--surface-2); color: var(--muted); border-radius: 50%; width: 36px; height: 36px; font-size: 1rem; flex-shrink: 0; }
   .lf-laps { font-size: 1.5rem; font-weight: 800; min-width: 42px; text-align: center; flex-shrink: 0; }
   .lf-roundbtn { width: 54px; height: 54px; border-radius: 50%; font-size: 1.6rem; font-weight: 700; border: none; color: white; flex-shrink: 0; }
-  .lf-minus { background: #ef4444; }
-  .lf-plus { background: #16a34a; }
-  .lf-empty { color: #94a3b8; text-align: center; margin-top: 30px; }
-  .lf-hint { color: #94a3b8; text-align: center; font-size: 0.8rem; }
-  #lfIntervalOverlay .modal-box { background: #1e293b; color: #f1f5f9; }
-  #lfIntervalList div { padding: 4px 0; border-bottom: 1px solid #334155; }
+  .lf-minus { background: var(--danger); }
+  .lf-plus { background: var(--success); }
+  .lf-empty { color: var(--muted); text-align: center; margin-top: 30px; }
+  .lf-hint { color: var(--muted); text-align: center; font-size: 0.8rem; }
+  #lfIntervalList div { padding: 4px 0; border-bottom: 1px solid var(--border); }
 
-  /* ===================== SCHWIMM (helles Blau-Theme) ===================== */
-  #schwimmView { background: #eaf6ff; color: #0c4a6e; min-height: 100vh; margin: 0; max-width: none; padding: 8px; }
-  #schwimmView .sw-wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
-  .sw-btn { border: none; border-radius: 10px; padding: 8px 14px; font-size: 0.95rem; font-weight: 600; color: white; cursor: pointer; }
-  .sw-back { background: #ffffff; color: #0c4a6e; border: 1px solid #bae6fd; }
-  .sw-timer-box { background: #ffffff; border: 1px solid #bae6fd; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .sw-timer-display { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 90px; color: #0c4a6e; }
-  .sw-btn-start { background: #0ea5e9; color: white; }
-  .sw-btn-pause { background: #f59e0b; color: #3a2400; }
-  .sw-btn-reset { background: #475569; }
+  /* ===================== SCHWIMM ===================== */
+  #schwimmView { padding: 8px 8px 60px; max-width: 1200px; }
+  #schwimmView .sw-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .sw-timer-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sw-add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sw-add-row input { flex: 1; min-width: 140px; }
+  .sw-timer-display { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 90px; color: var(--text); }
   .sw-mode-row { display: flex; gap: 6px; }
-  .sw-mode-btn { flex: 1; background: #ffffff; border: 2px solid #bae6fd; border-radius: 10px; padding: 8px 4px; font-weight: 700; color: #0c4a6e; font-size: 0.8rem; cursor: pointer; }
-  .sw-mode-btn.active { border-color: #0284c7; background: #bae6fd; }
-  .sw-btn-clearlanes { background: #dc2626; }
+  .sw-mode-btn { flex: 1; background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 8px 4px; font-weight: 700; color: var(--text); font-size: 0.8rem; cursor: pointer; }
+  .sw-mode-btn.active { border-color: var(--accent); background: var(--accent-soft); }
   .sw-stag-timers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-  .sw-stag-timer { background: #ffffff; border: 1px solid #bae6fd; border-radius: 8px; padding: 4px; text-align: center; }
-  .sw-stag-timer .lbl { font-size: 0.62rem; font-weight: 700; color: #5b7c94; text-transform: uppercase; }
-  .sw-stag-timer .disp { font-size: 0.85rem; font-weight: 800; font-variant-numeric: tabular-nums; color: #0c4a6e; margin: 1px 0 4px; }
+  .sw-stag-timer { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 4px; text-align: center; }
+  .sw-stag-timer .lbl { font-size: 0.62rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+  .sw-stag-timer .disp { font-size: 0.85rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); margin: 1px 0 4px; }
   .sw-stag-timer .row { display: flex; gap: 3px; }
-  .sw-stag-timer .row button { flex: 1; border: none; border-radius: 6px; padding: 4px 2px; font-weight: 700; font-size: 0.68rem; color: white; background: #0ea5e9; }
+  .sw-stag-timer .row button { flex: 1; border: none; border-radius: 6px; padding: 4px 2px; font-weight: 700; font-size: 0.68rem; color: white; background: var(--accent); }
   .sw-stag-timer .row button.running { background: #f59e0b; color: #3a2400; }
-  .sw-stag-timer .row button:last-child { flex: 0 0 auto; padding: 4px 6px; background: #475569; color: white; }
+  .sw-stag-timer .row button:last-child { flex: 0 0 auto; padding: 4px 6px; background: #64748b; color: white; }
   .sw-distance-row { display: flex; gap: 6px; flex-wrap: wrap; }
   .sw-distance-row .sw-distance-btn { min-width: 70px; }
-  .sw-distance-btn { flex: 1; background: #ffffff; border: 2px solid #bae6fd; border-radius: 10px; padding: 6px 4px; text-align: center; color: #0c4a6e; font-weight: 600; }
+  .sw-distance-btn { flex: 1; background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 6px 4px; text-align: center; color: var(--text); font-weight: 600; }
   .sw-distance-btn .m { font-size: 0.95rem; font-weight: 800; display: block; }
-  .sw-distance-btn .l { font-size: 0.7rem; color: #5b7c94; display: block; }
-  .sw-distance-btn.active { border-color: #0284c7; background: #bae6fd; }
-  .sw-action-row { display: flex; gap: 6px; }
-  .sw-action-row .sw-btn { flex: 1; font-size: 0.8rem; padding: 8px 6px; white-space: nowrap; }
-  .sw-btn-classes { background: #7c3aed; }
-  .sw-btn-export { background: #0891b2; }
-  .sw-btn-resetresults { background: #b45309; }
-  .sw-btn-save { background: #059669; }
-  .sw-add-row { display: flex; gap: 6px; background: #ffffff; border: 1px solid #bae6fd; border-radius: 12px; padding: 6px; }
-  .sw-add-row input { flex: 1; border: 1px solid #bae6fd; border-radius: 8px; padding: 8px; font-size: 0.95rem; background: #f0f9ff; color: #0c4a6e; }
-  .sw-add-row button { background: #0ea5e9; color: white; padding: 8px 12px; }
-  .sw-add-row button.sw-btn-classes { background: #7c3aed; white-space: nowrap; }
-  .sw-section-title { font-size: 0.75rem; font-weight: 700; color: #5b7c94; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 2px; }
-  .sw-dropzone { background: #dbeefe; border-radius: 10px; padding: 6px; border: 2px dashed transparent; }
-  .sw-dropzone.drop-hover { border-color: #0ea5e9; background: #bae6fd; }
+  .sw-distance-btn .l { font-size: 0.7rem; color: var(--muted); display: block; }
+  .sw-distance-btn.active { border-color: var(--accent); background: var(--accent-soft); }
+  .sw-section-title { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin: 0 2px; }
+  .sw-dropzone { background: var(--surface-2); border-radius: 10px; padding: 6px; border: 2px dashed transparent; }
+  .sw-dropzone.drop-hover { border-color: var(--accent); background: var(--accent-soft); }
   .sw-pool-zone { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; min-height: 40px; max-height: 15vh; overflow-y: auto; }
-  .sw-empty-hint { color: #5b7c94; font-size: 0.8rem; padding: 4px; }
-  .sw-chip { background: #ffffff; border: 1px solid #bae6fd; border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; color: #0c4a6e; touch-action: none; }
-  .sw-chip button { border: none; border-radius: 6px; background: #ef4444; color: white; font-weight: 700; padding: 1px 6px; }
+  .sw-empty-hint { color: var(--muted); font-size: 0.8rem; padding: 4px; }
+  .sw-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; color: var(--text); touch-action: none; }
+  .sw-chip button { border: none; border-radius: 6px; background: var(--danger); color: white; font-weight: 700; padding: 1px 6px; }
   .sw-lanes-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   @media (max-width: 700px) { .sw-lanes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .sw-lane-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .sw-lane-box { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .sw-card { background: #ffffff; border: 1px solid #bae6fd; border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; touch-action: none; position: relative; min-width: 0; }
-  .sw-card.sw-almost-done { background: #f0fdf4; border: 2px solid #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.25); }
-  .sw-card.sw-almost-done .sw-lengths { color: #16a34a; }
-  .sw-pos-badge { position: absolute; top: -8px; left: -8px; background: #0284c7; color: white; font-weight: 800; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .sw-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; touch-action: none; position: relative; min-width: 0; }
+  .sw-card.sw-almost-done { background: var(--success-soft); border: 2px solid var(--success); box-shadow: 0 0 0 3px rgba(22,163,74,0.25); }
+  .sw-card.sw-almost-done .sw-lengths { color: var(--success); }
+  .sw-pos-badge { position: absolute; top: -8px; left: -8px; background: var(--accent); color: white; font-weight: 800; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
   .sw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; min-width: 0; }
-  .sw-name { font-size: 0.9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #0c4a6e; min-width: 0; flex-shrink: 1; }
-  .sw-result { font-size: 0.75rem; font-weight: 700; color: #0284c7; white-space: normal; flex-shrink: 0; }
+  .sw-name { font-size: 0.9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); min-width: 0; flex-shrink: 1; }
+  .sw-result { font-size: 0.75rem; font-weight: 700; color: var(--accent); white-space: normal; flex-shrink: 0; }
   .sw-deficit { font-size: 0.68rem; color: #b45309; font-weight: 600; }
   .sw-bottom { display: flex; align-items: center; gap: 4px; }
   .sw-lenbtn { border: none; border-radius: 50%; color: white; font-weight: 700; flex-shrink: 0; width: 34px; height: 34px; font-size: 1rem; }
-  .sw-lenbtn.minus { background: #ef4444; }
-  .sw-lenbtn.plus1, .sw-lenbtn.plus2 { background: #0284c7; }
-  .sw-lengths { font-size: 0.9rem; font-weight: 800; min-width: 40px; text-align: center; flex: 1; color: #0c4a6e; }
-  .sw-del { border: none; border-radius: 6px; background: transparent; color: #5b7c94; font-size: 0.95rem; padding: 2px 4px; }
-  .sw-interval-btn { border: none; background: #334155; color: #cbd5e1; border-radius: 50%; width: 28px; height: 28px; font-size: 0.85rem; flex-shrink: 0; }
-  .sw-drag-ghost { position: fixed; top: 0; left: 0; transform: translate(-50%,-50%); background: #0ea5e9; color: white; font-weight: 700; padding: 10px 16px; border-radius: 10px; z-index: 300; pointer-events: none; }
+  .sw-lenbtn.minus { background: var(--danger); }
+  .sw-lenbtn.plus1, .sw-lenbtn.plus2 { background: var(--accent); }
+  .sw-lengths { font-size: 0.9rem; font-weight: 800; min-width: 40px; text-align: center; flex: 1; color: var(--text); }
+  .sw-del { border: none; border-radius: 6px; background: transparent; color: var(--muted); font-size: 0.95rem; padding: 2px 4px; }
+  .sw-interval-btn { border: none; background: var(--surface-2); color: var(--muted); border-radius: 50%; width: 28px; height: 28px; font-size: 0.85rem; flex-shrink: 0; }
+  .sw-drag-ghost { position: fixed; top: 0; left: 0; transform: translate(-50%,-50%); background: var(--accent); color: white; font-weight: 700; padding: 10px 16px; border-radius: 10px; z-index: 300; pointer-events: none; }
   @media (orientation: landscape) {
     .sw-card { padding: 10px 12px; gap: 6px; }
     .sw-name { font-size: 1.1rem; }
@@ -239,7 +263,7 @@
   .level-chip input { width: 130px; }
   .level-chip button { border: none; background: var(--danger); color: white; border-radius: 6px; padding: 3px 7px; font-weight: 700; }
   .toggle-group { display: flex; gap: 8px; margin-bottom: 14px; }
-  .toggle-btn { flex: 1; border: 1px solid var(--border); background: white; color: var(--text); border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer; }
+  .toggle-btn { flex: 1; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer; }
   .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
   .sprint-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 26px 0; }
   .sprint-big-btn { width: 200px; height: 200px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 1.15rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.25); touch-action: manipulation; user-select: none; padding: 10px; }
@@ -273,10 +297,10 @@
   .box-row input[type="text"] { flex: 1; }
   .box-row input[type="number"] { width: 64px; text-align: center; }
   .box-row button { border: none; background: var(--danger); color: white; border-radius: 6px; padding: 5px 9px; font-weight: 700; }
-  .add-box-btn { background: white; border: 1px dashed var(--accent); color: var(--accent); border-radius: 8px; padding: 6px 10px; font-weight: 600; }
+  .add-box-btn { background: var(--card); border: 1px dashed var(--accent); color: var(--accent); border-radius: 8px; padding: 6px 10px; font-weight: 600; }
   .student-row { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
   .student-row .sname { flex: 1; font-weight: 600; }
-  .attempt-btn { border: 1px solid var(--accent); background: white; color: var(--accent); border-radius: 8px; padding: 8px 12px; font-weight: 700; font-size: 0.85rem; }
+  .attempt-btn { border: 1px solid var(--accent); background: var(--card); color: var(--accent); border-radius: 8px; padding: 8px 12px; font-weight: 700; font-size: 0.85rem; }
   .attempt-btn.graded { background: var(--accent); color: white; }
   .attempt-btn.graded.low { background: var(--danger); border-color: var(--danger); }
   .grading-table { width: 100%; border-collapse: collapse; }
@@ -286,10 +310,10 @@
   .crit-title-cell .t { font-weight: 700; display: block; }
   .crit-title-cell .d { color: var(--muted); font-size: 0.8rem; }
   .level-cell { cursor: pointer; font-weight: 700; min-width: 90px; }
-  .level-cell.selected { outline: 3px solid rgba(0,0,0,0.35); outline-offset: -3px; }
+  .level-cell.selected { outline: 3px solid rgba(0,0,0,0.35); outline-offset: -3px; color: #0f172a; }
   .comment-cell textarea { width: 100%; min-height: 40px; resize: vertical; }
   .checkbox-cell { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-  .box-cell { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; min-width: 80px; cursor: pointer; font-weight: 600; background: white; line-height: 1.3; }
+  .box-cell { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; min-width: 80px; cursor: pointer; font-weight: 600; background: var(--card); line-height: 1.3; }
   .box-cell .bp { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
   .box-cell.selected { background: var(--accent); color: white; border-color: var(--accent); }
   .box-cell.selected .bp { color: rgba(255,255,255,0.85); }
@@ -299,15 +323,15 @@
 
   /* ===================== SEILSPRINGEN ===================== */
   .sl-duration-row { display: flex; gap: 8px; margin-bottom: 16px; }
-  .sl-duration-btn { flex: 1; background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 12px; font-weight: 700; }
-  .sl-duration-btn.active { border-color: #f59e0b; background: #fff7ed; }
+  .sl-duration-btn { flex: 1; background: var(--card); color: var(--text); border: 2px solid var(--border); border-radius: 10px; padding: 12px; font-weight: 700; }
+  .sl-duration-btn.active { border-color: var(--warn); background: var(--accent-soft); }
   .sl-timer { text-align: center; font-size: 2.4rem; font-weight: 800; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
   .sl-tapbtn {
     display: block; margin: 0 auto 18px; width: 240px; height: 240px; border-radius: 50%;
     background: #f59e0b; color: white; border: none; font-size: 3.5rem; font-weight: 800;
     box-shadow: 0 8px 24px rgba(245,158,11,0.4);
   }
-  .sl-tapbtn:disabled { background: #cbd5e1; box-shadow: none; color: #64748b; }
+  .sl-tapbtn:disabled { background: var(--border); box-shadow: none; color: var(--muted); }
   .sl-tapbtn:active:not(:disabled) { transform: scale(0.97); }
   .sl-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
   .sl-name-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -318,7 +342,7 @@
   .ms-row .ms-name { flex: 1; font-weight: 700; font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ms-time { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 110px; text-align: center; }
   .ms-row button { border: none; border-radius: 8px; padding: 10px 14px; font-weight: 700; color: white; }
-  .ms-toggle { background: #16a34a; min-width: 84px; }
+  .ms-toggle { background: var(--success); min-width: 84px; }
   .ms-toggle.running { background: #f59e0b; }
   .ms-lap { background: #2563eb; }
   .ms-reset { background: #64748b; }
@@ -343,7 +367,7 @@
   /* ===================== SCOREBOARD ===================== */
   #scoreboardView { background: #030712; color: white; min-height: 100vh; margin: 0; max-width: none; padding: 0; display: flex; flex-direction: column; }
   .sb-back-row { padding: 10px; }
-  .sb-back-row .btn { background: #1f2937; }
+  .sb-back-row .btn { background: #1f2937; color: white; border-color: #374151; }
   .sb-main { flex: 1; display: flex; align-items: stretch; justify-content: center; touch-action: none; user-select: none; }
   .sb-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; position: relative; }
   .sb-side:first-child { border-right: 2px solid #1f2937; }
@@ -351,7 +375,7 @@
   .sb-team-name:focus { outline: 1px solid #334155; border-radius: 6px; }
   .sb-number { font-family: "Courier New", monospace; font-size: min(28vw, 220px); font-weight: 800; line-height: 1; color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,0.35); }
   .sb-reset-row { text-align: center; padding: 10px; }
-  .sb-reset-row .btn { background: #1f2937; }
+  .sb-reset-row .btn { background: #1f2937; color: white; }
   .sb-hint { text-align: center; color: #64748b; font-size: 0.8rem; padding: 10px; }
 
   /* ===================== TEAMERSTELLUNG ===================== */
@@ -378,14 +402,14 @@
 
   /* ===================== VERLAUF ===================== */
   .vl-student-row { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; font-weight: 600; }
-  .vl-student-row.active { border-color: var(--accent); background: #eff6ff; border-radius: 8px 8px 0 0; margin-bottom: 0; }
-  .vl-inline-history:not(:empty) { border: 1px solid var(--accent); border-top: none; border-radius: 0 0 8px 8px; padding: 10px 10px 4px; margin-bottom: 6px; background: #f8fafc; }
+  .vl-student-row.active { border-color: var(--accent); background: var(--accent-soft); border-radius: 8px 8px 0 0; margin-bottom: 0; }
+  .vl-inline-history:not(:empty) { border: 1px solid var(--accent); border-top: none; border-radius: 0 0 8px 8px; padding: 10px 10px 4px; margin-bottom: 6px; background: var(--surface-2); }
   .vl-progress-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
   .vl-progress-table th, .vl-progress-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; white-space: nowrap; }
   .vl-progress-table thead th { background: #2563eb; color: white; position: sticky; top: 0; z-index: 2; }
   .vl-progress-table tbody th { background: var(--card); position: sticky; left: 0; z-index: 1; font-weight: 700; }
   .vl-progress-table thead th:first-child { position: sticky; left: 0; top: 0; z-index: 3; }
-  .vl-progress-table tbody tr:nth-child(even) td, .vl-progress-table tbody tr:nth-child(even) th { background: #f8fafc; }
+  .vl-progress-table tbody tr:nth-child(even) td, .vl-progress-table tbody tr:nth-child(even) th { background: var(--surface-2); }
   .vl-progress-table .vl-cell-entry { display: block; }
   .vl-progress-table .vl-cell-entry + .vl-cell-entry { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border); }
   .vl-progress-table .vl-cell-note { color: var(--accent); font-weight: 700; }
@@ -404,33 +428,39 @@
       <button class="btn btn-outline" id="homeClassesBtn">Klassen verwalten</button>
       <button class="btn btn-outline" id="homeVerlaufBtn">Leistungen ansehen</button>
     </div>
+    <div id="appVersionLabel" style="text-align:center; margin-top:14px; font-size:0.68rem; color:var(--muted); opacity:0.6;">v2026-10-14.1</div>
     <button class="settings-fab" id="homeSettingsBtn">⚙️</button>
   </div>
 
   <!-- ============ LAUF ============ -->
   <div id="laufView" class="view hidden">
     <div class="lf-wrap">
-      <div class="row back-row"><button class="lf-btn lf-back" data-back>← Start</button></div>
+      <div class="row back-row">
+        <button class="btn btn-secondary" data-back>← Start</button>
+        <div class="more-wrap">
+          <button class="btn btn-secondary more-btn" title="Weitere Aktionen">⋯</button>
+          <div class="more-menu hidden">
+            <button id="lf_sortBtn">↕︎ Nach Runden sortieren</button>
+            <button id="lf_exportBtn">📤 Ergebnisse exportieren</button>
+            <button id="lf_resetLapsBtn" class="danger">↺ Alle Runden zurücksetzen</button>
+          </div>
+        </div>
+      </div>
       <div class="lf-timer-box">
         <div class="lf-timer-display" id="lf_timerDisplay">12:00</div>
-        <button class="lf-btn lf-btn-start" id="lf_startBtn">Start</button>
-        <button class="lf-btn lf-btn-pause" id="lf_pauseBtn">Pause</button>
-        <button class="lf-btn lf-btn-reset" id="lf_resetTimerBtn">Reset</button>
+        <button class="btn" id="lf_startBtn">Start</button>
+        <button class="btn btn-secondary" id="lf_pauseBtn">Pause</button>
+        <button class="btn btn-secondary" id="lf_resetTimerBtn">Reset</button>
       </div>
-      <button class="lf-btn lf-btn-all" id="lf_allPlusBtn">+1 Runde für alle</button>
-      <div class="lf-action-row">
-        <button class="lf-btn lf-btn-sort" id="lf_sortBtn">Sortieren</button>
-        <button class="lf-btn lf-btn-resetlaps" id="lf_resetLapsBtn">Runden zurücksetzen</button>
-        <button class="lf-btn lf-btn-export" id="lf_exportBtn">Exportieren</button>
-      </div>
-      <button class="lf-btn lf-btn-save" id="lf_saveResultsBtn">Resultate sichern (Leistungen)</button>
+      <button class="btn btn-lg" id="lf_allPlusBtn">+1 Runde für alle</button>
       <div class="lf-add-row">
         <input id="lf_nameInput" type="text" placeholder="Name eingeben..." maxlength="20">
-        <button class="lf-btn" id="lf_addBtn">+ Hinzufügen</button>
+        <button class="btn btn-outline" id="lf_addBtn">+ Hinzufügen</button>
+        <button class="btn btn-outline" id="lf_classesBtn">Klassen</button>
       </div>
-      <button class="lf-btn lf-btn-classes" id="lf_classesBtn">Klassen</button>
       <div class="lf-list" id="lf_list"></div>
       <div class="lf-hint">Zum Löschen: Zeile nach links wischen · Uhr-Symbol gedrückt halten für Intervalle</div>
+      <button class="btn btn-outline btn-block" id="lf_saveResultsBtn">In Leistungen speichern</button>
     </div>
     <button class="cam-btn" id="lf_camBtn" title="Ergebnis als Foto sichern">📷</button>
   </div>
@@ -438,12 +468,22 @@
   <!-- ============ SCHWIMM ============ -->
   <div id="schwimmView" class="view hidden">
     <div class="sw-wrap">
-      <div class="row back-row"><button class="sw-btn sw-back" data-back>← Start</button></div>
+      <div class="row back-row">
+        <button class="btn btn-secondary" data-back>← Start</button>
+        <div class="more-wrap">
+          <button class="btn btn-secondary more-btn" title="Weitere Aktionen">⋯</button>
+          <div class="more-menu hidden">
+            <button id="sw_exportBtn">📤 Ergebnisse exportieren</button>
+            <button id="sw_resetResultsBtn" class="danger">↺ Ergebnisse zurücksetzen</button>
+            <button id="sw_clearLanesBtn" class="danger">✕ Bahnen leeren</button>
+          </div>
+        </div>
+      </div>
       <div class="sw-timer-box" id="sw_timerBox">
         <div class="sw-timer-display" id="sw_timerDisplay">00:00</div>
-        <button class="sw-btn sw-btn-start" id="sw_startBtn">Start</button>
-        <button class="sw-btn sw-btn-pause" id="sw_pauseBtn">Pause</button>
-        <button class="sw-btn sw-btn-reset" id="sw_resetTimerBtn">Neues Rennen</button>
+        <button class="btn" id="sw_startBtn">Start</button>
+        <button class="btn btn-secondary" id="sw_pauseBtn">Pause</button>
+        <button class="btn btn-secondary" id="sw_resetTimerBtn">Neues Rennen</button>
       </div>
       <div class="sw-mode-row">
         <button class="sw-mode-btn active" data-mode="same">Gleichzeitig messen</button>
@@ -464,8 +504,8 @@
       </div>
       <div class="sw-add-row">
         <input id="sw_nameInput" type="text" placeholder="Name eingeben..." maxlength="20">
-        <button class="sw-btn" id="sw_addBtn">+ Hinzufügen</button>
-        <button class="sw-btn sw-btn-classes" id="sw_classesBtn">Klassen</button>
+        <button class="btn btn-outline" id="sw_addBtn">+ Hinzufügen</button>
+        <button class="btn btn-outline" id="sw_classesBtn">Klassen</button>
       </div>
       <div class="sw-section-title">Nicht zugeteilt</div>
       <div class="sw-dropzone sw-pool-zone" id="sw_poolZone" data-lane="0"></div>
@@ -475,12 +515,7 @@
         <div class="sw-lane-col"><div class="sw-section-title">Bahn 3</div><div class="sw-dropzone sw-lane-box" id="sw_lane3" data-lane="3"></div></div>
         <div class="sw-lane-col"><div class="sw-section-title">Bahn 4</div><div class="sw-dropzone sw-lane-box" id="sw_lane4" data-lane="4"></div></div>
       </div>
-      <div class="sw-action-row">
-        <button class="sw-btn sw-btn-clearlanes" id="sw_clearLanesBtn">Bahnen leeren</button>
-        <button class="sw-btn sw-btn-resetresults" id="sw_resetResultsBtn">Ergebnisse zurücksetzen</button>
-        <button class="sw-btn sw-btn-export" id="sw_exportBtn">Exportieren</button>
-      </div>
-      <button class="sw-btn sw-btn-save" id="sw_saveResultsBtn" style="width:100%;">SuS-Leistungen abspeichern</button>
+      <button class="btn btn-outline btn-block" id="sw_saveResultsBtn">In Leistungen speichern</button>
     </div>
     <button class="cam-btn" id="sw_camBtn" title="Ergebnis als Foto sichern">📷</button>
   </div>
@@ -525,9 +560,9 @@
     <div class="sl-timer" id="sl_timerDisplay">01:00</div>
     <button class="sl-tapbtn" id="sl_tapBtn" disabled><span id="sl_countDisplay">0</span></button>
     <div class="sl-controls">
-      <button class="btn btn-outline" id="sl_startBtn">Start</button>
+      <button class="btn" id="sl_startBtn">Start</button>
       <button class="btn btn-secondary" id="sl_resetBtn">Zurücksetzen</button>
-      <button class="btn hidden" id="sl_saveBtn" style="background:#059669;">Ergebnis sichern</button>
+      <button class="btn hidden" id="sl_saveBtn">In Leistungen speichern</button>
     </div>
   </div>
 
@@ -612,7 +647,7 @@
 
   <!-- ============ SCOREBOARD ============ -->
   <div id="scoreboardView" class="view hidden">
-    <div class="sb-back-row"><button class="btn" data-back>← Start</button></div>
+    <div class="sb-back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
     <div class="sb-main">
       <div class="sb-side" data-side="left">
         <input type="text" class="sb-team-name" id="sb_leftName" value="Team A" maxlength="16">
@@ -688,6 +723,12 @@
     <p style="font-weight:800; margin-top:0;">⚙️ Einstellungen</p>
     <label class="field-label" style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin-bottom:6px;">Sichtbare Boxen auf der Startseite</label>
     <div id="settingsTilesList"></div>
+    <label class="field-label" style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:16px 0 6px;">Darstellung</label>
+    <div class="row" id="themeRow" style="gap:6px;">
+      <button class="toggle-btn" data-theme-choice="auto">Automatisch</button>
+      <button class="toggle-btn" data-theme-choice="light">☀️ Hell</button>
+      <button class="toggle-btn" data-theme-choice="dark">🌙 Dunkel</button>
+    </div>
     <label class="field-label" style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:16px 0 6px;">Daten sichern</label>
     <p style="font-size:0.8rem; color:var(--muted); margin-top:-4px;">Exportiert alle Klassen, Verlaufsdaten und Tool-Einstellungen als Datei – zum Sichern oder Übertragen auf ein anderes Gerät.</p>
     <div class="row" style="display:flex; gap:10px;">
@@ -1741,13 +1782,22 @@ let runners = [];
 let laufTimerRemaining = LAUF_TIMER_SECONDS;
 let laufTimerInterval = null;
 let laufTimerRunning = false;
+let laufTimerEndAt = null; // Zielzeitpunkt (ms) – Restzeit wird aus der echten Uhrzeit berechnet, nicht durch Mitzählen
 
-function laufSave() { saveJSON(LAUF_STORAGE_KEY, { runners, laufTimerRemaining }); }
+function laufSave() { saveJSON(LAUF_STORAGE_KEY, { runners, laufTimerRemaining, laufTimerEndAt: laufTimerRunning ? laufTimerEndAt : null }); }
 function laufLoad() {
   const data = loadJSON(LAUF_STORAGE_KEY, null);
   if (!data) return;
   if (Array.isArray(data.runners)) runners = data.runners;
   if (typeof data.laufTimerRemaining === "number") laufTimerRemaining = data.laufTimerRemaining;
+  // Lief der Timer beim Schliessen/Neuladen noch, läuft er nahtlos weiter
+  if (typeof data.laufTimerEndAt === "number") {
+    laufTimerRemaining = Math.max(0, Math.ceil((data.laufTimerEndAt - Date.now()) / 1000));
+    if (laufTimerRemaining > 0) {
+      laufTimerEndAt = data.laufTimerEndAt; laufTimerRunning = true;
+      laufTimerInterval = setInterval(laufTick, 250);
+    }
+  }
 }
 function renderLaufTimer() {
   const el = document.getElementById("lf_timerDisplay");
@@ -1767,13 +1817,23 @@ function startLaufTimer() {
   if (laufTimerRunning) return;
   if (laufTimerRemaining <= 0) laufTimerRemaining = LAUF_TIMER_SECONDS;
   laufTimerRunning = true;
-  laufTimerInterval = setInterval(() => {
-    laufTimerRemaining--;
-    if (laufTimerRemaining <= 0) { laufTimerRemaining = 0; pauseLaufTimer(); laufBeep(); }
-    renderLaufTimer(); laufSave();
-  }, 1000);
+  laufTimerEndAt = Date.now() + laufTimerRemaining * 1000;
+  laufTimerInterval = setInterval(laufTick, 250);
+  laufSave();
 }
-function pauseLaufTimer() { laufTimerRunning = false; clearInterval(laufTimerInterval); }
+function laufSyncRemaining() {
+  if (laufTimerRunning) laufTimerRemaining = Math.max(0, Math.ceil((laufTimerEndAt - Date.now()) / 1000));
+}
+function laufTick() {
+  laufSyncRemaining();
+  if (laufTimerRemaining <= 0) { pauseLaufTimer(); laufBeep(); }
+  renderLaufTimer();
+}
+function pauseLaufTimer() {
+  laufSyncRemaining();
+  laufTimerRunning = false; laufTimerEndAt = null; clearInterval(laufTimerInterval);
+  laufSave();
+}
 function resetLaufTimer() { pauseLaufTimer(); laufTimerRemaining = LAUF_TIMER_SECONDS; renderLaufTimer(); laufSave(); }
 
 function addRunner(name) {
@@ -1882,7 +1942,7 @@ function showLfIntervalPopover(id) {
   const ts = r.lapTimestamps || [];
   const listEl = document.getElementById("lfIntervalList");
   if (ts.length < 2) {
-    listEl.innerHTML = '<p style="color:#94a3b8;">Noch nicht genug Runden für Intervalle.</p>';
+    listEl.innerHTML = '<p style="color:var(--muted);">Noch nicht genug Runden für Intervalle.</p>';
   } else {
     let rows = "";
     for (let i = 1; i < ts.length; i++) {
@@ -1969,10 +2029,25 @@ let schwimmElapsed = 0;
 let schwimmTimerInterval = null;
 let schwimmTimerRunning = false;
 let schwimmMode = "same";
+// Uhren rechnen mit der echten Uhrzeit (baseMs = bisher gelaufene Zeit, startedAt = Startzeitpunkt, solange sie läuft).
+// So stimmen die Zeiten auch, wenn der Bildschirm kurz gesperrt war oder der Browser den Tab gebremst hat.
+let schwimmClock = { baseMs: 0, startedAt: null };
 
-let staggeredTimers = [0, 1, 2, 3].map(() => ({ elapsed: 0, running: false, interval: null }));
+let staggeredTimers = [0, 1, 2, 3].map(() => ({ elapsed: 0, running: false, interval: null, baseMs: 0, startedAt: null }));
 
-function schwimmSave() { saveJSON(SCHWIMM_STORAGE_KEY, { swimmers, targetLengths, distanceMeters, schwimmElapsed, schwimmMode, staggeredElapsed: staggeredTimers.map(t => t.elapsed) }); }
+function clockElapsedSec(c) { return Math.floor((c.baseMs + (c.startedAt ? Date.now() - c.startedAt : 0)) / 1000); }
+function schwimmSyncElapsed() {
+  schwimmElapsed = clockElapsedSec(schwimmClock);
+  staggeredTimers.forEach(t => { t.elapsed = clockElapsedSec(t); });
+}
+function schwimmSave() {
+  saveJSON(SCHWIMM_STORAGE_KEY, {
+    swimmers, targetLengths, distanceMeters, schwimmElapsed, schwimmMode,
+    staggeredElapsed: staggeredTimers.map(t => t.elapsed),
+    schwimmClock,
+    staggeredClocks: staggeredTimers.map(t => ({ baseMs: t.baseMs, startedAt: t.startedAt }))
+  });
+}
 function schwimmLoad() {
   const data = loadJSON(SCHWIMM_STORAGE_KEY, null);
   if (!data) return;
@@ -1982,6 +2057,23 @@ function schwimmLoad() {
   if (typeof data.schwimmElapsed === "number") schwimmElapsed = data.schwimmElapsed;
   if (data.schwimmMode === "same" || data.schwimmMode === "staggered") schwimmMode = data.schwimmMode;
   if (Array.isArray(data.staggeredElapsed)) data.staggeredElapsed.forEach((v, i) => { if (staggeredTimers[i] && typeof v === "number") staggeredTimers[i].elapsed = v; });
+  // Ältere Speicherstände kennen nur Sekunden → daraus die Uhr ableiten
+  schwimmClock = { baseMs: schwimmElapsed * 1000, startedAt: null };
+  staggeredTimers.forEach(t => { t.baseMs = t.elapsed * 1000; });
+  if (data.schwimmClock && typeof data.schwimmClock.baseMs === "number") {
+    schwimmClock = { baseMs: data.schwimmClock.baseMs, startedAt: typeof data.schwimmClock.startedAt === "number" ? data.schwimmClock.startedAt : null };
+  }
+  if (Array.isArray(data.staggeredClocks)) data.staggeredClocks.forEach((c, i) => {
+    const t = staggeredTimers[i];
+    if (!t || !c || typeof c.baseMs !== "number") return;
+    t.baseMs = c.baseMs; t.startedAt = typeof c.startedAt === "number" ? c.startedAt : null;
+  });
+  schwimmSyncElapsed();
+  // Uhren, die beim Schliessen/Neuladen liefen, laufen weiter
+  if (schwimmClock.startedAt) { schwimmTimerRunning = true; schwimmTimerInterval = setInterval(schwimmTick, 250); }
+  staggeredTimers.forEach((t, i) => {
+    if (t.startedAt) { t.running = true; t.interval = setInterval(() => staggeredTick(i), 250); }
+  });
 }
 function setSchwimmMode(mode) { schwimmMode = mode; renderSchwimmMode(); schwimmSave(); }
 function renderSchwimmMode() {
@@ -2004,14 +2096,23 @@ function renderStaggeredTimers() {
 function startStaggeredTimer(idx) {
   const t = staggeredTimers[idx];
   if (t.running) return;
-  t.running = true;
-  t.interval = setInterval(() => { t.elapsed++; renderStaggeredTimers(); schwimmSave(); checkStaggeredAllFinished(idx); }, 1000);
-  renderStaggeredTimers();
+  t.running = true; t.startedAt = Date.now();
+  t.interval = setInterval(() => staggeredTick(idx), 250);
+  renderStaggeredTimers(); schwimmSave();
 }
-function pauseStaggeredTimer(idx) { const t = staggeredTimers[idx]; t.running = false; clearInterval(t.interval); renderStaggeredTimers(); }
+function staggeredTick(idx) {
+  staggeredTimers[idx].elapsed = clockElapsedSec(staggeredTimers[idx]);
+  renderStaggeredTimers(); checkStaggeredAllFinished(idx);
+}
+function pauseStaggeredTimer(idx) {
+  const t = staggeredTimers[idx];
+  if (t.startedAt) { t.baseMs += Date.now() - t.startedAt; t.startedAt = null; }
+  t.elapsed = clockElapsedSec(t);
+  t.running = false; clearInterval(t.interval); renderStaggeredTimers(); schwimmSave();
+}
 function resetStaggeredTimer(idx) {
   pauseStaggeredTimer(idx);
-  staggeredTimers[idx].elapsed = 0;
+  staggeredTimers[idx].elapsed = 0; staggeredTimers[idx].baseMs = 0;
   swimmers.filter(s => s.lane > 0 && s.position === idx + 1).forEach(s => { s.lengths = 0; s.finishTime = null; });
   renderStaggeredTimers(); renderSwimAll(); schwimmSave();
 }
@@ -2040,7 +2141,7 @@ function clearLanes() {
     : "Alle Schwimmer in den Bahnen entfernen?";
   openConfirm(msg, () => {
     swimmers = swimmers.filter(s => !(s.lane > 0));
-    if (schwimmMode === "staggered") { staggeredTimers.forEach((t, i) => { pauseStaggeredTimer(i); t.elapsed = 0; }); renderStaggeredTimers(); }
+    if (schwimmMode === "staggered") { staggeredTimers.forEach((t, i) => { pauseStaggeredTimer(i); t.elapsed = 0; t.baseMs = 0; }); renderStaggeredTimers(); }
     renderSwimAll(); schwimmSave();
   }, null, "Entfernen");
 }
@@ -2048,13 +2149,19 @@ document.getElementById("sw_clearLanesBtn").addEventListener("click", clearLanes
 function renderSchwimmTimer() { document.getElementById("sw_timerDisplay").textContent = formatTime(schwimmElapsed); }
 function startSchwimmTimer() {
   if (schwimmTimerRunning) return;
-  schwimmTimerRunning = true;
-  schwimmTimerInterval = setInterval(() => { schwimmElapsed++; renderSchwimmTimer(); schwimmSave(); }, 1000);
+  schwimmTimerRunning = true; schwimmClock.startedAt = Date.now();
+  schwimmTimerInterval = setInterval(schwimmTick, 250);
+  schwimmSave();
 }
-function pauseSchwimmTimer() { schwimmTimerRunning = false; clearInterval(schwimmTimerInterval); }
+function schwimmTick() { schwimmElapsed = clockElapsedSec(schwimmClock); renderSchwimmTimer(); }
+function pauseSchwimmTimer() {
+  if (schwimmClock.startedAt) { schwimmClock.baseMs += Date.now() - schwimmClock.startedAt; schwimmClock.startedAt = null; }
+  schwimmElapsed = clockElapsedSec(schwimmClock);
+  schwimmTimerRunning = false; clearInterval(schwimmTimerInterval); renderSchwimmTimer(); schwimmSave();
+}
 function resetSchwimmRace() {
   pauseSchwimmTimer();
-  schwimmElapsed = 0;
+  schwimmElapsed = 0; schwimmClock.baseMs = 0;
   swimmers.forEach(s => { s.lengths = 0; s.finishTime = null; s.lengthTimes = []; s.lastTapAt = null; s.lastTapBtn = null; });
   renderSchwimmTimer(); renderSwimAll(); schwimmSave();
 }
@@ -2080,6 +2187,7 @@ function removeSwimmer(id) {
   renderSwimAll(); schwimmSave();
 }
 function currentElapsedForSwimmer(s) {
+  schwimmSyncElapsed();
   return (schwimmMode === "staggered" && s.position) ? staggeredTimers[s.position - 1].elapsed : schwimmElapsed;
 }
 const SW_COOLDOWN_MS = 45000;
@@ -2207,7 +2315,7 @@ function showSwIntervalPopover(id) {
   const ts = s.lengthTimes || [];
   const listEl = document.getElementById("lfIntervalList");
   if (ts.length === 0) {
-    listEl.innerHTML = '<p style="color:#94a3b8;">Noch keine Längen erfasst.</p>';
+    listEl.innerHTML = '<p style="color:var(--muted);">Noch keine Längen erfasst.</p>';
   } else {
     let rows = "";
     ts.forEach((t, i) => { rows += `<div>Länge ${i + 1}: ${formatTime(Math.max(0, Math.round(t)))}</div>`; });
@@ -3121,7 +3229,7 @@ function renderGradingTable(rubric) {
       html += `<tr data-ci="${ci}"><td class="crit-title-cell"><span class="t">${escapeHtml(c.title)}</span><span class="d">${escapeHtml(c.desc)}</span></td>`;
       c.points.forEach((p, li) => {
         const selected = gradingSelections[ci] === li;
-        const bg = selected ? levelColor(li, c.points.length) : "white";
+        const bg = selected ? levelColor(li, c.points.length) : "var(--card)";
         html += `<td class="level-cell${selected ? " selected" : ""}" style="background:${bg}" data-ci="${ci}" data-li="${li}">${p} Pt.</td>`;
       });
       html += `<td class="comment-cell"><textarea data-ci="${ci}" placeholder="Notiz...">${escapeHtml(gradingComments[ci])}</textarea></td></tr>`;
@@ -3183,7 +3291,7 @@ document.getElementById("gradingSave").addEventListener("click", () => {
 /* =========================================================================
    SEILSPRINGEN
    ========================================================================= */
-let seilCount = 0, seilDuration = 60, seilRemaining = 60, seilInterval = null, seilRunning = false;
+let seilCount = 0, seilDuration = 60, seilRemaining = 60, seilInterval = null, seilRunning = false, seilEndAt = null;
 
 function renderSeilClassOptions() {
   const sel = document.getElementById("sl_classSelect");
@@ -3221,10 +3329,11 @@ function seilStart() {
   seilRunning = true;
   document.getElementById("sl_tapBtn").disabled = false;
   document.getElementById("sl_saveBtn").classList.add("hidden");
+  seilEndAt = Date.now() + seilRemaining * 1000;
   seilInterval = setInterval(() => {
-    seilRemaining--; renderSeilTimer();
+    seilRemaining = Math.max(0, Math.ceil((seilEndAt - Date.now()) / 1000)); renderSeilTimer();
     if (seilRemaining <= 0) seilFinish();
-  }, 1000);
+  }, 250);
 }
 function seilFinish() {
   clearInterval(seilInterval); seilRunning = false;
@@ -4255,6 +4364,56 @@ document.getElementById("tm_camBtn").addEventListener("click", () => {
   });
   shareCanvasAsImage(drawResultsCanvas("Teamerstellung", lines), "teams.png");
 });
+
+/* ================= Darstellung (Hell/Dunkel) ================= */
+const THEME_KEY = "spt_theme";
+function currentThemeChoice() { try { return localStorage.getItem(THEME_KEY) || "auto"; } catch (e) { return "auto"; } }
+function applyTheme(choice) {
+  if (choice === "light" || choice === "dark") document.documentElement.dataset.theme = choice;
+  else delete document.documentElement.dataset.theme;
+  document.querySelectorAll("#themeRow .toggle-btn").forEach(b => b.classList.toggle("active", b.dataset.themeChoice === choice));
+}
+document.getElementById("themeRow").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-theme-choice]"); if (!btn) return;
+  const choice = btn.dataset.themeChoice;
+  try { if (choice === "auto") localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, choice); } catch (e) {}
+  applyTheme(choice);
+});
+applyTheme(currentThemeChoice());
+
+/* ================= ⋯-Menü ================= */
+document.addEventListener("click", (e) => {
+  const toggle = e.target.closest(".more-btn");
+  const ownMenu = toggle ? toggle.parentElement.querySelector(".more-menu") : null;
+  document.querySelectorAll(".more-menu").forEach(m => { if (m !== ownMenu) m.classList.add("hidden"); });
+  if (ownMenu) ownMenu.classList.toggle("hidden");
+});
+
+/* ================= Bildschirm wach halten ================= */
+// Solange irgendeine Uhr läuft, darf das Gerät nicht in den Ruhezustand gehen (sonst kann niemand mehr zählen).
+// Der Browser gibt die Sperre beim Verlassen der App selbst frei → regelmässig prüfen und neu anfordern.
+let screenWakeLock = null, wakeLockPending = false;
+function anyTimerRunning() {
+  return laufTimerRunning || schwimmTimerRunning || staggeredTimers.some(t => t.running) || seilRunning
+    || stopwatches.some(sw => sw.running) || !!sprintState.running || pkStopwatchRunning;
+}
+async function updateWakeLock() {
+  if (!("wakeLock" in navigator) || wakeLockPending) return;
+  const wanted = anyTimerRunning() && document.visibilityState === "visible";
+  if (wanted && !screenWakeLock) {
+    wakeLockPending = true;
+    try {
+      screenWakeLock = await navigator.wakeLock.request("screen");
+      screenWakeLock.addEventListener("release", () => { screenWakeLock = null; });
+    } catch (e) { screenWakeLock = null; }
+    wakeLockPending = false;
+  } else if (!wanted && screenWakeLock) {
+    const lock = screenWakeLock; screenWakeLock = null;
+    lock.release().catch(() => {});
+  }
+}
+setInterval(updateWakeLock, 1000);
+document.addEventListener("visibilitychange", updateWakeLock);
 
 /* ================= Init ================= */
 laufLoad(); renderLaufTimer(); renderLaufList();
