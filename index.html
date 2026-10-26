@@ -141,6 +141,11 @@
   .planung-item.done .planung-date { color: var(--muted); }
   .planung-content { flex: 1; white-space: pre-wrap; cursor: pointer; }
   .home-actions { display: flex; gap: 10px; justify-content: center; }
+  .active-class-bar { display: flex; align-items: center; gap: 10px; background: var(--card); border: 2px dashed var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; }
+  .active-class-bar.is-set { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+  .active-class-bar label { font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+  .active-class-bar select { flex: 1; min-width: 0; font-weight: 700; }
+  .active-badge { background: var(--accent); color: white; border-radius: 6px; padding: 1px 6px; font-size: 0.72rem; font-weight: 700; margin-left: 4px; }
 
   /* Modal (shared) */
   .modal-overlay {
@@ -426,6 +431,10 @@
   <div id="homeView" class="view">
     <h1>🏅 Sportlehrer-Toolbox</h1>
     <h2 class="sub" style="margin-top:-8px; font-size:0.78rem; text-align:center; color:var(--muted);">Box lange gedrückt halten und ziehen, um die Reihenfolge zu ändern</h2>
+    <div class="active-class-bar" id="activeClassBar">
+      <label for="activeClassSelect">👥 Aktive Klasse</label>
+      <select id="activeClassSelect"></select>
+    </div>
     <div class="card hidden" id="backupReminder" style="border-color:var(--warn); display:flex; align-items:center; gap:10px;">
       <div style="flex:1; font-size:0.85rem;">💾 <b>Daten sichern:</b> <span id="backupReminderText"></span></div>
       <button class="btn btn-outline" id="backupReminderBtn" style="padding:6px 12px; font-size:0.85rem;">Jetzt sichern</button>
@@ -435,7 +444,7 @@
       <button class="btn btn-outline" id="homeClassesBtn">Klassen verwalten</button>
       <button class="btn btn-outline" id="homeVerlaufBtn">Leistungen ansehen</button>
     </div>
-    <div id="appVersionLabel" style="text-align:center; margin-top:14px; font-size:0.68rem; color:var(--muted); opacity:0.6;">v2026-10-26.1</div>
+    <div id="appVersionLabel" style="text-align:center; margin-top:14px; font-size:0.68rem; color:var(--muted); opacity:0.6;">v2026-10-26.2</div>
     <button class="settings-fab" id="homeSettingsBtn">⚙️</button>
   </div>
 
@@ -463,7 +472,7 @@
       <div class="lf-add-row">
         <input id="lf_nameInput" type="text" placeholder="Name eingeben..." maxlength="20">
         <button class="btn btn-outline" id="lf_addBtn">+ Hinzufügen</button>
-        <button class="btn btn-outline" id="lf_classesBtn">Klassen</button>
+        <button class="btn btn-outline" id="lf_classesBtn" data-class-btn="Klassen">Klassen</button>
       </div>
       <div class="lf-list" id="lf_list"></div>
       <div class="lf-hint">Zum Löschen: Zeile nach links wischen · Uhr-Symbol gedrückt halten für Intervalle</div>
@@ -512,7 +521,7 @@
       <div class="sw-add-row">
         <input id="sw_nameInput" type="text" placeholder="Name eingeben..." maxlength="20">
         <button class="btn btn-outline" id="sw_addBtn">+ Hinzufügen</button>
-        <button class="btn btn-outline" id="sw_classesBtn">Klassen</button>
+        <button class="btn btn-outline" id="sw_classesBtn" data-class-btn="Klassen">Klassen</button>
       </div>
       <div class="sw-section-title">Nicht zugeteilt</div>
       <div class="sw-dropzone sw-pool-zone" id="sw_poolZone" data-lane="0"></div>
@@ -585,7 +594,7 @@
       <div class="toolbar">
         <input type="text" id="ms_nameInput" placeholder="Name/Gruppe eingeben...">
         <button class="btn" id="ms_addBtn">+ Hinzufügen</button>
-        <button class="btn btn-outline" id="ms_classesBtn">Klassen</button>
+        <button class="btn btn-outline" id="ms_classesBtn" data-class-btn="Klassen">Klassen</button>
         <button class="btn btn-outline" id="ms_startAllBtn">Alle starten</button>
         <button class="btn btn-outline" id="ms_stopAllBtn">Alle stoppen</button>
         <button class="btn btn-danger" id="ms_resetAllBtn">Alle zurücksetzen</button>
@@ -678,7 +687,7 @@
     <div class="toolbar">
       <input type="text" id="tm_nameInput" placeholder="Name eingeben...">
       <button class="btn" id="tm_addBtn">+ Hinzufügen</button>
-      <button class="btn btn-outline" id="tm_classesBtn">Klasse laden</button>
+      <button class="btn btn-outline" id="tm_classesBtn" data-class-btn="Klasse laden">Klasse laden</button>
       <button class="btn btn-danger" id="tm_clearBtn">Alle entfernen</button>
     </div>
     <div id="tm_participantList"></div>
@@ -859,7 +868,7 @@
 <div class="modal-overlay hidden" id="selectStudentsOverlay">
   <div class="modal-box">
     <h2 id="selectStudentsTitle">Schüler auswählen</h2>
-    <div class="select-actions"><button id="selectAllBtn">Alle</button><button id="selectNoneBtn">Keine</button></div>
+    <div class="select-actions"><button id="selectAllBtn">Alle</button><button id="selectNoneBtn">Keine</button><button id="selectOtherClassBtn">Andere Klasse…</button></div>
     <div class="scroll-list" id="selectStudentsScroll"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="selectStudentsCancel">Abbrechen</button>
@@ -929,7 +938,7 @@
     <div class="toolbar">
       <input type="text" id="examAddNameInput" placeholder="Name eingeben...">
       <button class="btn btn-outline" id="examAddNameBtn">+ Hinzufügen</button>
-      <button class="btn btn-outline" id="examLoadClassBtn">Klasse laden</button>
+      <button class="btn btn-outline" id="examLoadClassBtn" data-class-btn="Klasse laden">Klasse laden</button>
       <button class="btn btn-outline" id="examExportBtn">Exportieren</button>
       <button class="btn btn-outline" id="examPdfBtn">📄 PDF für SuS</button>
     </div>
@@ -992,7 +1001,7 @@
     <div class="toolbar">
       <input type="text" id="runAddNameInput" placeholder="Name eingeben...">
       <button class="btn btn-outline" id="runAddNameBtn">+ Hinzufügen</button>
-      <button class="btn btn-outline" id="runLoadClassBtn">Klasse laden</button>
+      <button class="btn btn-outline" id="runLoadClassBtn" data-class-btn="Klasse laden">Klasse laden</button>
       <button class="btn btn-outline" id="runExportBtn">Exportieren</button>
     </div>
     <div id="runStudentList"></div>
@@ -1211,7 +1220,7 @@ document.getElementById("settingsCloseBtn").addEventListener("click", () => docu
 const LAST_BACKUP_KEY = "spt_last_backup";
 const BACKUP_REMIND_DAYS = 14;
 function hasImportantData() {
-  try { return ["spt_history_v1", "spt_exams_v1", "spt_pk_runs_v1", "spt_classes_v1"].some(k => { const v = localStorage.getItem(k); return v && v !== "{}" && v !== "[]"; }); }
+  try { return ["spt_history_v2", "spt_exams_v1", "spt_pk_runs_v1", "spt_classes_v2"].some(k => { const v = localStorage.getItem(k); return v && v !== "{}" && v !== "[]"; }); }
   catch (e) { return false; }
 }
 function renderBackupInfo() {
@@ -1254,7 +1263,12 @@ document.getElementById("importBackupFileInput").addEventListener("change", (e) 
       if (keys.length === 0) { openConfirm("Diese Datei enthält keine passenden Sportlehrer-Toolbox-Daten.", null, null, "OK"); return; }
       const when = parsed.exportedAt ? ` vom ${new Date(parsed.exportedAt).toLocaleDateString("de-CH")}` : "";
       openConfirm(`Sicherung${when} importieren? Die aktuellen Daten auf diesem Gerät (Klassen, Leistungen, Prüfungen …) werden dabei überschrieben.`, () => {
-        try { keys.forEach(key => localStorage.setItem(key, data[key])); }
+        try {
+          // Ältere Sicherung (vor den Schüler-IDs): lokale v2-Daten entfernen, damit beim Neuladen aus v1 umgestellt wird
+          if (keys.includes("spt_classes_v1") && !keys.includes("spt_classes_v2")) localStorage.removeItem("spt_classes_v2");
+          if (keys.includes("spt_history_v1") && !keys.includes("spt_history_v2")) localStorage.removeItem("spt_history_v2");
+          keys.forEach(key => localStorage.setItem(key, data[key]));
+        }
         catch (err) { openConfirm("Import fehlgeschlagen: " + err.message, null, null, "OK"); return; }
         openConfirm(`${keys.length} Datenbereiche importiert. Die Seite wird jetzt neu geladen.`, () => location.reload(), () => location.reload(), "OK");
       }, null, "Überschreiben");
@@ -1287,15 +1301,69 @@ document.getElementById("confirmOk").addEventListener("click", () => { const cb 
 document.getElementById("confirmCancel").addEventListener("click", () => { const cb = confirmCancelCb; closeConfirm(); if (cb) cb(); });
 
 /* ================= Klassen (gemeinsam für alle Tools) ================= */
-const CLASSES_KEY = "spt_classes_v1";
-let classes = loadJSON(CLASSES_KEY, {});
+// Jede Schülerin / jeder Schüler hat eine feste ID (sid). Die Leistungen hängen an dieser ID, nicht am Namen:
+// gleiche Namen in verschiedenen Klassen bleiben getrennt, und Umbenennen behält die bisherigen Resultate.
+const CLASSES_KEY = "spt_classes_v2";
+const CLASSES_KEY_V1 = "spt_classes_v1";
+function newStudentId() { return "s_" + uid(); }
+function normalizeClasses(raw) {
+  const out = {};
+  Object.keys(raw || {}).forEach(c => {
+    out[c] = (Array.isArray(raw[c]) ? raw[c] : [])
+      .map(st => typeof st === "string" ? { id: newStudentId(), name: st.trim() } : { id: st.id || newStudentId(), name: String(st.name || "").trim() })
+      .filter(st => st.name);
+  });
+  return out;
+}
+const storedClassesV2 = loadJSON(CLASSES_KEY, null);
+let classes = normalizeClasses(storedClassesV2 || loadJSON(CLASSES_KEY_V1, {}));
 function persistClasses() { saveJSON(CLASSES_KEY, classes); }
+if (!storedClassesV2) persistClasses(); // neu vergebene IDs sofort festschreiben, damit sie stabil bleiben
+function classStudents(cls) { return (cls && classes[cls]) || []; }
+function findStudent(sid) {
+  for (const c of Object.keys(classes)) { const st = classes[c].find(x => x.id === sid); if (st) return { ...st, cls: c }; }
+  return null;
+}
+
+/* ---- Aktive Klasse: einmal pro Lektion wählen, alle Tools laden sie direkt ---- */
+const ACTIVE_CLASS_KEY = "spt_active_class";
+let activeClass = null;
+try { activeClass = localStorage.getItem(ACTIVE_CLASS_KEY) || null; } catch (e) {}
+if (activeClass && !classes[activeClass]) activeClass = null;
+function setActiveClass(cls) {
+  activeClass = cls && classes[cls] ? cls : null;
+  try { if (activeClass) localStorage.setItem(ACTIVE_CLASS_KEY, activeClass); else localStorage.removeItem(ACTIVE_CLASS_KEY); } catch (e) {}
+  renderActiveClassUI();
+}
+function renderActiveClassUI() {
+  const sel = document.getElementById("activeClassSelect");
+  sel.innerHTML = '<option value="">– keine –</option>' + Object.keys(classes).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)} (${classes[c].length})</option>`).join("");
+  sel.value = activeClass || "";
+  document.getElementById("activeClassBar").classList.toggle("is-set", !!activeClass);
+  document.querySelectorAll("[data-class-btn]").forEach(b => { b.textContent = activeClass ? `👥 ${activeClass}` : b.dataset.classBtn; });
+}
+document.getElementById("activeClassSelect").addEventListener("change", (e) => setActiveClass(e.target.value));
+
+// Ein frei eingetippter Name wird der passenden Person zugeordnet: zuerst in der aktiven Klasse,
+// sonst nur bei eindeutigem Treffer – lieber "Ohne Klasse" als eine falsche Zuordnung.
+function resolveSid(name) {
+  const n = String(name || "").trim();
+  if (!n) return null;
+  const inActive = classStudents(activeClass).filter(st => st.name === n);
+  if (inActive.length === 1) return inActive[0].id;
+  const all = Object.values(classes).flat().filter(st => st.name === n);
+  return all.length === 1 ? all[0].id : null;
+}
+
 let newClassEntries = [];
 let editingClassName = null;
 let classesPickCallback = null;
 
-function openClassesModal(onPick) {
+// onPick erhält [{ id, name }]. Mit aktiver Klasse geht es direkt zur Schülerauswahl (alle vorausgewählt,
+// Abwesende abwählen); "Andere Klasse" führt zur Klassenliste.
+function openClassesModal(onPick, opts) {
   classesPickCallback = onPick || null;
+  if (onPick && activeClass && classes[activeClass]) { openSelectStudents(activeClass, !(opts && opts.noPreselect)); return; }
   renderClassListModal();
   document.getElementById("classListOverlay").classList.remove("hidden");
 }
@@ -1310,7 +1378,7 @@ function openCreateClassModal() {
 }
 function openEditClassModal(name) {
   editingClassName = name;
-  newClassEntries = (classes[name] || []).slice();
+  newClassEntries = classStudents(name).map(st => ({ ...st }));
   document.getElementById("createClassModalTitle").textContent = "Klasse bearbeiten";
   document.getElementById("createClassName").value = name;
   document.getElementById("createClassNameInput").value = "";
@@ -1321,14 +1389,14 @@ function renderNewClassNames() {
   const scroll = document.getElementById("createClassNamesScroll");
   scroll.innerHTML = newClassEntries.length === 0
     ? '<p style="color:var(--muted)">Noch keine Namen hinzugefügt.</p>'
-    : newClassEntries.map((n, i) => `<div class="new-name-item"><span class="editable-name" title="Antippen zum Bearbeiten" data-index="${i}">${escapeHtml(n)}</span><button data-index="${i}">✕</button></div>`).join("");
+    : newClassEntries.map((st, i) => `<div class="new-name-item"><span class="editable-name" title="Antippen zum Bearbeiten" data-index="${i}">${escapeHtml(st.name)}</span><button data-index="${i}">✕</button></div>`).join("");
 }
 document.getElementById("createClassNameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("createClassAddBtn").click(); });
 document.getElementById("createClassAddBtn").addEventListener("click", () => {
   const input = document.getElementById("createClassNameInput");
   const v = input.value.trim();
   if (!v) return;
-  newClassEntries.push(v);
+  newClassEntries.push({ id: newStudentId(), name: v });
   input.value = "";
   renderNewClassNames();
 });
@@ -1340,14 +1408,14 @@ document.getElementById("createClassNamesScroll").addEventListener("click", (e) 
     const idx = Number(span.dataset.index);
     const input = document.createElement("input");
     input.type = "text";
-    input.value = newClassEntries[idx];
+    input.value = newClassEntries[idx].name;
     input.className = "editable-name-input";
     span.replaceWith(input);
     input.focus();
     input.select();
     const commit = () => {
       const v = input.value.trim();
-      if (v) newClassEntries[idx] = v;
+      if (v) newClassEntries[idx].name = v; // ID bleibt → Leistungen bleiben beim umbenannten Namen
       renderNewClassNames();
     };
     input.addEventListener("blur", commit);
@@ -1359,14 +1427,25 @@ document.getElementById("createClassSave").addEventListener("click", () => {
   const name = document.getElementById("createClassName").value.trim();
   if (!name) { openConfirm("Bitte einen Klassennamen eingeben.", null, null, "OK"); return; }
   if (newClassEntries.length === 0) { openConfirm("Bitte mindestens einen Namen hinzufügen.", null, null, "OK"); return; }
-  if (editingClassName && editingClassName !== name) delete classes[editingClassName];
-  classes[name] = newClassEntries.slice();
-  persistClasses();
-  document.getElementById("createClassOverlay").classList.add("hidden");
-  renderClassListModal();
-  openConfirm(`Klasse "${name}" gespeichert (${newClassEntries.length} Namen).`, null, null, "OK");
+  const doSave = () => {
+    const wasActive = editingClassName && activeClass === editingClassName;
+    if (editingClassName && editingClassName !== name) delete classes[editingClassName];
+    classes[name] = newClassEntries.map(st => ({ id: st.id, name: st.name }));
+    persistClasses();
+    if (wasActive || !activeClass) setActiveClass(name); else renderActiveClassUI();
+    document.getElementById("createClassOverlay").classList.add("hidden");
+    renderClassListModal();
+    openConfirm(`Klasse "${name}" gespeichert (${newClassEntries.length} Namen).`, null, null, "OK");
+  };
+  if (classes[name] && name !== editingClassName) {
+    openConfirm(`Es gibt bereits eine Klasse "${name}". Ersetzen? Die bisherigen Leistungen ihrer Schüler:innen erscheinen danach unter „Ohne Klasse".`, doSave, null, "Ersetzen");
+  } else doSave();
 });
-function deleteClassByName(name) { delete classes[name]; persistClasses(); renderClassListModal(); }
+function deleteClassByName(name) {
+  delete classes[name]; persistClasses();
+  if (activeClass === name) setActiveClass(null); else renderActiveClassUI();
+  renderClassListModal();
+}
 function renderClassListModal() {
   const scroll = document.getElementById("classListScroll");
   const names = Object.keys(classes);
@@ -1374,7 +1453,7 @@ function renderClassListModal() {
     ? '<p style="color:var(--muted)">Noch keine Klasse erstellt.</p>'
     : names.map(n => `
       <div class="class-row">
-        <div class="cname" data-name="${escapeHtml(n)}" data-action="select">${escapeHtml(n)} (${classes[n].length})</div>
+        <div class="cname" data-name="${escapeHtml(n)}" data-action="select">${escapeHtml(n)} (${classes[n].length})${n === activeClass ? ' <span class="active-badge">aktiv</span>' : ""}</div>
         <button class="edit-btn" data-name="${escapeHtml(n)}" data-action="edit">✎</button>
         <button class="del-btn" data-name="${escapeHtml(n)}" data-action="delete">✕</button>
       </div>
@@ -1385,9 +1464,9 @@ document.getElementById("classListScroll").addEventListener("click", (e) => {
   if (!target) return;
   const name = target.dataset.name;
   const action = target.dataset.action;
-  if (action === "select") openSelectStudents(name);
+  if (action === "select") openSelectStudents(name, false);
   else if (action === "edit") openEditClassModal(name);
-  else if (action === "delete") openConfirm(`Klasse "${name}" wirklich löschen?`, () => deleteClassByName(name), null, "Löschen");
+  else if (action === "delete") openConfirm(`Klasse "${name}" wirklich löschen? Bereits gespeicherte Leistungen bleiben unter „Ohne Klasse" erhalten.`, () => deleteClassByName(name), null, "Löschen");
 });
 document.getElementById("classAddBtn").addEventListener("click", openCreateClassModal);
 document.getElementById("classListClose").addEventListener("click", () => {
@@ -1460,7 +1539,7 @@ document.getElementById("importClassApplyBtn").addEventListener("click", () => {
   const guessedName = guessClassName(importClassGrid);
   document.getElementById("importClassOverlay").classList.add("hidden");
   editingClassName = null;
-  newClassEntries = names;
+  newClassEntries = names.map(n => ({ id: newStudentId(), name: n }));
   document.getElementById("createClassModalTitle").textContent = "Neue Klasse erstellen";
   document.getElementById("createClassName").value = guessedName || "";
   document.getElementById("createClassNameInput").value = "";
@@ -1608,41 +1687,47 @@ function parseSheetXml(xml, sharedStrings) {
 
 let selectStudentsClassName = null;
 let selectStudentsChecked = new Set();
-function openSelectStudents(className) {
+function openSelectStudents(className, preselectAll) {
   selectStudentsClassName = className;
-  selectStudentsChecked = new Set();
+  selectStudentsChecked = preselectAll ? new Set(classStudents(className).map((_, i) => i)) : new Set();
   document.getElementById("selectStudentsTitle").textContent = `Schüler auswählen – ${className}`;
   document.getElementById("selectStudentsAdd").textContent = classesPickCallback ? "Hinzufügen" : "Schliessen";
+  document.getElementById("selectOtherClassBtn").classList.toggle("hidden", !classesPickCallback);
   renderSelectStudents();
   document.getElementById("selectStudentsOverlay").classList.remove("hidden");
 }
 function renderSelectStudents() {
   const scroll = document.getElementById("selectStudentsScroll");
-  const students = classes[selectStudentsClassName] || [];
+  const students = classStudents(selectStudentsClassName);
   scroll.innerHTML = students.length === 0
     ? '<p style="color:var(--muted)">Diese Klasse hat keine Namen.</p>'
-    : students.map((n, i) => `<label class="check-item"><input type="checkbox" data-index="${i}" ${selectStudentsChecked.has(i) ? "checked" : ""}><span>${escapeHtml(n)}</span></label>`).join("");
+    : students.map((st, i) => `<label class="check-item"><input type="checkbox" data-index="${i}" ${selectStudentsChecked.has(i) ? "checked" : ""}><span>${escapeHtml(st.name)}</span></label>`).join("");
+  document.getElementById("selectStudentsAdd").textContent = classesPickCallback ? `Hinzufügen (${selectStudentsChecked.size})` : "Schliessen";
 }
 document.getElementById("selectStudentsScroll").addEventListener("change", (e) => {
   const cb = e.target.closest("input[type=checkbox]");
   if (!cb) return;
   const idx = Number(cb.dataset.index);
   if (cb.checked) selectStudentsChecked.add(idx); else selectStudentsChecked.delete(idx);
+  if (classesPickCallback) document.getElementById("selectStudentsAdd").textContent = `Hinzufügen (${selectStudentsChecked.size})`;
 });
 document.getElementById("selectAllBtn").addEventListener("click", () => {
-  const students = classes[selectStudentsClassName] || [];
-  selectStudentsChecked = new Set(students.map((_, i) => i));
+  selectStudentsChecked = new Set(classStudents(selectStudentsClassName).map((_, i) => i));
   renderSelectStudents();
 });
 document.getElementById("selectNoneBtn").addEventListener("click", () => { selectStudentsChecked = new Set(); renderSelectStudents(); });
 document.getElementById("selectStudentsCancel").addEventListener("click", () => document.getElementById("selectStudentsOverlay").classList.add("hidden"));
+document.getElementById("selectOtherClassBtn").addEventListener("click", () => {
+  document.getElementById("selectStudentsOverlay").classList.add("hidden");
+  renderClassListModal();
+  document.getElementById("classListOverlay").classList.remove("hidden");
+});
 document.getElementById("selectStudentsAdd").addEventListener("click", () => {
   if (!classesPickCallback) {
     document.getElementById("selectStudentsOverlay").classList.add("hidden");
     return;
   }
-  const students = classes[selectStudentsClassName] || [];
-  const chosen = students.filter((_, i) => selectStudentsChecked.has(i));
+  const chosen = classStudents(selectStudentsClassName).filter((_, i) => selectStudentsChecked.has(i)).map(st => ({ id: st.id, name: st.name }));
   if (chosen.length === 0) { openConfirm("Bitte mindestens einen Schüler auswählen.", null, null, "OK"); return; }
   const cb = classesPickCallback;
   document.getElementById("selectStudentsOverlay").classList.add("hidden");
@@ -1651,90 +1736,120 @@ document.getElementById("selectStudentsAdd").addEventListener("click", () => {
 });
 
 /* ================= Verlauf (gemeinsame Historie) ================= */
-const HISTORY_KEY = "spt_history_v1";
-let history = loadJSON(HISTORY_KEY, {});
+// Leistungen pro Schüler-ID. Personen ohne Klasse (frei eingetippt) bekommen die ID "n:<Name>".
+const HISTORY_KEY = "spt_history_v2";
+const HISTORY_KEY_V1 = "spt_history_v1";
+const MANUAL_SID_PREFIX = "n:";
 function persistHistory() { saveJSON(HISTORY_KEY, history); }
-// key (optional): identifiziert die Quelle (z.B. Prüfung + Versuch). Wird dieselbe Quelle erneut gespeichert,
-// ersetzt der neue Eintrag den alten – sonst stünde nach einer Korrektur die alte Note weiter in den Leistungen.
-function pushHistory(name, tool, label, detail, key) {
-  if (!name) return;
-  if (!history[name]) history[name] = [];
-  const entry = { id: uid(), date: todayISO(), tool, label, detail };
-  if (key) {
-    entry.key = key;
-    const old = history[name].find(en => en.key === key);
-    if (old) entry.date = old.date;
-    history[name] = history[name].filter(en => en.key !== key);
-  }
-  history[name].push(entry);
+let history = loadJSON(HISTORY_KEY, null);
+if (!history) {
+  // Einmalige Umstellung von Namen auf IDs: nur eindeutige Namen werden einer Klasse zugeordnet,
+  // mehrdeutige (gleicher Name in mehreren Klassen) landen unter "Ohne Klasse" statt bei der falschen Person.
+  history = {};
+  const old = loadJSON(HISTORY_KEY_V1, {});
+  Object.keys(old).forEach(name => {
+    const matches = Object.values(classes).flat().filter(st => st.name === name);
+    const sid = matches.length === 1 ? matches[0].id : MANUAL_SID_PREFIX + name;
+    history[sid] = (history[sid] || []).concat((old[name] || []).map(en => ({ ...en, id: en.id || uid(), name })));
+  });
   persistHistory();
 }
-function deleteHistoryEntry(name, id) {
-  if (!history[name]) return;
-  history[name] = history[name].filter(en => String(en.id) !== String(id));
-  if (history[name].length === 0) delete history[name];
+// person: { sid, name } oder nur ein Name (dann wird die ID über den Namen gesucht)
+function personOf(person) {
+  const name = String(typeof person === "string" ? person : (person && person.name) || "").trim();
+  const sid = (person && typeof person === "object" && person.sid) || resolveSid(name) || (name ? MANUAL_SID_PREFIX + name : null);
+  return { sid, name };
+}
+function displayNameFor(sid) {
+  const st = findStudent(sid);
+  if (st) return st.name;
+  const entries = history[sid] || [];
+  return entries.length ? entries[entries.length - 1].name : String(sid).replace(MANUAL_SID_PREFIX, "");
+}
+// key (optional): identifiziert die Quelle (z.B. Prüfung + Versuch). Wird dieselbe Quelle erneut gespeichert,
+// ersetzt der neue Eintrag den alten – sonst stünde nach einer Korrektur die alte Note weiter in den Leistungen.
+function pushHistory(person, tool, label, detail, key) {
+  const { sid, name } = personOf(person);
+  if (!sid || !name) return;
+  if (!history[sid]) history[sid] = [];
+  const entry = { id: uid(), date: todayISO(), name, tool, label, detail };
+  if (key) {
+    entry.key = key;
+    const old = history[sid].find(en => en.key === key);
+    if (old) entry.date = old.date;
+    history[sid] = history[sid].filter(en => en.key !== key);
+  }
+  history[sid].push(entry);
+  persistHistory();
+}
+function deleteHistoryEntry(sid, id) {
+  if (!history[sid]) return;
+  history[sid] = history[sid].filter(en => String(en.id) !== String(id));
+  if (history[sid].length === 0) delete history[sid];
   persistHistory();
 }
 document.getElementById("homeVerlaufBtn").addEventListener("click", () => {
   showView("verlauf");
   renderVerlaufClassSelect();
 });
-// Resultate von Namen, die direkt im Tool eingetippt wurden, gehören zu keiner Klasse → eigene Auswahl, sonst unauffindbar
+// Leistungen von Personen, die zu keiner Klasse (mehr) gehören → eigene Auswahl, sonst unauffindbar
 const VL_NO_CLASS = "__ohne_klasse__";
-function vlNamesWithoutClass() {
-  const inClass = new Set(Object.values(classes).flat());
-  return Object.keys(history).filter(n => !inClass.has(n)).sort((a, b) => a.localeCompare(b, "de"));
+function vlStudentsWithoutClass() {
+  const inClass = new Set(Object.values(classes).flat().map(st => st.id));
+  return Object.keys(history).filter(sid => !inClass.has(sid))
+    .map(sid => ({ id: sid, name: displayNameFor(sid) }))
+    .sort((a, b) => a.name.localeCompare(b.name, "de"));
 }
-function vlStudentsFor(cls) { return cls === VL_NO_CLASS ? vlNamesWithoutClass() : (classes[cls] || []); }
+function vlStudentsFor(cls) { return cls === VL_NO_CLASS ? vlStudentsWithoutClass() : classStudents(cls); }
 function renderVerlaufClassSelect() {
   const sel = document.getElementById("vl_classSelect");
+  const noClassCount = vlStudentsWithoutClass().length;
   sel.innerHTML = '<option value="">Klasse wählen...</option>' + Object.keys(classes).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")
-    + (vlNamesWithoutClass().length ? `<option value="${VL_NO_CLASS}">Ohne Klasse (${vlNamesWithoutClass().length})</option>` : "");
-  document.getElementById("vl_studentList").innerHTML = "";
+    + (noClassCount ? `<option value="${VL_NO_CLASS}">Ohne Klasse (${noClassCount})</option>` : "");
+  sel.value = activeClass || "";
+  renderVerlaufStudents();
 }
-document.getElementById("vl_classSelect").addEventListener("change", () => {
+function renderVerlaufStudents() {
   const cls = document.getElementById("vl_classSelect").value;
   const listEl = document.getElementById("vl_studentList");
   const discBtn = document.getElementById("vl_disciplineBtn");
   if (!cls) { listEl.innerHTML = ""; discBtn.style.display = "none"; return; }
   const students = vlStudentsFor(cls);
-  listEl.innerHTML = students.map(n => `
-    <div class="vl-student-row" data-name="${escapeHtml(n)}">${escapeHtml(n)}</div>
-    <div class="vl-inline-history" data-history-for="${escapeHtml(n)}"></div>
+  listEl.innerHTML = students.map(st => `
+    <div class="vl-student-row" data-sid="${escapeHtml(st.id)}">${escapeHtml(st.name)}${history[st.id] ? ` <span style="color:var(--muted); font-weight:400;">(${history[st.id].length})</span>` : ""}</div>
+    <div class="vl-inline-history" data-history-for="${escapeHtml(st.id)}"></div>
   `).join("");
   discBtn.style.display = getVlDisciplinesForClass(cls).length ? "" : "none";
-});
+}
+document.getElementById("vl_classSelect").addEventListener("change", renderVerlaufStudents);
 document.getElementById("vl_studentList").addEventListener("click", (e) => {
   const delBtn = e.target.closest("button[data-action='delete-history']");
   if (delBtn) {
     const container = e.target.closest(".vl-inline-history");
-    const name = container.dataset.historyFor;
-    openConfirm("Diesen Leistungseintrag löschen?", () => { deleteHistoryEntry(name, delBtn.dataset.id); renderVlHistoryFor(name); }, null, "Löschen");
+    const sid = container.dataset.historyFor;
+    openConfirm("Diesen Leistungseintrag löschen?", () => { deleteHistoryEntry(sid, delBtn.dataset.id); renderVlHistoryFor(sid); }, null, "Löschen");
     return;
   }
   const row = e.target.closest(".vl-student-row");
   if (!row) return;
-  const name = row.dataset.name;
+  const sid = row.dataset.sid;
   const wasActive = row.classList.contains("active");
   document.querySelectorAll(".vl-student-row").forEach(r => r.classList.remove("active"));
   document.querySelectorAll(".vl-inline-history").forEach(c => c.innerHTML = "");
-  if (!wasActive) { row.classList.add("active"); renderVlHistoryFor(name); }
+  if (!wasActive) { row.classList.add("active"); renderVlHistoryFor(sid); }
 });
-function renderVlHistoryFor(name) {
-  const entries = history[name] || [];
-  let needsPersist = false;
-  entries.forEach(en => { if (!en.id) { en.id = uid(); needsPersist = true; } });
-  if (needsPersist) persistHistory();
+function renderVlHistoryFor(sid) {
+  const entries = history[sid] || [];
   const sorted = entries.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
-  const el = document.querySelector(`.vl-inline-history[data-history-for="${CSS.escape(name)}"]`);
+  const el = document.querySelector(`.vl-inline-history[data-history-for="${CSS.escape(sid)}"]`);
   if (!el) return;
   if (sorted.length === 0) {
     el.innerHTML = '<div class="empty-hint">Noch keine Resultate für diese Person.</div>';
     return;
   }
   el.innerHTML = sorted.map(en => `
-    <div class="card vl-history-card" data-id="${en.id}">
-      <button class="vl-del" data-action="delete-history" data-id="${en.id}" title="Löschen">✕</button>
+    <div class="card vl-history-card" data-id="${escapeHtml(en.id)}">
+      <button class="vl-del" data-action="delete-history" data-id="${escapeHtml(en.id)}" title="Löschen">✕</button>
       <div class="card-title">${formatDateDE(en.date)} · ${escapeHtml(en.label)}</div>
       <div class="card-sub">${escapeHtml(en.detail)}</div>
     </div>
@@ -1744,11 +1859,23 @@ function renderVlHistoryFor(name) {
 /* ---- Verlauf: Disziplin-Übersicht (Tabelle pro Datum) ---- */
 let vlTableCurrentClass = null;
 let vlTableCurrentLabel = null;
+function vlClassLabel(cls) { return cls === VL_NO_CLASS ? "Ohne Klasse" : cls; }
 function getVlDisciplinesForClass(cls) {
-  const students = vlStudentsFor(cls);
   const labels = new Set();
-  students.forEach(n => (history[n] || []).forEach(en => labels.add(en.label)));
+  vlStudentsFor(cls).forEach(st => (history[st.id] || []).forEach(en => labels.add(en.label)));
   return [...labels].sort((a, b) => a.localeCompare(b, "de"));
+}
+// Zeilen = Personen, Spalten = Daten, Zellen = Resultate dieser Disziplin
+function vlBuildMatrix(cls, label) {
+  const students = vlStudentsFor(cls);
+  const dates = new Set();
+  students.forEach(st => (history[st.id] || []).forEach(en => { if (en.label === label) dates.add(en.date); }));
+  const sortedDates = [...dates].sort();
+  const matrix = students.map(st => {
+    const entries = (history[st.id] || []).filter(en => en.label === label);
+    return sortedDates.map(d => entries.filter(en => en.date === d).map(en => en.detail));
+  });
+  return { students, sortedDates, matrix };
 }
 document.getElementById("vl_disciplineBtn").addEventListener("click", () => {
   const cls = document.getElementById("vl_classSelect").value;
@@ -1775,11 +1902,8 @@ function vlFormatCellDetail(detail) {
 }
 function openVlProgressTable(cls, label) {
   vlTableCurrentClass = cls; vlTableCurrentLabel = label;
-  const students = vlStudentsFor(cls);
-  const dates = new Set();
-  students.forEach(n => (history[n] || []).forEach(en => { if (en.label === label) dates.add(en.date); }));
-  const sortedDates = [...dates].sort();
-  document.getElementById("vlTableTitle").textContent = `${label} – ${cls === VL_NO_CLASS ? "Ohne Klasse" : cls}`;
+  const { students, sortedDates, matrix } = vlBuildMatrix(cls, label);
+  document.getElementById("vlTableTitle").textContent = `${label} – ${vlClassLabel(cls)}`;
   const table = document.getElementById("vlProgressTable");
   if (sortedDates.length === 0) {
     table.innerHTML = '<tr><td style="color:var(--muted); border:none;">Keine Resultate vorhanden.</td></tr>';
@@ -1787,13 +1911,10 @@ function openVlProgressTable(cls, label) {
     return;
   }
   let html = "<thead><tr><th>Name</th>" + sortedDates.map(d => `<th>${formatDateDE(d)}</th>`).join("") + "</tr></thead><tbody>";
-  students.forEach(n => {
-    const entries = (history[n] || []).filter(en => en.label === label);
-    html += `<tr><th>${escapeHtml(n)}</th>` + sortedDates.map(d => {
-      const dayEntries = entries.filter(en => en.date === d);
-      if (dayEntries.length === 0) return '<td><span class="vl-cell-empty">–</span></td>';
-      return `<td>${dayEntries.map(en => `<span class="vl-cell-entry">${vlFormatCellDetail(en.detail)}</span>`).join("")}</td>`;
-    }).join("") + "</tr>";
+  students.forEach((st, ri) => {
+    html += `<tr><th>${escapeHtml(st.name)}</th>` + matrix[ri].map(details => details.length === 0
+      ? '<td><span class="vl-cell-empty">–</span></td>'
+      : `<td>${details.map(d => `<span class="vl-cell-entry">${vlFormatCellDetail(d)}</span>`).join("")}</td>`).join("") + "</tr>";
   });
   html += "</tbody>";
   table.innerHTML = html;
@@ -1846,16 +1967,9 @@ function drawProgressTableCanvas(title, dateHeaders, students, matrix) {
 }
 document.getElementById("vlTable_camBtn").addEventListener("click", () => {
   if (!vlTableCurrentClass || !vlTableCurrentLabel) return;
-  const students = vlStudentsFor(vlTableCurrentClass);
-  const dates = new Set();
-  students.forEach(n => (history[n] || []).forEach(en => { if (en.label === vlTableCurrentLabel) dates.add(en.date); }));
-  const sortedDates = [...dates].sort();
+  const { students, sortedDates, matrix } = vlBuildMatrix(vlTableCurrentClass, vlTableCurrentLabel);
   if (sortedDates.length === 0) { openConfirm("Keine Resultate vorhanden.", null, null, "OK"); return; }
-  const matrix = students.map(n => {
-    const entries = (history[n] || []).filter(en => en.label === vlTableCurrentLabel);
-    return sortedDates.map(d => entries.filter(en => en.date === d).map(en => en.detail));
-  });
-  const canvas = drawProgressTableCanvas(`${vlTableCurrentLabel} – ${vlTableCurrentClass === VL_NO_CLASS ? "Ohne Klasse" : vlTableCurrentClass}`, sortedDates.map(formatDateDE), students, matrix);
+  const canvas = drawProgressTableCanvas(`${vlTableCurrentLabel} – ${vlClassLabel(vlTableCurrentClass)}`, sortedDates.map(formatDateDE), students.map(st => st.name), matrix);
   shareCanvasAsImage(canvas, `verlauf-${vlTableCurrentLabel.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.png`);
 });
 
@@ -2103,14 +2217,14 @@ document.getElementById("lf_startBtn").addEventListener("click", startLaufTimer)
 document.getElementById("lf_pauseBtn").addEventListener("click", pauseLaufTimer);
 document.getElementById("lf_resetTimerBtn").addEventListener("click", () => openConfirm("Timer wirklich auf 12:00 zurücksetzen?", resetLaufTimer, null, "Zurücksetzen"));
 document.getElementById("lf_classesBtn").addEventListener("click", () => {
-  openClassesModal((names) => {
-    const existing = new Set(runners.map(r => r.name));
+  openClassesModal((students) => {
+    const existing = new Set(runners.map(r => r.sid || r.name));
     const skipped = [];
-    names.forEach(n => {
-      if (existing.has(n)) return;
-      if (runners.length >= LAUF_MAX_RUNNERS) { skipped.push(n); return; }
-      runners.push({ id: uid(), name: n, laps: 0, lapTimestamps: [], lastTapAt: null });
-      existing.add(n);
+    students.forEach(st => {
+      if (existing.has(st.id)) return;
+      if (runners.length >= LAUF_MAX_RUNNERS) { skipped.push(st.name); return; }
+      runners.push({ id: uid(), sid: st.id, name: st.name, laps: 0, lapTimestamps: [], lastTapAt: null });
+      existing.add(st.id);
     });
     renderLaufList(); laufSave();
     if (skipped.length) openConfirm(`Maximal ${LAUF_MAX_RUNNERS} Läufer gleichzeitig. Nicht übernommen (${skipped.length}): ${skipped.join(", ")}`, null, null, "OK");
@@ -2119,7 +2233,7 @@ document.getElementById("lf_classesBtn").addEventListener("click", () => {
 document.getElementById("lf_saveResultsBtn").addEventListener("click", () => {
   if (runners.length === 0) { openConfirm("Keine Läufer zum Sichern.", null, null, "OK"); return; }
   openConfirm("Aktuelle Resultate aller Läufer in die Leistungen übernehmen?", () => {
-    runners.forEach(r => pushHistory(r.name, "Lauf", "12-Minuten-Lauf", `${r.laps} Runden`, `lauf:${todayISO()}`));
+    runners.forEach(r => pushHistory(r, "Lauf", "12-Minuten-Lauf", `${r.laps} Runden`, `lauf:${todayISO()}`));
     openConfirm("Resultate wurden in die Leistungen übernommen.", null, null, "OK");
   }, null, "Sichern");
 });
@@ -2548,9 +2662,9 @@ document.getElementById("sw_resetTimerBtn").addEventListener("click", () => open
 document.getElementById("sw_resetResultsBtn").addEventListener("click", () => openConfirm("Alle Längen und Zeiten zurücksetzen?", resetAllResults, null, "Zurücksetzen"));
 document.getElementById("sw_exportBtn").addEventListener("click", exportSwimResults);
 document.getElementById("sw_classesBtn").addEventListener("click", () => {
-  openClassesModal((names) => {
-    const existing = new Set(swimmers.map(s => s.name));
-    names.forEach(n => { if (!existing.has(n)) { swimmers.push({ id: uid(), name: n, lengths: 0, finishTime: null, lane: 0, position: null, lengthTimes: [], lastTapAt: null, lastTapBtn: null }); existing.add(n); } });
+  openClassesModal((students) => {
+    const existing = new Set(swimmers.map(s => s.sid || s.name));
+    students.forEach(st => { if (!existing.has(st.id)) { swimmers.push({ id: uid(), sid: st.id, name: st.name, lengths: 0, finishTime: null, lane: 0, position: null, lengthTimes: [], lastTapAt: null, lastTapBtn: null }); existing.add(st.id); } });
     renderSwimAll(); schwimmSave();
   });
 });
@@ -2561,7 +2675,7 @@ document.getElementById("sw_saveResultsBtn").addEventListener("click", () => {
       const detail = s.finishTime !== null
         ? `${formatTime(s.finishTime)} · Note ${formatNote(roundToQuarter(computeSwimGrade(distanceMeters, s.finishTime)))} (${s.lengths} Längen)`
         : `${s.lengths}/${targetLengths} Längen (nicht beendet)`;
-      pushHistory(s.name, "Schwimm", `${distanceMeters}m Schwimmen`, detail, `swim:${distanceMeters}:${todayISO()}`);
+      pushHistory(s, "Schwimm", `${distanceMeters}m Schwimmen`, detail, `swim:${distanceMeters}:${todayISO()}`);
     });
     openConfirm("Resultate wurden in die Leistungen übernommen.", null, null, "OK");
   }, null, "Sichern");
@@ -3191,9 +3305,10 @@ document.getElementById("examAddNameBtn").addEventListener("click", () => {
 document.getElementById("examAddNameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("examAddNameBtn").click(); });
 document.getElementById("examDetailClose").addEventListener("click", () => { document.getElementById("examDetailOverlay").classList.add("hidden"); renderExamList(); });
 document.getElementById("examLoadClassBtn").addEventListener("click", () => {
-  openClassesModal((names) => {
+  openClassesModal((students) => {
     const ex = exams.find(x => x.id === currentExamId);
-    names.forEach(n => { if (!ex.students.includes(n)) ex.students.push(n); });
+    if (!ex.sids) ex.sids = {};
+    students.forEach(st => { if (!ex.students.includes(st.name)) { ex.students.push(st.name); ex.sids[st.name] = st.id; } });
     saveExams(); renderExamStudentList();
   });
 });
@@ -3404,7 +3519,7 @@ document.getElementById("gradingSave").addEventListener("click", () => {
   saveExams();
   document.getElementById("gradingOverlay").classList.add("hidden");
   renderExamStudentList();
-  pushHistory(gradingName, "Kriterienraster", `${rubric.name}${(rubric.attempts || 1) === 2 ? ` – ${gradingAttempt}. Versuch` : ""}`,
+  pushHistory({ sid: (ex.sids || {})[gradingName], name: gradingName }, "Kriterienraster", `${rubric.name}${(rubric.attempts || 1) === 2 ? ` – ${gradingAttempt}. Versuch` : ""}`,
     attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${points}/${rubric.maxSix} Pt.)` : "nicht bewertet", `exam:${ex.id}:${gradingAttempt}`);
 });
 
@@ -3416,21 +3531,23 @@ let seilCount = 0, seilDuration = 60, seilRemaining = 60, seilInterval = null, s
 function renderSeilClassOptions() {
   const sel = document.getElementById("sl_classSelect");
   sel.innerHTML = '<option value="">Manuell eingeben</option>' + Object.keys(classes).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
-  document.getElementById("sl_studentSelect").classList.add("hidden");
-  document.getElementById("sl_nameInput").classList.remove("hidden");
+  sel.value = activeClass || "";
+  renderSeilStudentSelect();
 }
-document.getElementById("sl_classSelect").addEventListener("change", () => {
+document.getElementById("sl_classSelect").addEventListener("change", renderSeilStudentSelect);
+function renderSeilStudentSelect() {
   const cls = document.getElementById("sl_classSelect").value;
   const studentSel = document.getElementById("sl_studentSelect");
   const nameInput = document.getElementById("sl_nameInput");
   if (!cls) { studentSel.classList.add("hidden"); nameInput.classList.remove("hidden"); return; }
   nameInput.classList.add("hidden"); studentSel.classList.remove("hidden");
-  studentSel.innerHTML = (classes[cls] || []).map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
-});
-function currentSeilName() {
+  studentSel.innerHTML = classStudents(cls).map(st => `<option value="${escapeHtml(st.id)}">${escapeHtml(st.name)}</option>`).join("");
+}
+function currentSeilPerson() {
   const cls = document.getElementById("sl_classSelect").value;
-  if (cls) return document.getElementById("sl_studentSelect").value;
-  return document.getElementById("sl_nameInput").value.trim();
+  if (cls) { const st = classStudents(cls).find(x => x.id === document.getElementById("sl_studentSelect").value); return st ? { sid: st.id, name: st.name } : null; }
+  const name = document.getElementById("sl_nameInput").value.trim();
+  return name ? { name } : null;
 }
 document.querySelectorAll(".sl-duration-btn").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -3472,11 +3589,16 @@ document.getElementById("sl_tapBtn").addEventListener("pointerdown", () => { if 
 document.getElementById("sl_startBtn").addEventListener("click", seilStart);
 document.getElementById("sl_resetBtn").addEventListener("click", seilReset);
 document.getElementById("sl_saveBtn").addEventListener("click", () => {
-  const name = currentSeilName();
-  if (!name) { openConfirm("Bitte einen Namen angeben oder aus einer Klasse wählen.", null, null, "OK"); return; }
-  pushHistory(name, "Seilspringen", `Seilspringen ${seilDuration}s`, `${seilCount} Sprünge`);
+  const person = currentSeilPerson();
+  if (!person) { openConfirm("Bitte einen Namen angeben oder aus einer Klasse wählen.", null, null, "OK"); return; }
+  const name = person.name, count = seilCount;
+  pushHistory(person, "Seilspringen", `Seilspringen ${seilDuration}s`, `${seilCount} Sprünge`);
   document.getElementById("sl_saveBtn").classList.add("hidden"); // kein versehentliches Doppelt-Speichern
-  openConfirm(`Ergebnis für ${name} gespeichert (${seilCount} Sprünge).`, null, null, "OK");
+  // In einer Klasse gleich zur nächsten Person weiter und Zähler zurücksetzen
+  const studentSel = document.getElementById("sl_studentSelect");
+  const hasNext = person.sid && studentSel.selectedIndex >= 0 && studentSel.selectedIndex < studentSel.options.length - 1;
+  if (hasNext) { studentSel.selectedIndex++; seilReset(); }
+  openConfirm(`Ergebnis für ${name} gespeichert (${count} Sprünge).${hasNext ? ` Weiter mit ${studentSel.options[studentSel.selectedIndex].text}.` : ""}`, null, null, "OK");
 });
 
 /* =========================================================================
@@ -3557,7 +3679,8 @@ document.getElementById("ms_addBtn").addEventListener("click", () => {
 });
 document.getElementById("ms_nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("ms_addBtn").click(); });
 document.getElementById("ms_classesBtn").addEventListener("click", () => {
-  openClassesModal((names) => {
+  openClassesModal((students) => {
+    const names = students.map(st => st.name);
     const existing = new Set(stopwatches.map(s => s.name));
     names.forEach(n => { if (!existing.has(n)) { stopwatches.push({ id: uid(), name: n, running: false, startedAt: null, accumulated: 0, laps: [] }); existing.add(n); } });
     renderMsList(); msSave();
@@ -3586,6 +3709,7 @@ if (!sprintState.gradeClass) sprintState.gradeClass = "none";
 if (!sprintState.runnerNames) sprintState.runnerNames = [];
 if (!sprintState.order) sprintState.order = [];
 if (!sprintState.savedNames) sprintState.savedNames = [];
+if (!sprintState.runnerSids) sprintState.runnerSids = [];
 function sprintSave() { saveJSON(SPRINT_KEY, sprintState); }
 function sprintFormatSec(sec) { return sec.toFixed(2) + " s"; }
 /* Notenskala Sekundarschule (Knaben), aus "Notentabelle 21'.xlsx": 1. Klasse 60m, 3. Klasse 80m */
@@ -3645,7 +3769,7 @@ function sprintSaveRow(slot) {
   const distLabel = sprintState.gradeClass !== "none" ? `${SPRINT_DISTANCE_BY_CLASS[sprintState.gradeClass]}m Sprint` : "Sprint";
   const note = sprintState.gradeClass !== "none" ? computeSprintGrade(sprintState.gradeClass, t) : null;
   const detail = `${sprintFormatSec(t)}${note != null ? ` · Note ${formatNote(roundToQuarter(note))}` : ""}`;
-  pushHistory(name, "Sprint", distLabel, detail);
+  pushHistory({ sid: (sprintState.runnerSids || [])[runnerIdx], name }, "Sprint", distLabel, detail);
   if (!sprintState.savedNames.includes(name)) sprintState.savedNames.push(name);
   sprintSave();
   renderSprint();
@@ -3752,9 +3876,10 @@ document.querySelectorAll("#sprintStartModeRow .toggle-btn").forEach(btn => btn.
 }));
 document.getElementById("sprintPickRunnersBtn").addEventListener("click", () => {
   if (sprintState.running) return;
-  openClassesModal((names) => {
-    if (names.length > 6) { openConfirm(`Es wurden ${names.length} Namen gewählt, es können aber höchstens 6 Läufer gleichzeitig erfasst werden. Es werden nur die ersten 6 übernommen.`, null, null, "OK"); }
-    sprintState.runnerNames = names.slice(0, 6);
+  openClassesModal((students) => {
+    if (students.length > 6) { openConfirm(`Es wurden ${students.length} Namen gewählt, es können aber höchstens 6 Läufer gleichzeitig erfasst werden. Es werden nur die ersten 6 übernommen.`, null, null, "OK"); }
+    sprintState.runnerNames = students.slice(0, 6).map(st => st.name);
+    sprintState.runnerSids = students.slice(0, 6).map(st => st.id);
     sprintState.count = sprintState.runnerNames.length;
     sprintState.order = sprintState.runnerNames.map((_, i) => i);
     sprintState.savedNames = [];
@@ -3764,6 +3889,7 @@ document.getElementById("sprintPickRunnersBtn").addEventListener("click", () => 
 document.getElementById("sprintClearRunnersBtn").addEventListener("click", () => {
   if (sprintState.running) return;
   sprintState.runnerNames = [];
+  sprintState.runnerSids = [];
   sprintState.order = [];
   sprintState.savedNames = [];
   sprintSave(); renderSprint();
@@ -4004,9 +4130,10 @@ document.getElementById("runAddNameBtn").addEventListener("click", () => {
 document.getElementById("runAddNameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("runAddNameBtn").click(); });
 document.getElementById("runDetailClose").addEventListener("click", () => { document.getElementById("runDetailOverlay").classList.add("hidden"); renderRunList(); });
 document.getElementById("runLoadClassBtn").addEventListener("click", () => {
-  openClassesModal((names) => {
+  openClassesModal((students) => {
     const run = pkRuns.find(r => r.id === currentRunId);
-    names.forEach(n => { if (!run.students.includes(n)) run.students.push(n); });
+    if (!run.sids) run.sids = {};
+    students.forEach(st => { if (!run.students.includes(st.name)) { run.students.push(st.name); run.sids[st.name] = st.id; } });
     pkSaveRuns(); renderRunStudentList();
   });
 });
@@ -4123,7 +4250,7 @@ document.getElementById("pkGradingSave").addEventListener("click", () => {
   pkSaveRuns();
   document.getElementById("pkGradingOverlay").classList.add("hidden");
   renderRunStudentList();
-  pushHistory(pkGradingName, "Parkour", `${course.name} – ${pkGradingAttempt}. Versuch`,
+  pushHistory({ sid: (run.sids || {})[pkGradingName], name: pkGradingName }, "Parkour", `${course.name} – ${pkGradingAttempt}. Versuch`,
     attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${effectiveTime.toFixed(1)}s${penaltyBreakdown.length ? ", " + penaltyBreakdown.join(", ") : ""})` : "nicht bewertet", `pk:${run.id}:${pkGradingAttempt}`);
 });
 
@@ -4353,7 +4480,7 @@ function tmChangeRating(id, delta) {
   const p = tmParticipants.find(p => String(p.id) === String(id));
   if (!p) return;
   p.rating = Math.max(-5, Math.min(5, p.rating + delta));
-  tmRatings[p.name] = p.rating; tmSaveRatings();
+  tmRatings[p.sid || p.name] = p.rating; tmSaveRatings();
   renderTmList(); tmSave();
 }
 function renderTmList() {
@@ -4390,9 +4517,9 @@ document.getElementById("tm_clearBtn").addEventListener("click", () => {
   openConfirm("Alle Teilnehmer entfernen?", () => { tmParticipants = []; renderTmList(); tmSave(); document.getElementById("tm_teamsResult").innerHTML = ""; }, null, "Entfernen");
 });
 document.getElementById("tm_classesBtn").addEventListener("click", () => {
-  openClassesModal((names) => {
+  openClassesModal((students) => {
     const applyReplace = () => {
-      tmParticipants = names.map(n => ({ id: uid(), name: n, rating: tmRatings[n] || 0 }));
+      tmParticipants = students.map(st => ({ id: uid(), sid: st.id, name: st.name, rating: tmRatings[st.id] ?? tmRatings[st.name] ?? 0 }));
       renderTmList(); tmSave();
       document.getElementById("tm_teamsResult").innerHTML = "";
     };
@@ -4551,6 +4678,7 @@ renderMsList();
 sbLoad(); sbRender();
 renderTmList();
 renderBackupInfo();
+renderActiveClassUI();
 // Browser bitten, die Daten nicht automatisch zu löschen (Safari räumt sonst ungenutzte Website-Daten weg)
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
 
