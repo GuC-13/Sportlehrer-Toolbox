@@ -114,10 +114,10 @@
   /* Home */
   #homeView .tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
   .tool-tile {
-    border: none; border-radius: 16px; padding: 26px 12px; cursor: grab;
+    border: none; border-radius: 16px; padding: 26px 12px; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
     color: white; font-weight: 700; font-size: 1rem;
-    touch-action: none; user-select: none; position: relative; width: 100%;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; position: relative; width: 100%;
   }
   .tool-tile.dragging { opacity: 0.35; }
   .tool-tile-ghost { position: fixed; z-index: 500; pointer-events: none; opacity: 0.9; box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
@@ -371,9 +371,12 @@
   .sb-main { flex: 1; display: flex; align-items: stretch; justify-content: center; touch-action: none; user-select: none; }
   .sb-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; position: relative; }
   .sb-side:first-child { border-right: 2px solid #1f2937; }
-  .sb-team-name { border: none; background: transparent; color: #94a3b8; font-size: 1.2rem; font-weight: 700; text-align: center; width: 90%; }
+  #scoreboardView .sb-team-name { border: none; background: transparent; color: #94a3b8; font-size: 1.2rem; font-weight: 700; text-align: center; width: 90%; }
   .sb-team-name:focus { outline: 1px solid #334155; border-radius: 6px; }
   .sb-number { font-family: "Courier New", monospace; font-size: min(28vw, 220px); font-weight: 800; line-height: 1; color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,0.35); }
+  .sb-btns { display: flex; gap: 14px; }
+  .sb-btns button { width: 72px; height: 56px; border-radius: 12px; border: 1px solid #374151; background: #1f2937; color: white; font-size: 1.3rem; font-weight: 800; touch-action: manipulation; }
+  .sb-btns button:active { background: #374151; }
   .sb-reset-row { text-align: center; padding: 10px; }
   .sb-reset-row .btn { background: #1f2937; color: white; }
   .sb-hint { text-align: center; color: #64748b; font-size: 0.8rem; padding: 10px; }
@@ -422,13 +425,17 @@
   <!-- ============ HOME ============ -->
   <div id="homeView" class="view">
     <h1>🏅 Sportlehrer-Toolbox</h1>
-    <h2 class="sub" style="margin-top:-8px; font-size:0.78rem; text-align:center; color:var(--muted);">Boxen lange gedrückt halten und ziehen, um die Reihenfolge zu ändern</h2>
+    <h2 class="sub" style="margin-top:-8px; font-size:0.78rem; text-align:center; color:var(--muted);">Box lange gedrückt halten und ziehen, um die Reihenfolge zu ändern</h2>
+    <div class="card hidden" id="backupReminder" style="border-color:var(--warn); display:flex; align-items:center; gap:10px;">
+      <div style="flex:1; font-size:0.85rem;">💾 <b>Daten sichern:</b> <span id="backupReminderText"></span></div>
+      <button class="btn btn-outline" id="backupReminderBtn" style="padding:6px 12px; font-size:0.85rem;">Jetzt sichern</button>
+    </div>
     <div class="tool-grid" id="homeToolGrid"></div>
     <div class="home-actions">
       <button class="btn btn-outline" id="homeClassesBtn">Klassen verwalten</button>
       <button class="btn btn-outline" id="homeVerlaufBtn">Leistungen ansehen</button>
     </div>
-    <div id="appVersionLabel" style="text-align:center; margin-top:14px; font-size:0.68rem; color:var(--muted); opacity:0.6;">v2026-10-14.1</div>
+    <div id="appVersionLabel" style="text-align:center; margin-top:14px; font-size:0.68rem; color:var(--muted); opacity:0.6;">v2026-10-26.1</div>
     <button class="settings-fab" id="homeSettingsBtn">⚙️</button>
   </div>
 
@@ -590,8 +597,8 @@
         <label class="field-label">Klasse (für automatische Notenberechnung)</label>
         <div class="row" id="sprintClassRow" style="gap:6px; margin-bottom:14px;">
           <button class="toggle-btn active" data-sprintclass="none">Keine Note</button>
-          <button class="toggle-btn" data-sprintclass="1">1. Klasse (60 m)</button>
-          <button class="toggle-btn" data-sprintclass="3">3. Klasse (80 m)</button>
+          <button class="toggle-btn" data-sprintclass="1">1. Klasse Knaben (60 m)</button>
+          <button class="toggle-btn" data-sprintclass="3">3. Klasse Knaben (80 m)</button>
         </div>
         <label class="field-label">Läufer</label>
         <div class="row" style="gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap;">
@@ -652,14 +659,16 @@
       <div class="sb-side" data-side="left">
         <input type="text" class="sb-team-name" id="sb_leftName" value="Team A" maxlength="16">
         <div class="sb-number" id="sb_leftScore">0</div>
+        <div class="sb-btns"><button data-sb="left" data-delta="-1">−1</button><button data-sb="left" data-delta="1">+1</button></div>
       </div>
       <div class="sb-side" data-side="right">
         <input type="text" class="sb-team-name" id="sb_rightName" value="Team B" maxlength="16">
         <div class="sb-number" id="sb_rightScore">0</div>
+        <div class="sb-btns"><button data-sb="right" data-delta="-1">−1</button><button data-sb="right" data-delta="1">+1</button></div>
       </div>
     </div>
     <div class="sb-reset-row"><button class="btn" id="sb_resetBtn">Zurücksetzen</button></div>
-    <div class="sb-hint">Mit 3 Fingern auf einer Seite nach oben wischen = +1 Punkt · nach unten wischen = −1 Punkt (max. 50)</div>
+    <div class="sb-hint">Punkte mit den Knöpfen ändern – oder mit 3 Fingern auf einer Seite nach oben (+1) bzw. unten (−1) wischen (max. 50)</div>
   </div>
 
   <!-- ============ TEAMERSTELLUNG ============ -->
@@ -730,7 +739,8 @@
       <button class="toggle-btn" data-theme-choice="dark">🌙 Dunkel</button>
     </div>
     <label class="field-label" style="font-size:0.85rem; font-weight:700; color:var(--muted); display:block; margin:16px 0 6px;">Daten sichern</label>
-    <p style="font-size:0.8rem; color:var(--muted); margin-top:-4px;">Exportiert alle Klassen, Verlaufsdaten und Tool-Einstellungen als Datei – zum Sichern oder Übertragen auf ein anderes Gerät.</p>
+    <p style="font-size:0.8rem; color:var(--muted); margin-top:-4px;">Exportiert alle Klassen, Verlaufsdaten und Tool-Einstellungen als Datei – zum Sichern oder Übertragen auf ein anderes Gerät. Die Daten liegen nur auf diesem Gerät; ohne Sicherung gehen sie bei Gerätewechsel oder Löschen der Browserdaten verloren.</p>
+    <p id="lastBackupLabel" style="font-size:0.8rem; font-weight:700; margin:0 0 8px;"></p>
     <div class="row" style="display:flex; gap:10px;">
       <button class="btn btn-outline" id="exportBackupBtn" style="flex:1;">💾 Exportieren</button>
       <button class="btn btn-outline" id="importBackupBtn" style="flex:1;">📥 Importieren</button>
@@ -1019,17 +1029,27 @@ function loadJSON(key, fallback) {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
   catch (e) { return fallback; }
 }
-function saveJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+let storageWarningShown = false;
+function saveJSON(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); }
+  catch (e) {
+    // Speicher voll oder gesperrt (z.B. privater Modus) → einmal deutlich warnen statt still Daten zu verlieren
+    if (!storageWarningShown) {
+      storageWarningShown = true;
+      setTimeout(() => openConfirm("Achtung: Daten konnten nicht gespeichert werden (Speicher voll oder privater Modus). Bitte unter ⚙️ eine Sicherung exportieren.", null, null, "OK"), 0);
+    }
+  }
+}
+// Auch Anführungszeichen ersetzen: Namen landen in data-Attributen (data-name="…")
 function escapeHtml(str) {
-  const d = document.createElement("div");
-  d.textContent = str == null ? "" : String(str);
-  return d.innerHTML;
+  return (str == null ? "" : String(str))
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function uid() { return Date.now() + "_" + Math.random().toString(36).slice(2, 9); }
 function formatTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = Math.max(0, Math.round(sec)) % 60;
-  return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  const total = Math.max(0, Math.round(sec));
+  return String(Math.floor(total / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
 }
 function roundToQuarter(n) { return Math.round(n / 0.25) * 0.25; }
 function formatNote(n) {
@@ -1097,49 +1117,71 @@ function renderHomeTools() {
   }).join("");
   wireHomeToolDrag();
 }
+// Antippen öffnet das Tool, Wischen scrollt die Seite, erst Langdrücken (400 ms) startet das Verschieben
+let homeTileDragging = false;
+document.addEventListener("touchmove", (e) => { if (homeTileDragging) e.preventDefault(); }, { passive: false });
 function wireHomeToolDrag() {
-  let ghost = null, draggingId = null, startX = 0, startY = 0, dragging = false, sourceEl = null;
+  let ghost = null, draggingId = null, startX = 0, startY = 0, sourceEl = null, pressTimer = null, moved = false;
+  const reset = () => {
+    clearTimeout(pressTimer);
+    if (sourceEl) sourceEl.classList.remove("dragging");
+    if (ghost) { ghost.remove(); ghost = null; }
+    draggingId = null; sourceEl = null; homeTileDragging = false; moved = false;
+  };
   document.querySelectorAll(".tool-tile").forEach(tile => {
+    tile.addEventListener("contextmenu", (e) => e.preventDefault());
     tile.addEventListener("pointerdown", (e) => {
+      reset();
       draggingId = tile.dataset.tool; sourceEl = tile;
-      startX = e.clientX; startY = e.clientY; dragging = false;
-      try { tile.setPointerCapture(e.pointerId); } catch (err) {}
-    });
-    tile.addEventListener("pointermove", (e) => {
-      if (!draggingId || sourceEl !== tile) return;
-      const dx = e.clientX - startX, dy = e.clientY - startY;
-      if (!dragging && Math.hypot(dx, dy) > 12) {
-        dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      pressTimer = setTimeout(() => {
+        homeTileDragging = true;
+        try { tile.setPointerCapture(e.pointerId); } catch (err) {}
         tile.classList.add("dragging");
         const rect = tile.getBoundingClientRect();
         ghost = tile.cloneNode(true);
         ghost.className = "tool-tile tool-tile-ghost " + tile.className.replace("dragging", "");
         ghost.style.width = rect.width + "px"; ghost.style.height = rect.height + "px";
+        ghost.style.left = rect.left + "px"; ghost.style.top = rect.top + "px";
         document.body.appendChild(ghost);
+        try { if (navigator.vibrate) navigator.vibrate(30); } catch (err) {}
+      }, 400);
+    });
+    tile.addEventListener("pointermove", (e) => {
+      if (sourceEl !== tile) return;
+      if (!homeTileDragging) {
+        if (Math.hypot(e.clientX - startX, e.clientY - startY) > 10) { moved = true; clearTimeout(pressTimer); }
+        return;
       }
-      if (dragging && ghost) {
+      if (ghost) {
         ghost.style.left = (e.clientX - ghost.offsetWidth / 2) + "px";
         ghost.style.top = (e.clientY - ghost.offsetHeight / 2) + "px";
       }
     });
     tile.addEventListener("pointerup", (e) => {
-      if (draggingId !== tile.dataset.tool || sourceEl !== tile) return;
-      if (!dragging) { draggingId = null; sourceEl = null; activateTool(tile.dataset.tool); return; }
-      tile.classList.remove("dragging");
-      if (ghost) { ghost.remove(); ghost = null; }
+      if (sourceEl !== tile) return;
+      if (!homeTileDragging) {
+        const open = !moved;
+        reset();
+        if (open) activateTool(tile.dataset.tool);
+        return;
+      }
+      const fromId = draggingId;
+      if (ghost) ghost.style.display = "none";
       const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
       const dropTile = dropTarget ? dropTarget.closest(".tool-tile") : null;
-      if (dropTile && dropTile.dataset.tool !== draggingId) {
+      reset();
+      if (dropTile && dropTile.dataset.tool !== fromId) {
         const prefs = getHomePrefs();
-        const fromIdx = prefs.order.indexOf(draggingId);
+        const fromIdx = prefs.order.indexOf(fromId);
         const toIdx = prefs.order.indexOf(dropTile.dataset.tool);
         prefs.order.splice(fromIdx, 1);
-        prefs.order.splice(toIdx, 0, draggingId);
+        prefs.order.splice(toIdx, 0, fromId);
         saveHomePrefs(prefs);
         renderHomeTools();
       }
-      draggingId = null; sourceEl = null; dragging = false;
     });
+    tile.addEventListener("pointercancel", reset);
   });
 }
 renderHomeTools();
@@ -1162,10 +1204,26 @@ function renderSettingsTiles() {
   }));
 }
 document.getElementById("homeSettingsBtn").addEventListener("click", () => {
-  renderSettingsTiles();
+  renderSettingsTiles(); renderBackupInfo();
   document.getElementById("settingsOverlay").classList.remove("hidden");
 });
 document.getElementById("settingsCloseBtn").addEventListener("click", () => document.getElementById("settingsOverlay").classList.add("hidden"));
+const LAST_BACKUP_KEY = "spt_last_backup";
+const BACKUP_REMIND_DAYS = 14;
+function hasImportantData() {
+  try { return ["spt_history_v1", "spt_exams_v1", "spt_pk_runs_v1", "spt_classes_v1"].some(k => { const v = localStorage.getItem(k); return v && v !== "{}" && v !== "[]"; }); }
+  catch (e) { return false; }
+}
+function renderBackupInfo() {
+  let last = null;
+  try { last = localStorage.getItem(LAST_BACKUP_KEY); } catch (e) {}
+  document.getElementById("lastBackupLabel").textContent = last ? `Letzte Sicherung: ${formatDateDE(last)}` : "Noch keine Sicherung erstellt.";
+  const days = last ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000) : Infinity;
+  const remind = hasImportantData() && days >= BACKUP_REMIND_DAYS;
+  document.getElementById("backupReminder").classList.toggle("hidden", !remind);
+  if (remind) document.getElementById("backupReminderText").textContent = last ? `letzte Sicherung vor ${days} Tagen.` : "noch nie gesichert.";
+}
+document.getElementById("backupReminderBtn").addEventListener("click", () => document.getElementById("exportBackupBtn").click());
 document.getElementById("exportBackupBtn").addEventListener("click", () => {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -1179,7 +1237,9 @@ document.getElementById("exportBackupBtn").addEventListener("click", () => {
   const dateStr = new Date().toISOString().slice(0, 10);
   a.href = url; a.download = `sportlehrer-toolbox-backup-${dateStr}.json`;
   document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  try { localStorage.setItem(LAST_BACKUP_KEY, todayISO()); } catch (e) {}
+  renderBackupInfo();
 });
 document.getElementById("importBackupBtn").addEventListener("click", () => document.getElementById("importBackupFileInput").click());
 document.getElementById("importBackupFileInput").addEventListener("change", (e) => {
@@ -1189,13 +1249,15 @@ document.getElementById("importBackupFileInput").addEventListener("change", (e) 
   reader.onload = () => {
     try {
       const parsed = JSON.parse(reader.result);
-      const data = parsed.data || parsed;
-      let count = 0;
-      Object.keys(data).forEach(key => {
-        if (key.startsWith("spt_")) { localStorage.setItem(key, data[key]); count++; }
-      });
-      if (count === 0) { openConfirm("Diese Datei enthält keine passenden Sportlehrer-Toolbox-Daten.", null, null, "OK"); return; }
-      openConfirm(`${count} Datenbereiche importiert. Die Seite wird jetzt neu geladen.`, () => location.reload(), null, "OK");
+      const data = (parsed && parsed.data) || parsed || {};
+      const keys = Object.keys(data).filter(key => key.startsWith("spt_") && typeof data[key] === "string");
+      if (keys.length === 0) { openConfirm("Diese Datei enthält keine passenden Sportlehrer-Toolbox-Daten.", null, null, "OK"); return; }
+      const when = parsed.exportedAt ? ` vom ${new Date(parsed.exportedAt).toLocaleDateString("de-CH")}` : "";
+      openConfirm(`Sicherung${when} importieren? Die aktuellen Daten auf diesem Gerät (Klassen, Leistungen, Prüfungen …) werden dabei überschrieben.`, () => {
+        try { keys.forEach(key => localStorage.setItem(key, data[key])); }
+        catch (err) { openConfirm("Import fehlgeschlagen: " + err.message, null, null, "OK"); return; }
+        openConfirm(`${keys.length} Datenbereiche importiert. Die Seite wird jetzt neu geladen.`, () => location.reload(), () => location.reload(), "OK");
+      }, null, "Überschreiben");
     } catch (err) {
       openConfirm("Datei konnte nicht gelesen werden: " + err.message, null, null, "OK");
     }
@@ -1420,37 +1482,41 @@ function guessClassName(grid) {
   }
   return "";
 }
-function parseCsvFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const text = String(reader.result);
-        const firstLine = text.split(/\r?\n/)[0] || "";
-        const delim = firstLine.split(";").length > firstLine.split(",").length ? ";" : ",";
-        const lines = text.split(/\r?\n/).filter(l => l.length > 0);
-        resolve(lines.map(line => parseCsvLine(line, delim)));
-      } catch (e) { reject(e); }
-    };
-    reader.onerror = () => reject(new Error("Lesefehler"));
-    reader.readAsText(file, "utf-8");
+// Excel speichert CSV oft als Windows-1252 → erst streng UTF-8 versuchen, sonst Windows-1252 (Umlaute bleiben korrekt)
+function readFileText(file) {
+  return file.arrayBuffer().then(buf => {
+    try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); }
+    catch (e) { return new TextDecoder("windows-1252").decode(buf); }
   });
 }
-function parseCsvLine(line, delim) {
-  const result = []; let cur = ""; let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+function parseCsvText(text) {
+  text = text.replace(/^\uFEFF/, "");
+  const firstLine = text.split(/\r?\n/)[0] || "";
+  const delim = firstLine.split(";").length >= firstLine.split(",").length ? ";" : ",";
+  // Zeichenweise, damit Trennzeichen und Zeilenumbrüche innerhalb von "…" erhalten bleiben
+  const rows = []; let row = []; let cur = ""; let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
     if (inQuotes) {
-      if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQuotes = false; }
+      if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else inQuotes = false; }
       else cur += ch;
-    } else {
-      if (ch === '"') inQuotes = true;
-      else if (ch === delim) { result.push(cur); cur = ""; }
-      else cur += ch;
-    }
+    } else if (ch === '"') inQuotes = true;
+    else if (ch === delim) { row.push(cur); cur = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cur); cur = "";
+      if (row.some(c => c !== "")) rows.push(row);
+      row = [];
+    } else cur += ch;
   }
-  result.push(cur);
-  return result;
+  row.push(cur);
+  if (row.some(c => c !== "")) rows.push(row);
+  return rows;
+}
+function parseCsvFile(file) { return readFileText(file).then(parseCsvText); }
+function csvCell(v) {
+  const str = v == null ? "" : String(v);
+  return /[;"\r\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
 }
 function parseXlsxFile(file) {
   return new Promise((resolve, reject) => {
@@ -1458,7 +1524,8 @@ function parseXlsxFile(file) {
     const reader = new FileReader();
     reader.onload = () => {
       unzipXlsxEntries(reader.result).then(entries => {
-        const sheetName = Object.keys(entries).find(n => /^xl\/worksheets\/sheet\d*\.xml$/.test(n));
+        const sheetNum = (n) => Number((n.match(/sheet(\d*)\.xml$/) || [])[1] || 0);
+        const sheetName = Object.keys(entries).filter(n => /^xl\/worksheets\/sheet\d*\.xml$/.test(n)).sort((a, b) => sheetNum(a) - sheetNum(b))[0];
         if (!sheetName) { reject(new Error("Kein Arbeitsblatt in der Datei gefunden.")); return; }
         const sharedStrings = entries["xl/sharedStrings.xml"] ? parseSharedStrings(entries["xl/sharedStrings.xml"]) : [];
         resolve(parseSheetXml(entries[sheetName], sharedStrings));
@@ -1468,31 +1535,38 @@ function parseXlsxFile(file) {
     reader.readAsArrayBuffer(file);
   });
 }
+// Liest über das zentrale ZIP-Verzeichnis: dort stehen die Grössen immer, auch wenn ein Programm sie im lokalen Kopf weglässt
 async function unzipXlsxEntries(arrayBuffer) {
   const view = new DataView(arrayBuffer);
   const bytes = new Uint8Array(arrayBuffer);
+  let eocd = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
+    if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("Keine gültige Excel-Datei (.xlsx).");
+  const entryCount = view.getUint16(eocd + 10, true);
+  let p = view.getUint32(eocd + 16, true);
   const results = {};
-  let offset = 0;
-  while (offset + 4 <= bytes.length) {
-    const sig = view.getUint32(offset, true);
-    if (sig !== 0x04034b50) break;
-    const compMethod = view.getUint16(offset + 8, true);
-    const compSize = view.getUint32(offset + 18, true);
-    const nameLen = view.getUint16(offset + 26, true);
-    const extraLen = view.getUint16(offset + 28, true);
-    const name = new TextDecoder().decode(bytes.slice(offset + 30, offset + 30 + nameLen));
-    const dataStart = offset + 30 + nameLen + extraLen;
+  for (let n = 0; n < entryCount && p + 46 <= bytes.length; n++) {
+    if (view.getUint32(p, true) !== 0x02014b50) break;
+    const compMethod = view.getUint16(p + 10, true);
+    const compSize = view.getUint32(p + 20, true);
+    const nameLen = view.getUint16(p + 28, true);
+    const extraLen = view.getUint16(p + 30, true);
+    const commentLen = view.getUint16(p + 32, true);
+    const localOffset = view.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(bytes.subarray(p + 46, p + 46 + nameLen));
+    p += 46 + nameLen + extraLen + commentLen;
+    if (name !== "xl/sharedStrings.xml" && !/^xl\/worksheets\/sheet\d*\.xml$/.test(name)) continue;
+    const dataStart = localOffset + 30 + view.getUint16(localOffset + 26, true) + view.getUint16(localOffset + 28, true);
     const compData = bytes.slice(dataStart, dataStart + compSize);
-    if (name === "xl/sharedStrings.xml" || /^xl\/worksheets\/sheet\d*\.xml$/.test(name)) {
-      let outBytes;
-      if (compMethod === 0) outBytes = compData;
-      else {
-        const stream = new Blob([compData]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-        outBytes = new Uint8Array(await new Response(stream).arrayBuffer());
-      }
-      results[name] = new TextDecoder("utf-8").decode(outBytes);
+    let outBytes;
+    if (compMethod === 0) outBytes = compData;
+    else {
+      const stream = new Blob([compData]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      outBytes = new Uint8Array(await new Response(stream).arrayBuffer());
     }
-    offset = dataStart + compSize;
+    results[name] = new TextDecoder("utf-8").decode(outBytes);
   }
   return results;
 }
@@ -1580,10 +1654,19 @@ document.getElementById("selectStudentsAdd").addEventListener("click", () => {
 const HISTORY_KEY = "spt_history_v1";
 let history = loadJSON(HISTORY_KEY, {});
 function persistHistory() { saveJSON(HISTORY_KEY, history); }
-function pushHistory(name, tool, label, detail) {
+// key (optional): identifiziert die Quelle (z.B. Prüfung + Versuch). Wird dieselbe Quelle erneut gespeichert,
+// ersetzt der neue Eintrag den alten – sonst stünde nach einer Korrektur die alte Note weiter in den Leistungen.
+function pushHistory(name, tool, label, detail, key) {
   if (!name) return;
   if (!history[name]) history[name] = [];
-  history[name].push({ id: uid(), date: todayISO(), tool, label, detail });
+  const entry = { id: uid(), date: todayISO(), tool, label, detail };
+  if (key) {
+    entry.key = key;
+    const old = history[name].find(en => en.key === key);
+    if (old) entry.date = old.date;
+    history[name] = history[name].filter(en => en.key !== key);
+  }
+  history[name].push(entry);
   persistHistory();
 }
 function deleteHistoryEntry(name, id) {
@@ -1596,9 +1679,17 @@ document.getElementById("homeVerlaufBtn").addEventListener("click", () => {
   showView("verlauf");
   renderVerlaufClassSelect();
 });
+// Resultate von Namen, die direkt im Tool eingetippt wurden, gehören zu keiner Klasse → eigene Auswahl, sonst unauffindbar
+const VL_NO_CLASS = "__ohne_klasse__";
+function vlNamesWithoutClass() {
+  const inClass = new Set(Object.values(classes).flat());
+  return Object.keys(history).filter(n => !inClass.has(n)).sort((a, b) => a.localeCompare(b, "de"));
+}
+function vlStudentsFor(cls) { return cls === VL_NO_CLASS ? vlNamesWithoutClass() : (classes[cls] || []); }
 function renderVerlaufClassSelect() {
   const sel = document.getElementById("vl_classSelect");
-  sel.innerHTML = '<option value="">Klasse wählen...</option>' + Object.keys(classes).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  sel.innerHTML = '<option value="">Klasse wählen...</option>' + Object.keys(classes).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")
+    + (vlNamesWithoutClass().length ? `<option value="${VL_NO_CLASS}">Ohne Klasse (${vlNamesWithoutClass().length})</option>` : "");
   document.getElementById("vl_studentList").innerHTML = "";
 }
 document.getElementById("vl_classSelect").addEventListener("change", () => {
@@ -1606,7 +1697,7 @@ document.getElementById("vl_classSelect").addEventListener("change", () => {
   const listEl = document.getElementById("vl_studentList");
   const discBtn = document.getElementById("vl_disciplineBtn");
   if (!cls) { listEl.innerHTML = ""; discBtn.style.display = "none"; return; }
-  const students = classes[cls] || [];
+  const students = vlStudentsFor(cls);
   listEl.innerHTML = students.map(n => `
     <div class="vl-student-row" data-name="${escapeHtml(n)}">${escapeHtml(n)}</div>
     <div class="vl-inline-history" data-history-for="${escapeHtml(n)}"></div>
@@ -1654,7 +1745,7 @@ function renderVlHistoryFor(name) {
 let vlTableCurrentClass = null;
 let vlTableCurrentLabel = null;
 function getVlDisciplinesForClass(cls) {
-  const students = classes[cls] || [];
+  const students = vlStudentsFor(cls);
   const labels = new Set();
   students.forEach(n => (history[n] || []).forEach(en => labels.add(en.label)));
   return [...labels].sort((a, b) => a.localeCompare(b, "de"));
@@ -1684,11 +1775,11 @@ function vlFormatCellDetail(detail) {
 }
 function openVlProgressTable(cls, label) {
   vlTableCurrentClass = cls; vlTableCurrentLabel = label;
-  const students = classes[cls] || [];
+  const students = vlStudentsFor(cls);
   const dates = new Set();
   students.forEach(n => (history[n] || []).forEach(en => { if (en.label === label) dates.add(en.date); }));
   const sortedDates = [...dates].sort();
-  document.getElementById("vlTableTitle").textContent = `${label} – ${cls}`;
+  document.getElementById("vlTableTitle").textContent = `${label} – ${cls === VL_NO_CLASS ? "Ohne Klasse" : cls}`;
   const table = document.getElementById("vlProgressTable");
   if (sortedDates.length === 0) {
     table.innerHTML = '<tr><td style="color:var(--muted); border:none;">Keine Resultate vorhanden.</td></tr>';
@@ -1755,7 +1846,7 @@ function drawProgressTableCanvas(title, dateHeaders, students, matrix) {
 }
 document.getElementById("vlTable_camBtn").addEventListener("click", () => {
   if (!vlTableCurrentClass || !vlTableCurrentLabel) return;
-  const students = classes[vlTableCurrentClass] || [];
+  const students = vlStudentsFor(vlTableCurrentClass);
   const dates = new Set();
   students.forEach(n => (history[n] || []).forEach(en => { if (en.label === vlTableCurrentLabel) dates.add(en.date); }));
   const sortedDates = [...dates].sort();
@@ -1764,7 +1855,7 @@ document.getElementById("vlTable_camBtn").addEventListener("click", () => {
     const entries = (history[n] || []).filter(en => en.label === vlTableCurrentLabel);
     return sortedDates.map(d => entries.filter(en => en.date === d).map(en => en.detail));
   });
-  const canvas = drawProgressTableCanvas(`${vlTableCurrentLabel} – ${vlTableCurrentClass}`, sortedDates.map(formatDateDE), students, matrix);
+  const canvas = drawProgressTableCanvas(`${vlTableCurrentLabel} – ${vlTableCurrentClass === VL_NO_CLASS ? "Ohne Klasse" : vlTableCurrentClass}`, sortedDates.map(formatDateDE), students, matrix);
   shareCanvasAsImage(canvas, `verlauf-${vlTableCurrentLabel.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.png`);
 });
 
@@ -1804,16 +1895,29 @@ function renderLaufTimer() {
   el.textContent = formatTime(Math.max(0, laufTimerRemaining));
   el.style.color = laufTimerRemaining <= 60 && laufTimerRemaining > 0 ? "#f59e0b" : (laufTimerRemaining <= 0 ? "#ef4444" : "");
 }
-function laufBeep() {
+// iOS gibt Ton nur frei, wenn der AudioContext bei einem Fingertipp entsteht → beim Start-Tipp anlegen, am Ende wiederverwenden
+let audioCtx = null;
+function unlockAudio() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 880; g.gain.setValueAtTime(0.2, ctx.currentTime);
-    o.start(); o.stop(ctx.currentTime + 0.4);
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  } catch (e) {}
+}
+function laufBeep() {
+  try { if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]); } catch (e) {}
+  try {
+    unlockAudio();
+    if (!audioCtx) return;
+    [0, 0.6, 1.2].forEach(offset => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = 880; g.gain.setValueAtTime(0.3, audioCtx.currentTime + offset);
+      o.start(audioCtx.currentTime + offset); o.stop(audioCtx.currentTime + offset + 0.4);
+    });
   } catch (e) {}
 }
 function startLaufTimer() {
+  unlockAudio();
   if (laufTimerRunning) return;
   if (laufTimerRemaining <= 0) laufTimerRemaining = LAUF_TIMER_SECONDS;
   laufTimerRunning = true;
@@ -2001,18 +2105,21 @@ document.getElementById("lf_resetTimerBtn").addEventListener("click", () => open
 document.getElementById("lf_classesBtn").addEventListener("click", () => {
   openClassesModal((names) => {
     const existing = new Set(runners.map(r => r.name));
+    const skipped = [];
     names.forEach(n => {
-      if (existing.has(n) || runners.length >= LAUF_MAX_RUNNERS) return;
+      if (existing.has(n)) return;
+      if (runners.length >= LAUF_MAX_RUNNERS) { skipped.push(n); return; }
       runners.push({ id: uid(), name: n, laps: 0, lapTimestamps: [], lastTapAt: null });
       existing.add(n);
     });
     renderLaufList(); laufSave();
+    if (skipped.length) openConfirm(`Maximal ${LAUF_MAX_RUNNERS} Läufer gleichzeitig. Nicht übernommen (${skipped.length}): ${skipped.join(", ")}`, null, null, "OK");
   });
 });
 document.getElementById("lf_saveResultsBtn").addEventListener("click", () => {
   if (runners.length === 0) { openConfirm("Keine Läufer zum Sichern.", null, null, "OK"); return; }
   openConfirm("Aktuelle Resultate aller Läufer in die Leistungen übernehmen?", () => {
-    runners.forEach(r => pushHistory(r.name, "Lauf", "12-Minuten-Lauf", `${r.laps} Runden`));
+    runners.forEach(r => pushHistory(r.name, "Lauf", "12-Minuten-Lauf", `${r.laps} Runden`, `lauf:${todayISO()}`));
     openConfirm("Resultate wurden in die Leistungen übernommen.", null, null, "OK");
   }, null, "Sichern");
 });
@@ -2068,6 +2175,7 @@ function schwimmLoad() {
     if (!t || !c || typeof c.baseMs !== "number") return;
     t.baseMs = c.baseMs; t.startedAt = typeof c.startedAt === "number" ? c.startedAt : null;
   });
+  if (schwimmMode === "staggered") [1, 2, 3, 4].forEach(renumberLane);
   schwimmSyncElapsed();
   // Uhren, die beim Schliessen/Neuladen liefen, laufen weiter
   if (schwimmClock.startedAt) { schwimmTimerRunning = true; schwimmTimerInterval = setInterval(schwimmTick, 250); }
@@ -2075,7 +2183,15 @@ function schwimmLoad() {
     if (t.startedAt) { t.running = true; t.interval = setInterval(() => staggeredTick(i), 250); }
   });
 }
-function setSchwimmMode(mode) { schwimmMode = mode; renderSchwimmMode(); schwimmSave(); }
+function setSchwimmMode(mode) {
+  if (mode === "staggered") {
+    // Gestaffelt gibt es nur 4 Startuhren pro Bahn; ohne Startposition würde die Zeit 00:00 (= Note 6) erfasst
+    const full = [1, 2, 3, 4].filter(n => swimmers.filter(s => s.lane === n).length > 4);
+    if (full.length) { openConfirm(`Gestaffelter Start erlaubt höchstens 4 Personen pro Bahn. Bitte zuerst Bahn ${full.join(", ")} entlasten.`, null, null, "OK"); return; }
+    [1, 2, 3, 4].forEach(renumberLane);
+  }
+  schwimmMode = mode; renderSchwimmMode(); schwimmSave();
+}
 function renderSchwimmMode() {
   document.querySelectorAll(".sw-mode-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === schwimmMode));
   document.getElementById("sw_timerBox").classList.toggle("hidden", schwimmMode === "staggered");
@@ -2188,7 +2304,8 @@ function removeSwimmer(id) {
 }
 function currentElapsedForSwimmer(s) {
   schwimmSyncElapsed();
-  return (schwimmMode === "staggered" && s.position) ? staggeredTimers[s.position - 1].elapsed : schwimmElapsed;
+  const t = schwimmMode === "staggered" && s.position ? staggeredTimers[s.position - 1] : null;
+  return t ? t.elapsed : schwimmElapsed;
 }
 const SW_COOLDOWN_MS = 45000;
 function changeLength(id, delta) {
@@ -2203,9 +2320,14 @@ function changeLength(id, delta) {
     const elapsedNow = currentElapsedForSwimmer(s);
     const prevTime = s.lengthTimes.length ? s.lengthTimes[s.lengthTimes.length - 1] : 0;
     for (let i = 0; i < delta; i++) s.lengthTimes.push(i === delta - 1 ? elapsedNow : prevTime);
-    if (prev < targetLengths && s.lengths >= targetLengths && s.finishTime === null) s.finishTime = elapsedNow;
+    if (prev < targetLengths && s.lengths >= targetLengths && s.finishTime === null) {
+      // Uhr nie gestartet → Zeit 00:00 wäre fälschlich eine Note 6
+      if (elapsedNow > 0) s.finishTime = elapsedNow;
+      else openConfirm("Die Uhr läuft nicht – es wurde keine Zielzeit erfasst. Bitte die Uhr starten.", null, null, "OK");
+    }
   } else if (delta < 0) {
     if (s.lengthTimes.length) s.lengthTimes.pop();
+    if (s.lengths < targetLengths) s.finishTime = null; // versehentlich zu viel getippt → Zielzeit wieder offen
   }
   renderSwimAll(); schwimmSave();
   if (schwimmMode === "staggered" && s.position) checkStaggeredAllFinished(s.position - 1);
@@ -2439,7 +2561,7 @@ document.getElementById("sw_saveResultsBtn").addEventListener("click", () => {
       const detail = s.finishTime !== null
         ? `${formatTime(s.finishTime)} · Note ${formatNote(roundToQuarter(computeSwimGrade(distanceMeters, s.finishTime)))} (${s.lengths} Längen)`
         : `${s.lengths}/${targetLengths} Längen (nicht beendet)`;
-      pushHistory(s.name, "Schwimm", `${distanceMeters}m Schwimmen`, detail);
+      pushHistory(s.name, "Schwimm", `${distanceMeters}m Schwimmen`, detail, `swim:${distanceMeters}:${todayISO()}`);
     });
     openConfirm("Resultate wurden in die Leistungen übernommen.", null, null, "OK");
   }, null, "Sichern");
@@ -2730,7 +2852,7 @@ document.getElementById("rubricList").addEventListener("click", (e) => {
 document.getElementById("newRubricBtn").addEventListener("click", () => openRubricEditor(null));
 
 function downloadTextFile(filename, text) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + text], { type: "text/csv;charset=utf-8;" }); // BOM: Excel erkennt sonst die Umlaute nicht
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = filename;
@@ -2744,15 +2866,15 @@ function exportRubricCsv(rubric) {
     const maxBoxes = Math.max(0, ...rubric.criteria.map(c => c.boxes.length));
     const header = ["Kriterium", "Beschreibung"];
     for (let i = 1; i <= maxBoxes; i++) header.push(`Feld${i}_Bezeichnung`, `Feld${i}_Punkte`);
-    lines.push(header.join(";"));
+    lines.push(header.map(csvCell).join(";"));
     rubric.criteria.forEach(c => {
       const row = [c.title, c.desc];
       for (let i = 0; i < maxBoxes; i++) { const b = c.boxes[i]; row.push(b ? b.label : "", b ? b.points : ""); }
-      lines.push(row.join(";"));
+      lines.push(row.map(csvCell).join(";"));
     });
   } else {
-    lines.push(["Kriterium", "Beschreibung", ...rubric.levels].join(";"));
-    rubric.criteria.forEach(c => lines.push([c.title, c.desc, ...c.points].join(";")));
+    lines.push(["Kriterium", "Beschreibung", ...rubric.levels].map(csvCell).join(";"));
+    rubric.criteria.forEach(c => lines.push([c.title, c.desc, ...c.points].map(csvCell).join(";")));
   }
   downloadTextFile(`${sanitizeFilename(rubric.name)}.csv`, lines.join("\n"));
 }
@@ -2921,10 +3043,9 @@ document.getElementById("rubricEditorSave").addEventListener("click", () => {
 document.getElementById("importCsvBtn").addEventListener("click", () => document.getElementById("csvFileInput").click());
 document.getElementById("csvFileInput").addEventListener("change", (e) => {
   const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
+  readFileText(file).then(text => {
     try {
-      const parsed = parseRubricCsv(String(reader.result));
+      const parsed = parseRubricCsv(text);
       draftType = parsed.type; draftAttempts = parsed.attempts || 1;
       draftLevels = parsed.levels; draftCriteria = parsed.criteria;
       editingRubricId = null;
@@ -2939,11 +3060,11 @@ document.getElementById("csvFileInput").addEventListener("change", (e) => {
     } catch (err) {
       openConfirm("CSV konnte nicht gelesen werden. Erwartetes Format: Kriterium;Beschreibung;Stufe1;Stufe2;... (oder eine mit dieser App exportierte Datei).", null, null, "OK");
     }
-  };
-  reader.readAsText(file, "UTF-8"); e.target.value = "";
+  });
+  e.target.value = "";
 });
 function parseRubricCsv(text) {
-  const rawLines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  const rawLines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(l => l.trim().length > 0);
   const meta = { type: "levels", maxSix: null, attempts: 1 };
   let i = 0;
   while (i < rawLines.length && rawLines[i].trim().startsWith("#")) {
@@ -2957,22 +3078,21 @@ function parseRubricCsv(text) {
     }
     i++;
   }
-  const lines = rawLines.slice(i);
+  // Meta-Zeilen (#…) sind einzeilig; der Rest wird als echtes CSV gelesen (Anführungszeichen, Umbrüche)
+  const lines = parseCsvText(rawLines.slice(i).join("\n")).map(cells => cells.map(c => c.trim()));
   if (lines.length < 2) throw new Error("zu kurz");
-  const delim = (lines[0].split(";").length >= lines[0].split(",").length) ? ";" : ",";
-  const splitLine = (l) => l.split(delim).map(s => s.trim().replace(/^"|"$/g, ""));
   if (meta.type === "checkboxes") {
     const criteria = lines.slice(1).map(line => {
-      const cells = splitLine(line); const boxes = [];
+      const cells = line; const boxes = [];
       for (let c = 2; c < cells.length; c += 2) { const label = cells[c]; if (label) boxes.push({ label, points: Number(cells[c + 1]) || 0 }); }
       return { id: uid(), title: cells[0] || "", desc: cells[1] || "", boxes };
     });
     return { type: "checkboxes", maxSix: meta.maxSix, attempts: meta.attempts, levels: [], criteria };
   }
-  const header = splitLine(lines[0]); const levels = header.slice(2);
+  const header = lines[0]; const levels = header.slice(2);
+  while (levels.length && !levels[levels.length - 1]) levels.pop(); // leere Excel-Spalten am Ende
   if (levels.length === 0) throw new Error("keine Stufen gefunden");
-  const criteria = lines.slice(1).map(line => {
-    const cells = splitLine(line);
+  const criteria = lines.slice(1).map(cells => {
     return { id: uid(), title: cells[0] || "", desc: cells[1] || "", points: levels.map((_, i2) => Number(cells[2 + i2]) || 0) };
   });
   return { type: "levels", maxSix: meta.maxSix, attempts: meta.attempts, levels, criteria };
@@ -3285,7 +3405,7 @@ document.getElementById("gradingSave").addEventListener("click", () => {
   document.getElementById("gradingOverlay").classList.add("hidden");
   renderExamStudentList();
   pushHistory(gradingName, "Kriterienraster", `${rubric.name}${(rubric.attempts || 1) === 2 ? ` – ${gradingAttempt}. Versuch` : ""}`,
-    attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${points}/${rubric.maxSix} Pt.)` : "nicht bewertet");
+    attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${points}/${rubric.maxSix} Pt.)` : "nicht bewertet", `exam:${ex.id}:${gradingAttempt}`);
 });
 
 /* =========================================================================
@@ -3324,6 +3444,7 @@ document.querySelectorAll(".sl-duration-btn").forEach(btn => {
 function renderSeilTimer() { document.getElementById("sl_timerDisplay").textContent = formatTime(seilRemaining); }
 function renderSeilCount() { document.getElementById("sl_countDisplay").textContent = seilCount; }
 function seilStart() {
+  unlockAudio();
   if (seilRunning) return;
   if (seilRemaining <= 0) seilRemaining = seilDuration;
   seilRunning = true;
@@ -3337,6 +3458,7 @@ function seilStart() {
 }
 function seilFinish() {
   clearInterval(seilInterval); seilRunning = false;
+  laufBeep();
   document.getElementById("sl_tapBtn").disabled = true;
   document.getElementById("sl_saveBtn").classList.remove("hidden");
 }
@@ -3353,6 +3475,7 @@ document.getElementById("sl_saveBtn").addEventListener("click", () => {
   const name = currentSeilName();
   if (!name) { openConfirm("Bitte einen Namen angeben oder aus einer Klasse wählen.", null, null, "OK"); return; }
   pushHistory(name, "Seilspringen", `Seilspringen ${seilDuration}s`, `${seilCount} Sprünge`);
+  document.getElementById("sl_saveBtn").classList.add("hidden"); // kein versehentliches Doppelt-Speichern
   openConfirm(`Ergebnis für ${name} gespeichert (${seilCount} Sprünge).`, null, null, "OK");
 });
 
@@ -4001,7 +4124,7 @@ document.getElementById("pkGradingSave").addEventListener("click", () => {
   document.getElementById("pkGradingOverlay").classList.add("hidden");
   renderRunStudentList();
   pushHistory(pkGradingName, "Parkour", `${course.name} – ${pkGradingAttempt}. Versuch`,
-    attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${effectiveTime.toFixed(1)}s${penaltyBreakdown.length ? ", " + penaltyBreakdown.join(", ") : ""})` : "nicht bewertet");
+    attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${effectiveTime.toFixed(1)}s${penaltyBreakdown.length ? ", " + penaltyBreakdown.join(", ") : ""})` : "nicht bewertet", `pk:${run.id}:${pkGradingAttempt}`);
 });
 
 /* =========================================================================
@@ -4035,6 +4158,10 @@ document.getElementById("sb_resetBtn").addEventListener("click", () => {
 });
 
 const sbMain = document.querySelector(".sb-main");
+sbMain.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-sb]"); if (!btn) return;
+  sbChange(btn.dataset.sb, Number(btn.dataset.delta));
+});
 let sb3Touch = null;
 function sbAvgY(touches) { let s = 0; for (let i = 0; i < touches.length; i++) s += touches[i].clientY; return s / touches.length; }
 function sbAvgX(touches) { let s = 0; for (let i = 0; i < touches.length; i++) s += touches[i].clientX; return s / touches.length; }
@@ -4423,6 +4550,9 @@ renderSeilTimer(); renderSeilCount();
 renderMsList();
 sbLoad(); sbRender();
 renderTmList();
+renderBackupInfo();
+// Browser bitten, die Daten nicht automatisch zu löschen (Safari räumt sonst ungenutzte Website-Daten weg)
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
