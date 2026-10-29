@@ -2,13 +2,13 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Sportlehrer-Toolbox</title>
 <script>try { const t = localStorage.getItem("spt_theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-  /* Farben nur über diese Variablen – Hell/Dunkel folgt der Geräteeinstellung oder der Wahl in ⚙️ (data-theme) */
+  /* Farben nur über diese Variablen. *-bg = Flächen mit weisser Schrift (≥ 4.5:1 in Hell und Dunkel), --control-border = Rahmen von Bedienelementen (≥ 3:1) – Hell/Dunkel folgt der Geräteeinstellung oder der Wahl in ⚙️ (data-theme) */
   :root {
     --bg: #f1f5f9;
     --card: #ffffff;
@@ -16,12 +16,17 @@
     --input-bg: #ffffff;
     --border: #e2e8f0;
     --text: #0f172a;
-    --muted: #64748b;
+    --muted: #5b6b80;
+    --control-border: #7d8ba1;
     --accent: #2563eb;
+    --accent-bg: #2563eb;
+    --danger-bg: #dc2626;
+    --success-bg: #15803d;
+    --warn-text: #b45309;
     --accent-dark: #1d4ed8;
     --accent-soft: #eff6ff;
     --danger: #dc2626;
-    --success: #16a34a;
+    --success: #15803d;
     --success-soft: #f0fdf4;
     --warn: #f59e0b;
     color-scheme: light;
@@ -35,10 +40,15 @@
     --border: #334155;
     --text: #f1f5f9;
     --muted: #94a3b8;
-    --accent: #3b82f6;
+    --control-border: #64748b;
+    --accent: #60a5fa;
+    --accent-bg: #2563eb;
+    --danger-bg: #dc2626;
+    --success-bg: #15803d;
+    --warn-text: #fbbf24;
     --accent-dark: #2563eb;
     --accent-soft: #1e3a5f;
-    --danger: #ef4444;
+    --danger: #f87171;
     --success: #22c55e;
     --success-soft: #14321f;
     --warn: #f59e0b;
@@ -53,10 +63,15 @@
     --border: #334155;
     --text: #f1f5f9;
     --muted: #94a3b8;
-    --accent: #3b82f6;
+    --control-border: #64748b;
+    --accent: #60a5fa;
+    --accent-bg: #2563eb;
+    --danger-bg: #dc2626;
+    --success-bg: #15803d;
+    --warn-text: #fbbf24;
     --accent-dark: #2563eb;
     --accent-soft: #1e3a5f;
-    --danger: #ef4444;
+    --danger: #f87171;
     --success: #22c55e;
     --success-soft: #14321f;
     --warn: #f59e0b;
@@ -76,12 +91,12 @@
   h1 { font-size: 1.4rem; margin: 4px 0 18px; text-align: center; }
   .btn {
     border: none; border-radius: 10px; padding: 10px 16px; font-size: 0.95rem;
-    font-weight: 600; cursor: pointer; color: white; background: var(--accent);
+    font-weight: 600; cursor: pointer; color: white; background: var(--accent-bg);
   }
   .btn:active { transform: scale(0.97); }
   /* Drei Rollen: .btn = Hauptaktion (gefüllt) · .btn-outline / .btn-secondary = Nebenaktion · .btn-danger = Löschen/Zurücksetzen */
   .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-  .btn-danger { background: var(--danger); }
+  .btn-danger { background: var(--danger-bg); }
   .btn-outline { background: var(--card); color: var(--accent); border: 1px solid var(--accent); }
   .btn-lg { width: 100%; font-size: 1.15rem; padding: 14px; }
   .btn-block { width: 100%; }
@@ -122,17 +137,16 @@
   .tool-tile.dragging { opacity: 0.35; }
   .tool-tile-ghost { position: fixed; z-index: 500; pointer-events: none; opacity: 0.9; box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
   .tool-tile .ti { font-size: 2.4rem; }
-  .settings-fab { position: fixed; bottom: 18px; right: 18px; width: 52px; height: 52px; border-radius: 50%; background: #475569; color: white; border: none; font-size: 1.4rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; z-index: 40; }
   .settings-tile-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid var(--border); }
   .settings-tile-row:last-child { border-bottom: none; }
-  .tool-lauf { background: linear-gradient(135deg, #16a34a, #14532d); }
-  .tool-schwimm { background: linear-gradient(135deg, #38bdf8, #0369a1); }
+  .tool-lauf { background: linear-gradient(135deg, #15803d, #14532d); }
+  .tool-schwimm { background: linear-gradient(135deg, #0369a1, #0c4a6e); }
   .tool-kriterien { background: linear-gradient(135deg, #7c3aed, #4c1d95); }
-  .tool-seil { background: linear-gradient(135deg, #f59e0b, #92400e); }
+  .tool-seil { background: linear-gradient(135deg, #b45309, #78350f); }
   .tool-multi { background: linear-gradient(135deg, #64748b, #1e293b); }
   .tool-parkour { background: linear-gradient(135deg, #dc2626, #7f1d1d); }
   .tool-scoreboard { background: linear-gradient(135deg, #111827, #030712); }
-  .tool-team { background: linear-gradient(135deg, #0d9488, #134e4a); }
+  .tool-team { background: linear-gradient(135deg, #0f766e, #134e4a); }
   .tool-planung { background: linear-gradient(135deg, #4338ca, #1e1b4b); }
   .planung-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; transition: opacity 0.15s; }
   .planung-item.done { opacity: 0.45; background: var(--bg); }
@@ -140,12 +154,11 @@
   .planung-date { font-weight: 800; min-width: 90px; color: var(--accent); flex-shrink: 0; cursor: pointer; }
   .planung-item.done .planung-date { color: var(--muted); }
   .planung-content { flex: 1; white-space: pre-wrap; cursor: pointer; }
-  .home-actions { display: flex; gap: 10px; justify-content: center; }
   .active-class-bar { display: flex; align-items: center; gap: 10px; background: var(--card); border: 2px dashed var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; }
   .active-class-bar.is-set { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
   .active-class-bar label { font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
   .active-class-bar select { flex: 1; min-width: 0; font-weight: 700; }
-  .active-badge { background: var(--accent); color: white; border-radius: 6px; padding: 1px 6px; font-size: 0.72rem; font-weight: 700; margin-left: 4px; }
+  .active-badge { background: var(--accent-bg); color: white; border-radius: 6px; padding: 1px 6px; font-size: 0.72rem; font-weight: 700; margin-left: 4px; }
 
   /* Modal (shared) */
   .modal-overlay {
@@ -164,18 +177,18 @@
   .modal-box input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; margin-bottom: 12px; }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
   .modal-header p { margin: 0; }
-  .modal-header button { border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; background: var(--accent); color: white; }
+  .modal-header button { border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; background: var(--accent-bg); color: white; }
   .class-row, .new-name-item, .check-item {
     display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
   }
   .class-row .cname { flex: 1; font-weight: 600; cursor: pointer; }
   .class-row button, .new-name-item button { border: none; border-radius: 6px; padding: 5px 10px; font-weight: 600; color: white; }
   .class-row .edit-btn { background: #64748b; }
-  .class-row .del-btn { background: var(--danger); }
+  .class-row .del-btn { background: var(--card); color: var(--danger); border: 1px solid var(--danger); }
   .new-name-item span { flex: 1; font-weight: 600; }
   .new-name-item .editable-name { cursor: pointer; }
   .new-name-item .editable-name-input { flex: 1; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; font-size: inherit; font-family: inherit; }
-  .new-name-item button { background: var(--danger); }
+  .new-name-item button { background: var(--danger-bg); }
   .check-item input { width: 20px; height: 20px; }
   .check-item span { font-weight: 600; }
   .scroll-list { max-height: 40vh; overflow-y: auto; margin-bottom: 12px; }
@@ -184,31 +197,22 @@
 
   /* ===================== LAUF ===================== */
   #laufView .lf-wrap { display: flex; flex-direction: column; gap: 10px; }
-  .lf-timer-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .lf-timer-display { font-size: 2.4rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 130px; }
-  .lf-add-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .lf-add-row input { flex: 1; min-width: 140px; }
   .lf-list { display: flex; flex-direction: column; gap: 8px; }
   .lf-runner { position: relative; border-radius: 12px; overflow: hidden; }
-  .lf-delete-zone { position: absolute; inset: 2px; border-radius: 12px; background: var(--danger); display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; font-weight: 700; color: white; }
+  .lf-delete-zone { position: absolute; inset: 2px; border-radius: 12px; background: var(--danger-bg); display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; font-weight: 700; color: white; }
   .lf-runner-content { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; touch-action: pan-y; }
-  .lf-rank { width: 22px; text-align: center; color: var(--muted); font-weight: 700; flex-shrink: 0; }
   .lf-name { flex: 1; font-size: 1rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lf-interval-btn { border: none; background: var(--surface-2); color: var(--muted); border-radius: 50%; width: 36px; height: 36px; font-size: 1rem; flex-shrink: 0; }
   .lf-laps { font-size: 1.5rem; font-weight: 800; min-width: 42px; text-align: center; flex-shrink: 0; }
   .lf-roundbtn { width: 54px; height: 54px; border-radius: 50%; font-size: 1.6rem; font-weight: 700; border: none; color: white; flex-shrink: 0; }
-  .lf-minus { background: var(--danger); }
-  .lf-plus { background: var(--success); }
+  .lf-minus { background: var(--danger-bg); }
+  .lf-plus { background: var(--success-bg); }
   .lf-empty { color: var(--muted); text-align: center; margin-top: 30px; }
-  .lf-hint { color: var(--muted); text-align: center; font-size: 0.8rem; }
   #lfIntervalList div { padding: 4px 0; border-bottom: 1px solid var(--border); }
 
   /* ===================== SCHWIMM ===================== */
   #schwimmView { padding: 8px 8px 60px; max-width: 1200px; }
   #schwimmView .sw-wrap { display: flex; flex-direction: column; gap: 8px; }
-  .sw-timer-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .sw-add-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .sw-add-row input { flex: 1; min-width: 140px; }
   .sw-timer-display { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 90px; color: var(--text); }
   .sw-mode-row { display: flex; gap: 6px; }
   .sw-mode-btn { flex: 1; background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 8px 4px; font-weight: 700; color: var(--text); font-size: 0.8rem; cursor: pointer; }
@@ -218,7 +222,7 @@
   .sw-stag-timer .lbl { font-size: 0.62rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
   .sw-stag-timer .disp { font-size: 0.85rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); margin: 1px 0 4px; }
   .sw-stag-timer .row { display: flex; gap: 3px; }
-  .sw-stag-timer .row button { flex: 1; border: none; border-radius: 6px; padding: 4px 2px; font-weight: 700; font-size: 0.68rem; color: white; background: var(--accent); }
+  .sw-stag-timer .row button { flex: 1; border: none; border-radius: 6px; padding: 4px 2px; font-weight: 700; font-size: 0.68rem; color: white; background: var(--accent-bg); }
   .sw-stag-timer .row button.running { background: #f59e0b; color: #3a2400; }
   .sw-stag-timer .row button:last-child { flex: 0 0 auto; padding: 4px 6px; background: #64748b; color: white; }
   .sw-distance-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -233,7 +237,7 @@
   .sw-pool-zone { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; min-height: 40px; max-height: 15vh; overflow-y: auto; }
   .sw-empty-hint { color: var(--muted); font-size: 0.8rem; padding: 4px; }
   .sw-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; color: var(--text); touch-action: none; }
-  .sw-chip button { border: none; border-radius: 6px; background: var(--danger); color: white; font-weight: 700; padding: 1px 6px; }
+  .sw-chip button { border: none; border-radius: 6px; background: var(--danger-bg); color: white; font-weight: 700; padding: 1px 6px; }
   .sw-lanes-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   @media (max-width: 700px) { .sw-lanes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .sw-lane-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -241,19 +245,16 @@
   .sw-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; touch-action: none; position: relative; min-width: 0; }
   .sw-card.sw-almost-done { background: var(--success-soft); border: 2px solid var(--success); box-shadow: 0 0 0 3px rgba(22,163,74,0.25); }
   .sw-card.sw-almost-done .sw-lengths { color: var(--success); }
-  .sw-pos-badge { position: absolute; top: -8px; left: -8px; background: var(--accent); color: white; font-weight: 800; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-  .sw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; min-width: 0; }
+  .sw-pos-badge { position: absolute; top: -8px; left: -8px; background: var(--accent-bg); color: white; font-weight: 800; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
   .sw-name { font-size: 0.9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); min-width: 0; flex-shrink: 1; }
   .sw-result { font-size: 0.75rem; font-weight: 700; color: var(--accent); white-space: normal; flex-shrink: 0; }
-  .sw-deficit { font-size: 0.68rem; color: #b45309; font-weight: 600; }
+  .sw-deficit { font-size: 0.8125rem; color: var(--warn-text); font-weight: 600; }
   .sw-bottom { display: flex; align-items: center; gap: 4px; }
   .sw-lenbtn { border: none; border-radius: 50%; color: white; font-weight: 700; flex-shrink: 0; width: 34px; height: 34px; font-size: 1rem; }
-  .sw-lenbtn.minus { background: var(--danger); }
-  .sw-lenbtn.plus1, .sw-lenbtn.plus2 { background: var(--accent); }
+  .sw-lenbtn.minus { background: var(--danger-bg); }
+  .sw-lenbtn.plus1, .sw-lenbtn.plus2 { background: var(--accent-bg); }
   .sw-lengths { font-size: 0.9rem; font-weight: 800; min-width: 40px; text-align: center; flex: 1; color: var(--text); }
-  .sw-del { border: none; border-radius: 6px; background: transparent; color: var(--muted); font-size: 0.95rem; padding: 2px 4px; }
-  .sw-interval-btn { border: none; background: var(--surface-2); color: var(--muted); border-radius: 50%; width: 28px; height: 28px; font-size: 0.85rem; flex-shrink: 0; }
-  .sw-drag-ghost { position: fixed; top: 0; left: 0; transform: translate(-50%,-50%); background: var(--accent); color: white; font-weight: 700; padding: 10px 16px; border-radius: 10px; z-index: 300; pointer-events: none; }
+  .sw-drag-ghost { position: fixed; top: 0; left: 0; transform: translate(-50%,-50%); background: var(--accent-bg); color: white; font-weight: 700; padding: 10px 16px; border-radius: 10px; z-index: 300; pointer-events: none; }
   @media (orientation: landscape) {
     .sw-card { padding: 10px 12px; gap: 6px; }
     .sw-name { font-size: 1.1rem; }
@@ -266,14 +267,14 @@
   .levels-editor { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
   .level-chip { display: flex; align-items: center; gap: 6px; background: var(--bg); border-radius: 8px; padding: 6px 8px; }
   .level-chip input { width: 130px; }
-  .level-chip button { border: none; background: var(--danger); color: white; border-radius: 6px; padding: 3px 7px; font-weight: 700; }
+  .level-chip button { border: none; background: var(--danger-bg); color: white; border-radius: 6px; padding: 3px 7px; font-weight: 700; }
   .toggle-group { display: flex; gap: 8px; margin-bottom: 14px; }
   .toggle-btn { flex: 1; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer; }
-  .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+  .toggle-btn.active { background: var(--accent-bg); border-color: var(--accent-bg); color: white; }
   .sprint-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 26px 0; }
-  .sprint-big-btn { width: 200px; height: 200px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 1.15rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.25); touch-action: manipulation; user-select: none; padding: 10px; }
-  .sprint-big-btn.running { background: var(--danger); }
-  .sprint-big-btn.finished { background: #16a34a; }
+  .sprint-big-btn { width: 200px; height: 200px; border-radius: 50%; border: none; background: var(--accent-bg); color: white; font-size: 1.15rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.25); touch-action: manipulation; user-select: none; padding: 10px; }
+  .sprint-big-btn.running { background: var(--danger-bg); }
+  .sprint-big-btn.finished { background: var(--success-bg); }
   .sprint-big-btn:active { transform: scale(0.96); }
   .sprint-clock { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); min-height: 2.6rem; }
   .sprint-status { font-size: 0.95rem; font-weight: 600; color: var(--muted); text-align: center; }
@@ -287,8 +288,8 @@
   .sprint-time-box { display: flex; align-items: center; gap: 8px; flex-shrink: 0; background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-weight: 700; }
   .sprint-time-box .time { font-variant-numeric: tabular-nums; color: var(--accent); }
   .sprint-time-box .note { font-size: 0.85rem; font-weight: 700; color: var(--accent2, var(--accent)); background: rgba(0,0,0,0.06); border-radius: 6px; padding: 2px 8px; }
-  .sprint-row-save-btn { border: none; background: var(--accent); color: #fff; border-radius: 10px; width: 42px; flex-shrink: 0; font-size: 1.1rem; cursor: pointer; touch-action: manipulation; }
-  .sprint-row-save-btn.saved { background: #16a34a; }
+  .sprint-row-save-btn { border: none; background: var(--accent-bg); color: #fff; border-radius: 10px; width: 42px; flex-shrink: 0; font-size: 1.1rem; cursor: pointer; touch-action: manipulation; }
+  .sprint-row-save-btn.saved { background: var(--success-bg); }
   table.criteria-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
   table.criteria-table th, table.criteria-table td { border: 1px solid var(--border); padding: 6px; vertical-align: top; }
   table.criteria-table th { background: var(--bg); font-size: 0.8rem; }
@@ -301,13 +302,13 @@
   .box-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
   .box-row input[type="text"] { flex: 1; }
   .box-row input[type="number"] { width: 64px; text-align: center; }
-  .box-row button { border: none; background: var(--danger); color: white; border-radius: 6px; padding: 5px 9px; font-weight: 700; }
+  .box-row button { border: none; background: var(--danger-bg); color: white; border-radius: 6px; padding: 5px 9px; font-weight: 700; }
   .add-box-btn { background: var(--card); border: 1px dashed var(--accent); color: var(--accent); border-radius: 8px; padding: 6px 10px; font-weight: 600; }
   .student-row { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
   .student-row .sname { flex: 1; font-weight: 600; }
   .attempt-btn { border: 1px solid var(--accent); background: var(--card); color: var(--accent); border-radius: 8px; padding: 8px 12px; font-weight: 700; font-size: 0.85rem; }
-  .attempt-btn.graded { background: var(--accent); color: white; }
-  .attempt-btn.graded.low { background: var(--danger); border-color: var(--danger); }
+  .attempt-btn.graded { background: var(--accent-bg); color: white; }
+  .attempt-btn.graded.low { background: var(--danger-bg); border-color: var(--danger-bg); }
   .grading-table { width: 100%; border-collapse: collapse; }
   .grading-table th, .grading-table td { border: 1px solid var(--border); padding: 8px; text-align: center; font-size: 0.85rem; }
   .grading-table th { background: var(--bg); }
@@ -320,7 +321,7 @@
   .checkbox-cell { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
   .box-cell { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; min-width: 80px; cursor: pointer; font-weight: 600; background: var(--card); line-height: 1.3; }
   .box-cell .bp { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
-  .box-cell.selected { background: var(--accent); color: white; border-color: var(--accent); }
+  .box-cell.selected { background: var(--accent-bg); color: white; border-color: var(--accent-bg); }
   .box-cell.selected .bp { color: rgba(255,255,255,0.85); }
   .grade-summary { display: flex; gap: 20px; align-items: baseline; margin-bottom: 14px; background: var(--bg); border-radius: 10px; padding: 10px 14px; }
   .grade-summary .note { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
@@ -333,7 +334,7 @@
   .sl-timer { text-align: center; font-size: 2.4rem; font-weight: 800; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
   .sl-tapbtn {
     display: block; margin: 0 auto 18px; width: 240px; height: 240px; border-radius: 50%;
-    background: #f59e0b; color: white; border: none; font-size: 3.5rem; font-weight: 800;
+    background: #b45309; color: white; border: none; font-size: 3.5rem; font-weight: 800;
     box-shadow: 0 8px 24px rgba(245,158,11,0.4);
   }
   .sl-tapbtn:disabled { background: var(--border); box-shadow: none; color: var(--muted); }
@@ -347,11 +348,11 @@
   .ms-row .ms-name { flex: 1; font-weight: 700; font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ms-time { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 110px; text-align: center; }
   .ms-row button { border: none; border-radius: 8px; padding: 10px 14px; font-weight: 700; color: white; }
-  .ms-toggle { background: var(--success); min-width: 84px; }
-  .ms-toggle.running { background: #f59e0b; }
+  .ms-toggle { background: var(--success-bg); min-width: 84px; }
+  .ms-toggle.running { background: #f59e0b; color: #3a2400; }
   .ms-lap { background: #2563eb; }
   .ms-reset { background: #64748b; }
-  .ms-del { background: var(--danger); }
+  .ms-del { background: var(--danger-bg); }
   .ms-laps { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
 
   /* ===================== PARKOUR ===================== */
@@ -360,7 +361,7 @@
   .pk-deduction-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; }
   .pk-deduction-row .count { font-size: 2rem; font-weight: 800; min-width: 50px; text-align: center; }
   .pk-deduction-row button { width: 54px; height: 54px; border-radius: 50%; border: none; font-size: 1.6rem; font-weight: 700; color: white; }
-  .pk-minus { background: var(--danger); }
+  .pk-minus { background: var(--danger-bg); }
   .pk-plus { background: #64748b; }
   .pk-deduction-row.pk-penalty-row { justify-content: space-between; background: var(--bg); border-radius: 10px; padding: 8px 10px; }
   .pk-penalty-row .pk-penalty-info { flex: 1; text-align: center; }
@@ -392,21 +393,13 @@
   .tm-rating-controls { display: flex; align-items: center; gap: 8px; }
   .tm-rating-controls button { width: 34px; height: 34px; border-radius: 50%; border: none; font-weight: 700; font-size: 1.1rem; color: white; background: #64748b; }
   .tm-rating-value { min-width: 30px; text-align: center; font-weight: 800; font-size: 1.1rem; }
-  .tm-rating-value.pos { color: #16a34a; }
+  .tm-rating-value.pos { color: var(--success); }
   .tm-rating-value.neg { color: var(--danger); }
   .tm-team-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
   .tm-team-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
   .tm-team-card .tm-member { padding: 4px 0; border-bottom: 1px solid var(--border); }
   .tm-team-total { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
 
-  /* ===================== KAMERA-BUTTON (Ergebnis als Foto) ===================== */
-  .cam-btn {
-    position: fixed; right: 16px; bottom: 16px; z-index: 60;
-    width: 52px; height: 52px; border-radius: 50%; border: none;
-    background: #2563eb; color: white; font-size: 1.4rem;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-  }
-  .cam-btn:active { transform: scale(0.95); }
 
   /* ===================== VERLAUF ===================== */
   .vl-student-row { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; font-weight: 600; }
@@ -422,6 +415,109 @@
   .vl-progress-table .vl-cell-entry + .vl-cell-entry { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border); }
   .vl-progress-table .vl-cell-note { color: var(--accent); font-weight: 700; }
   .vl-progress-table .vl-cell-empty { color: var(--muted); }
+
+  /* ===================== BEDIENBARKEIT IN DER HALLE =====================
+     Grundlage: Apple HIG (Tippfläche ≥ 44 pt), Material (48 dp, 8 dp Abstand), WCAG 2.2 (Kontrast, Zoom),
+     Hoober (einhändige Daumenbedienung → Hauptaktionen unten). */
+  html { touch-action: manipulation; } /* Zoomen mit zwei Fingern erlaubt, aber kein Doppeltipp-Zoom beim schnellen Zählen */
+  .btn, .toggle-btn, .sw-mode-btn, .sl-duration-btn, .attempt-btn, .select-actions button, .modal-header button, .add-box-btn, .ms-row button { min-height: 44px; }
+  .btn-secondary, .btn-outline.btn-secondary { border-color: var(--control-border); }
+  .btn-danger-outline { background: var(--card); color: var(--danger); border: 1px solid var(--danger); }
+  input[type="text"], input[type="number"], input[type="date"], select, textarea { min-height: 44px; font-size: 16px; border-color: var(--control-border); } /* 16 px: sonst zoomt iOS beim Antippen ins Feld */
+  .icon-btn { min-width: 48px; padding: 10px 12px; font-size: 1.2rem; }
+  .class-row button, .new-name-item button, .box-row button, .level-chip button, .sw-chip button, .crit-del-btn { min-width: 44px; min-height: 44px; }
+  .vl-del { min-width: 44px; min-height: 44px; top: 2px; right: 2px; }
+  .vl-history-card { padding-right: 50px; }
+  .tm-rating-controls button { width: 44px; height: 44px; }
+  .pk-penalty-row button { width: 48px; height: 48px; }
+  .check-item { min-height: 48px; }
+  .check-item input { width: 24px; height: 24px; }
+  .more-menu button { min-height: 48px; }
+  .class-row .cname { min-height: 44px; display: flex; align-items: center; }
+  .row, .toolbar, .card-actions, .modal-actions { gap: 8px; }
+  label.field-label { font-size: 0.8125rem; }
+  .hint { color: var(--muted); text-align: center; font-size: 0.875rem; margin: 6px 0; }
+  .version-label { text-align: center; margin-top: 10px; font-size: 0.75rem; color: var(--muted); }
+
+  /* Einheitliche Kopfzeile: zurück · Titel · ⋯ */
+  .view-header { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .view-header h1 { margin: 0; font-size: 1.1rem; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+  .view-header > span { min-width: 1px; }
+  .view-header .more-wrap { margin-left: 0; }
+  .back-btn { padding: 10px 12px; }
+  .tab-row { margin-bottom: 14px; }
+  .tab-row .toggle-btn { flex: 1; }
+
+  /* Eingabezeile: Name · Hinzufügen · Klasse */
+  .add-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; margin-bottom: 10px; }
+  .add-row input { min-width: 0; width: 100%; }
+  .class-btn { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Hauptaktionen unten in der Daumenzone (bleiben beim Scrollen sichtbar) */
+  .action-bar { position: sticky; bottom: 0; z-index: 30; display: flex; gap: 8px; margin: 12px -14px -60px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--border); }
+  .action-bar .btn { flex: 1; min-height: 52px; font-size: 1.05rem; }
+  .action-bar .icon-btn { flex: 0 0 auto; }
+  #msViewEinzeln .action-bar { margin-bottom: -60px; }
+  #schwimmView .action-bar { margin-left: -6px; margin-right: -6px; padding-left: 6px; padding-right: 6px; }
+  .timer-display-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 6px 12px; text-align: center; }
+  .timer-display-box .lf-timer-display, .timer-display-box .sw-timer-display { min-width: 0; }
+  .lf-timer-display { font-size: 3rem; }
+  .sw-timer-display { font-size: 2.2rem; font-weight: 800; }
+
+  /* Startseite: feste Navigation unten statt Knöpfen unter dem Seitenende */
+  #homeView { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; justify-content: center; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--border); box-shadow: 0 -2px 10px rgba(0,0,0,0.08); }
+  .bottom-nav button { flex: 1; max-width: 200px; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: none; background: transparent; color: var(--text); font-weight: 700; font-size: 0.8125rem; border-radius: 10px; cursor: pointer; }
+  .bottom-nav button:active { background: var(--surface-2); }
+  .bottom-nav .ic { font-size: 1.4rem; line-height: 1; }
+  .settings-tile-row .order-btns { display: flex; gap: 6px; margin-left: auto; margin-right: 10px; }
+  .settings-tile-row .order-btns button { min-width: 44px; min-height: 44px; border: 1px solid var(--control-border); background: var(--card); color: var(--text); border-radius: 8px; font-size: 1rem; }
+  .settings-tile-row .order-btns button:disabled { opacity: 0.35; }
+
+  /* Lauf: Name hat Vorrang (2 Zeilen), Antippen öffnet Zeiten/Entfernen */
+  .lf-namebtn { flex: 1; min-width: 0; min-height: 54px; border: none; background: transparent; color: var(--text); text-align: left; padding: 2px 0; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
+  .lf-namebtn .lf-name { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; line-height: 1.2; }
+  .lf-namebtn .lf-sub { font-size: 0.8125rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .lf-runner-content { gap: 8px; padding: 8px 10px; }
+
+  /* Schwimmen: Karte passt in jede Bahnspalte, +2 am auffälligsten */
+  #schwimmView { padding-left: 6px; padding-right: 6px; }
+  .sw-dropzone { padding: 4px; }
+  .sw-lanes-grid { gap: 6px; }
+  .sw-card { padding: 6px; touch-action: pan-y; gap: 6px; }
+  .sw-head { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; border: none; background: transparent; color: var(--text); padding: 0 2px; text-align: left; cursor: grab; touch-action: none; }
+  .sw-head .sw-name { flex: 1; min-width: 0; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; line-height: 1.15; font-size: 0.95rem; }
+  .sw-head .sw-lengths { flex: 0 0 auto; min-width: 0; font-size: 1rem; }
+  .sw-result { font-size: 0.8125rem; }
+  .sw-bottom { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .sw-lenbtn { width: 100%; height: 48px; border-radius: 12px; font-size: 1.15rem; }
+  .sw-lenbtn.plus1 { background: var(--accent-soft); color: var(--accent); border: 2px solid var(--accent); }
+  .sw-lenbtn.plus2 { background: var(--accent-bg); font-size: 1.3rem; }
+  .sw-pos-badge { width: 24px; height: 24px; font-size: 0.8125rem; }
+  .sw-chip { min-height: 44px; }
+  .sw-section-title { font-size: 0.8125rem; }
+  .sw-distance-btn .l { font-size: 0.8125rem; }
+  .sw-mode-btn { font-size: 0.9rem; }
+  .sw-stag-timer .lbl { font-size: 0.8125rem; }
+  .sw-stag-timer .disp { font-size: 1rem; }
+  .sw-stag-timer .row button { min-height: 44px; font-size: 0.875rem; }
+  .sw-stag-timer .row button:last-child { padding: 4px 10px; }
+  @media (orientation: landscape) { .sw-lenbtn { width: 100%; height: 52px; } }
+
+  .box-cell .bp { font-size: 0.8125rem; }
+  .sb-hint { font-size: 0.875rem; }
+  .sb-back-row .btn, .sb-reset-row .btn { min-height: 44px; }
+  .attempt-btn { font-size: 0.875rem; }
+  .card-actions .btn { padding: 10px 14px; font-size: 0.9rem; }
+  .card-actions .btn-danger-outline { margin-left: auto; }
+  .vl-student-row { min-height: 48px; display: flex; align-items: center; }
+  .sw-empty-hint { font-size: 0.8125rem; }
+  .sw-distance-btn.active .l { color: var(--text); }
+  .sb-hint { color: #94a3b8; }
+  #lf_allPlusBtn { background: var(--success-bg); }
+  .sw-distance-btn { padding: 6px 2px; }
+  .sw-distance-btn .l { white-space: nowrap; }
+  .version-label { font-size: 0.8125rem; }
 </style>
 </head>
 <body>
@@ -430,86 +526,82 @@
   <!-- ============ HOME ============ -->
   <div id="homeView" class="view">
     <h1>🏅 Sportlehrer-Toolbox</h1>
-    <h2 class="sub" style="margin-top:-8px; font-size:0.78rem; text-align:center; color:var(--muted);">Box lange gedrückt halten und ziehen, um die Reihenfolge zu ändern</h2>
     <div class="active-class-bar" id="activeClassBar">
       <label for="activeClassSelect">👥 Aktive Klasse</label>
       <select id="activeClassSelect"></select>
     </div>
-    <div class="card hidden" id="backupReminder" style="border-color:var(--warn); display:flex; align-items:center; gap:10px;">
-      <div style="flex:1; font-size:0.85rem;">💾 <b>Daten sichern:</b> <span id="backupReminderText"></span></div>
-      <button class="btn btn-outline" id="backupReminderBtn" style="padding:6px 12px; font-size:0.85rem;">Jetzt sichern</button>
+    <div class="card hidden" id="backupReminder" style="border-color:var(--warn-text); display:flex; align-items:center; gap:10px;">
+      <div style="flex:1; font-size:0.875rem;">💾 <b>Daten sichern:</b> <span id="backupReminderText"></span></div>
+      <button class="btn btn-outline" id="backupReminderBtn">Jetzt sichern</button>
     </div>
     <div class="tool-grid" id="homeToolGrid"></div>
-    <div class="home-actions">
-      <button class="btn btn-outline" id="homeClassesBtn">Klassen verwalten</button>
-      <button class="btn btn-outline" id="homeVerlaufBtn">Leistungen ansehen</button>
-    </div>
-    <div id="appVersionLabel" style="text-align:center; margin-top:14px; font-size:0.68rem; color:var(--muted); opacity:0.6;">v2026-10-26.2</div>
-    <button class="settings-fab" id="homeSettingsBtn">⚙️</button>
+    <p class="hint">Reihenfolge ändern: Box lange drücken und ziehen – oder unter ⚙️ Einstellungen.</p>
+    <div id="appVersionLabel" class="version-label">v2026-10-29.1</div>
+    <nav class="bottom-nav" aria-label="Hauptnavigation">
+      <button id="homeClassesBtn"><span class="ic">👥</span><span>Klassen</span></button>
+      <button id="homeVerlaufBtn"><span class="ic">📊</span><span>Leistungen</span></button>
+      <button id="homeSettingsBtn"><span class="ic">⚙️</span><span>Einstellungen</span></button>
+    </nav>
   </div>
 
   <!-- ============ LAUF ============ -->
   <div id="laufView" class="view hidden">
-    <div class="lf-wrap">
-      <div class="row back-row">
-        <button class="btn btn-secondary" data-back>← Start</button>
-        <div class="more-wrap">
-          <button class="btn btn-secondary more-btn" title="Weitere Aktionen">⋯</button>
-          <div class="more-menu hidden">
-            <button id="lf_sortBtn">↕︎ Nach Runden sortieren</button>
-            <button id="lf_exportBtn">📤 Ergebnisse exportieren</button>
-            <button id="lf_resetLapsBtn" class="danger">↺ Alle Runden zurücksetzen</button>
-          </div>
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>🏃 12-Minuten-Lauf</h1>
+      <div class="more-wrap">
+        <button class="btn btn-secondary more-btn" title="Weitere Aktionen" aria-label="Weitere Aktionen">⋯</button>
+        <div class="more-menu hidden">
+          <button id="lf_sortBtn">↕︎ Nach Runden sortieren</button>
+          <button id="lf_exportBtn">📤 Ergebnisse exportieren</button>
+          <button id="lf_resetTimerBtn">⏱ Timer auf 12:00 zurücksetzen</button>
+          <button id="lf_resetLapsBtn" class="danger">↺ Alle Runden zurücksetzen</button>
         </div>
       </div>
-      <div class="lf-timer-box">
-        <div class="lf-timer-display" id="lf_timerDisplay">12:00</div>
-        <button class="btn" id="lf_startBtn">Start</button>
-        <button class="btn btn-secondary" id="lf_pauseBtn">Pause</button>
-        <button class="btn btn-secondary" id="lf_resetTimerBtn">Reset</button>
-      </div>
-      <button class="btn btn-lg" id="lf_allPlusBtn">+1 Runde für alle</button>
-      <div class="lf-add-row">
-        <input id="lf_nameInput" type="text" placeholder="Name eingeben..." maxlength="20">
-        <button class="btn btn-outline" id="lf_addBtn">+ Hinzufügen</button>
-        <button class="btn btn-outline" id="lf_classesBtn" data-class-btn="Klassen">Klassen</button>
+    </div>
+    <div class="lf-wrap">
+      <div class="timer-display-box"><div class="lf-timer-display" id="lf_timerDisplay">12:00</div></div>
+      <div class="add-row">
+        <input id="lf_nameInput" type="text" placeholder="Name eingeben..." maxlength="40">
+        <button class="btn btn-outline" id="lf_addBtn">Hinzufügen</button>
+        <button class="btn btn-outline class-btn" id="lf_classesBtn" data-class-btn="Klassen">Klassen</button>
       </div>
       <div class="lf-list" id="lf_list"></div>
-      <div class="lf-hint">Zum Löschen: Zeile nach links wischen · Uhr-Symbol gedrückt halten für Intervalle</div>
+      <p class="hint">Name antippen: Rundenzeiten ansehen oder Person entfernen</p>
       <button class="btn btn-outline btn-block" id="lf_saveResultsBtn">In Leistungen speichern</button>
     </div>
-    <button class="cam-btn" id="lf_camBtn" title="Ergebnis als Foto sichern">📷</button>
+    <div class="action-bar">
+      <button class="btn" id="lf_startBtn">▶ Start</button>
+      <button class="btn" id="lf_allPlusBtn">+1 Runde für alle</button>
+      <button class="btn btn-secondary icon-btn" id="lf_camBtn" title="Ergebnis als Foto sichern" aria-label="Ergebnis als Foto sichern">📷</button>
+    </div>
   </div>
 
   <!-- ============ SCHWIMM ============ -->
   <div id="schwimmView" class="view hidden">
-    <div class="sw-wrap">
-      <div class="row back-row">
-        <button class="btn btn-secondary" data-back>← Start</button>
-        <div class="more-wrap">
-          <button class="btn btn-secondary more-btn" title="Weitere Aktionen">⋯</button>
-          <div class="more-menu hidden">
-            <button id="sw_exportBtn">📤 Ergebnisse exportieren</button>
-            <button id="sw_resetResultsBtn" class="danger">↺ Ergebnisse zurücksetzen</button>
-            <button id="sw_clearLanesBtn" class="danger">✕ Bahnen leeren</button>
-          </div>
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>🏊 Schwimmausdauer</h1>
+      <div class="more-wrap">
+        <button class="btn btn-secondary more-btn" title="Weitere Aktionen" aria-label="Weitere Aktionen">⋯</button>
+        <div class="more-menu hidden">
+          <button id="sw_exportBtn">📤 Ergebnisse exportieren</button>
+          <button id="sw_resetResultsBtn" class="danger">↺ Ergebnisse zurücksetzen</button>
+          <button id="sw_clearLanesBtn" class="danger">✕ Bahnen leeren</button>
         </div>
       </div>
-      <div class="sw-timer-box" id="sw_timerBox">
-        <div class="sw-timer-display" id="sw_timerDisplay">00:00</div>
-        <button class="btn" id="sw_startBtn">Start</button>
-        <button class="btn btn-secondary" id="sw_pauseBtn">Pause</button>
-        <button class="btn btn-secondary" id="sw_resetTimerBtn">Neues Rennen</button>
-      </div>
+    </div>
+    <div class="sw-wrap">
+      <div class="timer-display-box" id="sw_timerBox"><div class="sw-timer-display" id="sw_timerDisplay">00:00</div></div>
       <div class="sw-mode-row">
         <button class="sw-mode-btn active" data-mode="same">Gleichzeitig messen</button>
         <button class="sw-mode-btn" data-mode="staggered">Gestaffelter Start</button>
       </div>
       <div class="sw-stag-timers hidden" id="sw_stagTimers">
-        <div class="sw-stag-timer"><div class="lbl">Start 1</div><div class="disp" id="sw_stagTimer0">00:00</div><div class="row"><button data-action="toggle" data-pos="0" id="sw_stagToggle0">Start</button><button data-action="reset" data-pos="0">↺</button></div></div>
-        <div class="sw-stag-timer"><div class="lbl">Start 2</div><div class="disp" id="sw_stagTimer1">00:00</div><div class="row"><button data-action="toggle" data-pos="1" id="sw_stagToggle1">Start</button><button data-action="reset" data-pos="1">↺</button></div></div>
-        <div class="sw-stag-timer"><div class="lbl">Start 3</div><div class="disp" id="sw_stagTimer2">00:00</div><div class="row"><button data-action="toggle" data-pos="2" id="sw_stagToggle2">Start</button><button data-action="reset" data-pos="2">↺</button></div></div>
-        <div class="sw-stag-timer"><div class="lbl">Start 4</div><div class="disp" id="sw_stagTimer3">00:00</div><div class="row"><button data-action="toggle" data-pos="3" id="sw_stagToggle3">Start</button><button data-action="reset" data-pos="3">↺</button></div></div>
+        <div class="sw-stag-timer"><div class="lbl">Start 1</div><div class="disp" id="sw_stagTimer0">00:00</div><div class="row"><button data-action="toggle" data-pos="0" id="sw_stagToggle0">Start</button><button data-action="reset" data-pos="0" aria-label="Uhr 1 zurücksetzen">↺</button></div></div>
+        <div class="sw-stag-timer"><div class="lbl">Start 2</div><div class="disp" id="sw_stagTimer1">00:00</div><div class="row"><button data-action="toggle" data-pos="1" id="sw_stagToggle1">Start</button><button data-action="reset" data-pos="1" aria-label="Uhr 2 zurücksetzen">↺</button></div></div>
+        <div class="sw-stag-timer"><div class="lbl">Start 3</div><div class="disp" id="sw_stagTimer2">00:00</div><div class="row"><button data-action="toggle" data-pos="2" id="sw_stagToggle2">Start</button><button data-action="reset" data-pos="2" aria-label="Uhr 3 zurücksetzen">↺</button></div></div>
+        <div class="sw-stag-timer"><div class="lbl">Start 4</div><div class="disp" id="sw_stagTimer3">00:00</div><div class="row"><button data-action="toggle" data-pos="3" id="sw_stagToggle3">Start</button><button data-action="reset" data-pos="3" aria-label="Uhr 4 zurücksetzen">↺</button></div></div>
       </div>
       <div class="sw-distance-row">
         <button class="sw-distance-btn" data-meters="100" data-lengths="4"><span class="m">100 m (M)</span><span class="l">4 Längen</span></button>
@@ -518,10 +610,10 @@
         <button class="sw-distance-btn" data-meters="400" data-lengths="16"><span class="m">400 m (K)</span><span class="l">16 Längen</span></button>
         <button class="sw-distance-btn" data-meters="500" data-lengths="20"><span class="m">500 m (K)</span><span class="l">20 Längen</span></button>
       </div>
-      <div class="sw-add-row">
-        <input id="sw_nameInput" type="text" placeholder="Name eingeben..." maxlength="20">
-        <button class="btn btn-outline" id="sw_addBtn">+ Hinzufügen</button>
-        <button class="btn btn-outline" id="sw_classesBtn" data-class-btn="Klassen">Klassen</button>
+      <div class="add-row">
+        <input id="sw_nameInput" type="text" placeholder="Name eingeben..." maxlength="40">
+        <button class="btn btn-outline" id="sw_addBtn">Hinzufügen</button>
+        <button class="btn btn-outline class-btn" id="sw_classesBtn" data-class-btn="Klassen">Klassen</button>
       </div>
       <div class="sw-section-title">Nicht zugeteilt</div>
       <div class="sw-dropzone sw-pool-zone" id="sw_poolZone" data-lane="0"></div>
@@ -531,23 +623,36 @@
         <div class="sw-lane-col"><div class="sw-section-title">Bahn 3</div><div class="sw-dropzone sw-lane-box" id="sw_lane3" data-lane="3"></div></div>
         <div class="sw-lane-col"><div class="sw-section-title">Bahn 4</div><div class="sw-dropzone sw-lane-box" id="sw_lane4" data-lane="4"></div></div>
       </div>
+      <p class="hint">Am Namen ziehen: Bahn wechseln · Name antippen: Längenzeiten ansehen oder entfernen</p>
       <button class="btn btn-outline btn-block" id="sw_saveResultsBtn">In Leistungen speichern</button>
     </div>
-    <button class="cam-btn" id="sw_camBtn" title="Ergebnis als Foto sichern">📷</button>
+    <div class="action-bar">
+      <button class="btn" id="sw_startBtn">▶ Start</button>
+      <button class="btn btn-secondary" id="sw_resetTimerBtn">↺ Neues Rennen</button>
+      <button class="btn btn-secondary icon-btn" id="sw_camBtn" title="Ergebnis als Foto sichern" aria-label="Ergebnis als Foto sichern">📷</button>
+    </div>
   </div>
 
   <!-- ============ KRITERIENRASTER ============ -->
   <div id="kriterienView" class="view hidden">
-    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
-    <div class="tabs" style="display:flex; gap:8px; margin-bottom:14px;">
-      <button class="tab-btn btn btn-outline" id="tabRubrics" style="flex:1;">Kriterienraster</button>
-      <button class="tab-btn btn btn-outline" id="tabExams" style="flex:1;">Prüfungen</button>
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>📋 Kriterienraster</h1>
+      <div class="more-wrap">
+        <button class="btn btn-secondary more-btn" title="Weitere Aktionen" aria-label="Weitere Aktionen">⋯</button>
+        <div class="more-menu hidden">
+          <button id="importCsvBtn">📥 Raster aus CSV importieren</button>
+          <button id="exportTemplateBtn">📄 CSV-Vorlage exportieren</button>
+        </div>
+      </div>
+    </div>
+    <div class="row tab-row">
+      <button class="toggle-btn active" id="tabRubrics">Raster</button>
+      <button class="toggle-btn" id="tabExams">Prüfungen</button>
     </div>
     <div id="viewRubrics">
       <div class="toolbar">
         <button class="btn" id="newRubricBtn">+ Neues Raster</button>
-        <button class="btn btn-outline" id="importCsvBtn">CSV importieren</button>
-        <button class="btn btn-outline" id="exportTemplateBtn">Vorlage exportieren</button>
         <input type="file" id="csvFileInput" accept=".csv" style="display:none">
       </div>
       <div id="rubricList"></div>
@@ -560,8 +665,11 @@
 
   <!-- ============ SEILSPRINGEN ============ -->
   <div id="seilView" class="view hidden">
-    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
-    <h1>🪢 Seilspringen</h1>
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>➰ Seilspringen</h1>
+      <span></span>
+    </div>
     <div class="sl-name-row">
       <select id="sl_classSelect"><option value="">Manuell eingeben</option></select>
       <select id="sl_studentSelect" class="hidden"></select>
@@ -576,48 +684,57 @@
     <div class="sl-timer" id="sl_timerDisplay">01:00</div>
     <button class="sl-tapbtn" id="sl_tapBtn" disabled><span id="sl_countDisplay">0</span></button>
     <div class="sl-controls">
-      <button class="btn" id="sl_startBtn">Start</button>
-      <button class="btn btn-secondary" id="sl_resetBtn">Zurücksetzen</button>
+      <button class="btn" id="sl_startBtn">▶ Start</button>
+      <button class="btn btn-secondary" id="sl_resetBtn">↺ Zurücksetzen</button>
       <button class="btn hidden" id="sl_saveBtn">In Leistungen speichern</button>
     </div>
   </div>
 
   <!-- ============ MULTISTOPPUHR ============ -->
   <div id="multiView" class="view hidden">
-    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
-    <h1>⏱️ Multistoppuhr</h1>
-    <div class="row" style="gap:8px; margin-bottom:14px;">
-      <button class="toggle-btn active" id="msTabEinzeln" style="flex:1;">Einzeln</button>
-      <button class="toggle-btn" id="msTabSprint" style="flex:1;">🏃 Sprint messen</button>
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>⏱️ Multistoppuhr</h1>
+      <div class="more-wrap">
+        <button class="btn btn-secondary more-btn" title="Weitere Aktionen" aria-label="Weitere Aktionen">⋯</button>
+        <div class="more-menu hidden">
+          <button id="ms_resetAllBtn" class="danger">↺ Alle Stoppuhren zurücksetzen</button>
+        </div>
+      </div>
+    </div>
+    <div class="row tab-row">
+      <button class="toggle-btn active" id="msTabEinzeln">Einzeln</button>
+      <button class="toggle-btn" id="msTabSprint">🏃 Sprint messen</button>
     </div>
     <div id="msViewEinzeln">
-      <div class="toolbar">
+      <div class="add-row">
         <input type="text" id="ms_nameInput" placeholder="Name/Gruppe eingeben...">
-        <button class="btn" id="ms_addBtn">+ Hinzufügen</button>
-        <button class="btn btn-outline" id="ms_classesBtn" data-class-btn="Klassen">Klassen</button>
-        <button class="btn btn-outline" id="ms_startAllBtn">Alle starten</button>
-        <button class="btn btn-outline" id="ms_stopAllBtn">Alle stoppen</button>
-        <button class="btn btn-danger" id="ms_resetAllBtn">Alle zurücksetzen</button>
+        <button class="btn btn-outline" id="ms_addBtn">Hinzufügen</button>
+        <button class="btn btn-outline class-btn" id="ms_classesBtn" data-class-btn="Klassen">Klassen</button>
       </div>
       <div id="ms_list"></div>
+      <div class="action-bar">
+        <button class="btn" id="ms_startAllBtn">▶ Alle starten</button>
+        <button class="btn btn-secondary" id="ms_stopAllBtn">⏹ Alle stoppen</button>
+      </div>
     </div>
     <div id="msViewSprint" class="hidden">
       <div class="card" id="sprintSetupCard">
         <label class="field-label">Klasse (für automatische Notenberechnung)</label>
-        <div class="row" id="sprintClassRow" style="gap:6px; margin-bottom:14px;">
+        <div class="row" id="sprintClassRow" style="margin-bottom:14px;">
           <button class="toggle-btn active" data-sprintclass="none">Keine Note</button>
           <button class="toggle-btn" data-sprintclass="1">1. Klasse Knaben (60 m)</button>
           <button class="toggle-btn" data-sprintclass="3">3. Klasse Knaben (80 m)</button>
         </div>
         <label class="field-label">Läufer</label>
-        <div class="row" style="gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap;">
+        <div class="row" style="align-items:center; margin-bottom:6px;">
           <button class="btn btn-outline" id="sprintPickRunnersBtn">👤 Läufer auswählen</button>
-          <span id="sprintRunnersLabel" style="font-size:0.85rem; color:var(--muted);"></span>
-          <button class="btn btn-outline" id="sprintClearRunnersBtn" style="display:none; padding:4px 10px; font-size:0.85rem;">✕ Namen entfernen</button>
+          <span id="sprintRunnersLabel" style="font-size:0.875rem; color:var(--muted);"></span>
+          <button class="btn btn-outline" id="sprintClearRunnersBtn" style="display:none;">✕ Namen entfernen</button>
         </div>
         <div id="sprintCountWrap">
           <label class="field-label">Anzahl Läufer (gleichzeitig, ohne Namen)</label>
-          <div class="row" id="sprintCountRow" style="gap:6px; margin-bottom:14px;">
+          <div class="row" id="sprintCountRow" style="margin-bottom:14px;">
             <button class="toggle-btn" data-sprintcount="1">1</button>
             <button class="toggle-btn" data-sprintcount="2">2</button>
             <button class="toggle-btn active" data-sprintcount="3">3</button>
@@ -627,7 +744,7 @@
           </div>
         </div>
         <label class="field-label">Start-Modus</label>
-        <div class="row" id="sprintStartModeRow" style="gap:6px;">
+        <div class="row" id="sprintStartModeRow">
           <button class="toggle-btn active" data-sprintstart="press">Start bei Drücken</button>
           <button class="toggle-btn" data-sprintstart="release">Start bei Loslassen</button>
         </div>
@@ -638,7 +755,7 @@
         <div class="sprint-status" id="sprintStatus">Bereit</div>
       </div>
       <div class="sprint-results" id="sprintResults"></div>
-      <div class="row" style="justify-content:center; gap:10px; margin-top:14px;">
+      <div class="row" style="justify-content:center; margin-top:14px;">
         <button class="btn btn-outline" id="sprintNewBtn">↺ Neuer Sprint</button>
       </div>
     </div>
@@ -646,10 +763,14 @@
 
   <!-- ============ PARKOURBENOTUNG ============ -->
   <div id="parkourView" class="view hidden">
-    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
-    <div class="tabs" style="display:flex; gap:8px; margin-bottom:14px;">
-      <button class="btn btn-outline" id="pkTabCourses" style="flex:1;">Parcours</button>
-      <button class="btn btn-outline" id="pkTabRuns" style="flex:1;">Durchgänge</button>
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>🏑 Parkourbenotung</h1>
+      <span></span>
+    </div>
+    <div class="row tab-row">
+      <button class="toggle-btn active" id="pkTabCourses">Parcours</button>
+      <button class="toggle-btn" id="pkTabRuns">Durchgänge</button>
     </div>
     <div id="pkViewCourses">
       <div class="toolbar"><button class="btn" id="newCourseBtn">+ Neuer Parcours</button></div>
@@ -663,60 +784,79 @@
 
   <!-- ============ SCOREBOARD ============ -->
   <div id="scoreboardView" class="view hidden">
-    <div class="sb-back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
+    <div class="sb-back-row"><button class="btn btn-secondary back-btn" data-back>← Start</button></div>
     <div class="sb-main">
       <div class="sb-side" data-side="left">
-        <input type="text" class="sb-team-name" id="sb_leftName" value="Team A" maxlength="16">
+        <input type="text" class="sb-team-name" id="sb_leftName" value="Team A" maxlength="16" aria-label="Name linkes Team">
         <div class="sb-number" id="sb_leftScore">0</div>
         <div class="sb-btns"><button data-sb="left" data-delta="-1">−1</button><button data-sb="left" data-delta="1">+1</button></div>
       </div>
       <div class="sb-side" data-side="right">
-        <input type="text" class="sb-team-name" id="sb_rightName" value="Team B" maxlength="16">
+        <input type="text" class="sb-team-name" id="sb_rightName" value="Team B" maxlength="16" aria-label="Name rechtes Team">
         <div class="sb-number" id="sb_rightScore">0</div>
         <div class="sb-btns"><button data-sb="right" data-delta="-1">−1</button><button data-sb="right" data-delta="1">+1</button></div>
       </div>
     </div>
-    <div class="sb-reset-row"><button class="btn" id="sb_resetBtn">Zurücksetzen</button></div>
+    <div class="sb-reset-row"><button class="btn" id="sb_resetBtn">↺ Zurücksetzen</button></div>
     <div class="sb-hint">Punkte mit den Knöpfen ändern – oder mit 3 Fingern auf einer Seite nach oben (+1) bzw. unten (−1) wischen (max. 50)</div>
   </div>
 
   <!-- ============ TEAMERSTELLUNG ============ -->
   <div id="teamView" class="view hidden">
-    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
-    <h1>👥 Teamerstellung</h1>
-    <div class="toolbar">
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>👥 Teamerstellung</h1>
+      <div class="more-wrap">
+        <button class="btn btn-secondary more-btn" title="Weitere Aktionen" aria-label="Weitere Aktionen">⋯</button>
+        <div class="more-menu hidden">
+          <button id="tm_clearBtn" class="danger">✕ Alle Teilnehmenden entfernen</button>
+        </div>
+      </div>
+    </div>
+    <div class="add-row">
       <input type="text" id="tm_nameInput" placeholder="Name eingeben...">
-      <button class="btn" id="tm_addBtn">+ Hinzufügen</button>
-      <button class="btn btn-outline" id="tm_classesBtn" data-class-btn="Klasse laden">Klasse laden</button>
-      <button class="btn btn-danger" id="tm_clearBtn">Alle entfernen</button>
+      <button class="btn btn-outline" id="tm_addBtn">Hinzufügen</button>
+      <button class="btn btn-outline class-btn" id="tm_classesBtn" data-class-btn="Klasse laden">Klasse laden</button>
     </div>
     <div id="tm_participantList"></div>
-    <div class="toolbar" style="align-items:center;">
-      <label class="field-label" style="margin:0;">Anzahl Teams</label>
-      <input type="number" id="tm_numTeams" value="2" min="2" max="8" style="width:70px;">
-      <button class="btn" id="tm_buildBtn">Teams bilden (zufällig &amp; fair)</button>
+    <div class="row" style="margin:12px 0;">
+      <label class="field-label" for="tm_numTeams" style="margin:0;">Anzahl Teams</label>
+      <input type="number" id="tm_numTeams" value="2" min="2" max="8" style="width:80px;">
     </div>
     <div id="tm_teamsResult"></div>
-    <button class="cam-btn" id="tm_camBtn" title="Teams als Foto sichern">📷</button>
+    <div class="action-bar">
+      <button class="btn" id="tm_buildBtn">Teams bilden (zufällig &amp; fair)</button>
+      <button class="btn btn-secondary icon-btn" id="tm_camBtn" title="Teams als Foto sichern" aria-label="Teams als Foto sichern">📷</button>
+    </div>
   </div>
 
   <!-- ============ PLANUNG ============ -->
   <div id="planungView" class="view hidden">
-    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
-    <h1>📅 Planung</h1>
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>📅 Planung</h1>
+      <div class="more-wrap">
+        <button class="btn btn-secondary more-btn" title="Weitere Aktionen" aria-label="Weitere Aktionen">⋯</button>
+        <div class="more-menu hidden">
+          <button id="planungClearBtn" class="danger">✕ Ganzen Plan löschen</button>
+        </div>
+      </div>
+    </div>
     <div class="toolbar">
       <button class="btn btn-outline" id="planungImportBtn">📥 Excel/CSV importieren</button>
-      <button class="btn btn-danger" id="planungClearBtn">Alles löschen</button>
     </div>
     <div id="planungList"></div>
   </div>
 
   <!-- ============ VERLAUF ============ -->
   <div id="verlaufView" class="view hidden">
-    <div class="row back-row"><button class="btn btn-secondary" data-back>← Start</button></div>
-    <h1>📊 Leistungen</h1>
-    <label class="field-label">Klasse</label>
-    <div class="row" style="gap:8px; margin-bottom:14px;">
+    <div class="view-header">
+      <button class="btn btn-secondary back-btn" data-back>← Start</button>
+      <h1>📊 Leistungen</h1>
+      <span></span>
+    </div>
+    <label class="field-label" for="vl_classSelect">Klasse</label>
+    <div class="row" style="margin-bottom:14px;">
       <select id="vl_classSelect" style="flex:1;"><option value="">Klasse wählen...</option></select>
       <button class="btn btn-outline" id="vl_disciplineBtn" style="display:none; flex-shrink:0;">🏆 Disziplin</button>
     </div>
@@ -842,7 +982,7 @@
     <label class="field-label">Lektionsinhalt</label>
     <textarea id="planungEditContent" rows="4" style="width:100%; resize:vertical; font-family:inherit; font-size:1rem; padding:10px; border:1px solid var(--border); border-radius:8px;"></textarea>
     <div class="modal-actions">
-      <button class="btn btn-danger" id="planungEditDeleteBtn" style="margin-right:auto;">Löschen</button>
+      <button class="btn btn-danger-outline" id="planungEditDeleteBtn" style="margin-right:auto;">Löschen</button>
       <button class="btn btn-secondary" id="planungEditCancelBtn">Abbrechen</button>
       <button class="btn" id="planungEditSaveBtn">Speichern</button>
     </div>
@@ -881,7 +1021,10 @@
   <div class="modal-box">
     <h2 id="lfIntervalTitle">Intervalle</h2>
     <div id="lfIntervalList"></div>
-    <div class="modal-actions"><button class="btn btn-secondary" id="lfIntervalClose">Schliessen</button></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger-outline" id="lfIntervalRemoveBtn" style="margin-right:auto;">Entfernen</button>
+      <button class="btn btn-secondary" id="lfIntervalClose">Schliessen</button>
+    </div>
   </div>
 </div>
 
@@ -1201,8 +1344,17 @@ function renderSettingsTiles() {
   document.getElementById("settingsTilesList").innerHTML = prefs.order.map(id => {
     const t = HOME_TOOLS.find(x => x.id === id);
     const isHidden = prefs.hidden.includes(id);
-    return `<div class="settings-tile-row"><span>${t.icon} ${escapeHtml(t.title)}</span><label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" data-tile-visible="${id}" ${isHidden ? "" : "checked"} style="width:20px; height:20px;"> sichtbar</label></div>`;
+    const idx = prefs.order.indexOf(id);
+    // ↑/↓ als sichtbare Alternative zum Langdrücken auf der Startseite
+    return `<div class="settings-tile-row"><span>${t.icon} ${escapeHtml(t.title)}</span><div class="order-btns"><button data-tile-move="${id}" data-dir="-1" aria-label="${escapeHtml(t.title)} nach oben" ${idx === 0 ? "disabled" : ""}>↑</button><button data-tile-move="${id}" data-dir="1" aria-label="${escapeHtml(t.title)} nach unten" ${idx === prefs.order.length - 1 ? "disabled" : ""}>↓</button></div><label style="display:flex; align-items:center; gap:6px; cursor:pointer; min-height:44px;"><input type="checkbox" data-tile-visible="${id}" ${isHidden ? "" : "checked"} style="width:24px; height:24px;"> sichtbar</label></div>`;
   }).join("");
+  document.querySelectorAll("[data-tile-move]").forEach(btn => btn.addEventListener("click", () => {
+    const p = getHomePrefs();
+    const from = p.order.indexOf(btn.dataset.tileMove), to = from + Number(btn.dataset.dir);
+    if (to < 0 || to >= p.order.length) return;
+    [p.order[from], p.order[to]] = [p.order[to], p.order[from]];
+    saveHomePrefs(p); renderHomeTools(); renderSettingsTiles();
+  }));
   document.querySelectorAll("[data-tile-visible]").forEach(cb => cb.addEventListener("change", () => {
     const p = getHomePrefs();
     const id = cb.dataset.tileVisible;
@@ -2007,7 +2159,11 @@ function laufLoad() {
 function renderLaufTimer() {
   const el = document.getElementById("lf_timerDisplay");
   el.textContent = formatTime(Math.max(0, laufTimerRemaining));
-  el.style.color = laufTimerRemaining <= 60 && laufTimerRemaining > 0 ? "#f59e0b" : (laufTimerRemaining <= 0 ? "#ef4444" : "");
+  el.style.color = laufTimerRemaining <= 60 && laufTimerRemaining > 0 ? "var(--warn-text)" : (laufTimerRemaining <= 0 ? "var(--danger)" : "");
+  // Ein Knopf für Start/Pause/Weiter (Hick: weniger gleichzeitige Optionen)
+  const btn = document.getElementById("lf_startBtn");
+  btn.textContent = laufTimerRunning ? "⏸ Pause" : (laufTimerRemaining > 0 && laufTimerRemaining < LAUF_TIMER_SECONDS ? "▶ Weiter" : "▶ Start");
+  btn.classList.toggle("btn-secondary", laufTimerRunning);
 }
 // iOS gibt Ton nur frei, wenn der AudioContext bei einem Fingertipp entsteht → beim Start-Tipp anlegen, am Ende wiederverwenden
 let audioCtx = null;
@@ -2037,7 +2193,7 @@ function startLaufTimer() {
   laufTimerRunning = true;
   laufTimerEndAt = Date.now() + laufTimerRemaining * 1000;
   laufTimerInterval = setInterval(laufTick, 250);
-  laufSave();
+  laufSave(); renderLaufTimer();
 }
 function laufSyncRemaining() {
   if (laufTimerRunning) laufTimerRemaining = Math.max(0, Math.ceil((laufTimerEndAt - Date.now()) / 1000));
@@ -2050,7 +2206,7 @@ function laufTick() {
 function pauseLaufTimer() {
   laufSyncRemaining();
   laufTimerRunning = false; laufTimerEndAt = null; clearInterval(laufTimerInterval);
-  laufSave();
+  laufSave(); renderLaufTimer();
 }
 function resetLaufTimer() { pauseLaufTimer(); laufTimerRemaining = LAUF_TIMER_SECONDS; renderLaufTimer(); laufSave(); }
 
@@ -2090,16 +2246,15 @@ function resetAllLaps() {
 function renderLaufList() {
   const listEl = document.getElementById("lf_list");
   if (runners.length === 0) { listEl.innerHTML = '<div class="lf-empty">Noch keine Läufer hinzugefügt.</div>'; return; }
-  listEl.innerHTML = runners.map((r, i) => `
+  // Der Name hat Vorrang (bis 2 Zeilen); Antippen öffnet Rundenzeiten und "Entfernen"
+  listEl.innerHTML = runners.map(r => `
     <div class="lf-runner" data-id="${r.id}">
       <div class="lf-delete-zone" data-id="${r.id}">Löschen</div>
       <div class="lf-runner-content" data-id="${r.id}">
-        <div class="lf-rank">${i + 1}</div>
-        <div class="lf-name">${escapeHtml(r.name)}</div>
-        <button class="lf-interval-btn" data-id="${r.id}">⏱</button>
-        <button class="lf-roundbtn lf-minus" data-action="minus" data-id="${r.id}">−</button>
+        <button class="lf-namebtn" data-action="details" data-id="${r.id}"><span class="lf-name">${escapeHtml(r.name)}</span><span class="lf-sub">⏱ Rundenzeiten</span></button>
+        <button class="lf-roundbtn lf-minus" data-action="minus" data-id="${r.id}" aria-label="Runde abziehen">−</button>
         <div class="lf-laps">${r.laps}</div>
-        <button class="lf-roundbtn lf-plus" data-action="plus" data-id="${r.id}">+</button>
+        <button class="lf-roundbtn lf-plus" data-action="plus" data-id="${r.id}" aria-label="Runde dazu">+</button>
       </div>
     </div>
   `).join("");
@@ -2114,14 +2269,15 @@ setInterval(() => {
     const elapsedMs = now - r.lastTapAt;
     if (elapsedMs >= LF_COOLDOWN_MS) { btn.style.background = ""; r.lastTapAt = null; return; }
     const deg = (elapsedMs / LF_COOLDOWN_MS) * 360;
-    btn.style.background = `conic-gradient(#16a34a ${deg}deg, #f59e0b ${deg}deg 360deg)`;
+    btn.style.background = `conic-gradient(#15803d ${deg}deg, #b45309 ${deg}deg 360deg)`;
   });
 }, 150);
 
 const lfList = document.getElementById("lf_list");
-let lfDragState = null;
+// Wischen nach links bleibt als Abkürzung zum Löschen; sichtbar geht es über Name → "Entfernen"
+let lfDragState = null, lfSwipedAt = 0;
 lfList.addEventListener("pointerdown", (e) => {
-  if (e.target.closest("button")) return;
+  if (e.target.closest("button:not(.lf-namebtn)")) return;
   const content = e.target.closest(".lf-runner-content");
   if (!content) return;
   lfDragState = { id: content.dataset.id, startX: e.clientX, el: content, currentX: 0 };
@@ -2137,6 +2293,7 @@ lfList.addEventListener("pointermove", (e) => {
 function lfEndDrag() {
   if (!lfDragState) return;
   const el = lfDragState.el;
+  if (lfDragState.currentX < -10) lfSwipedAt = Date.now();
   el.style.transition = "transform 0.2s ease";
   el.style.transform = lfDragState.currentX <= -LF_SWIPE_THRESHOLD ? `translateX(-${LF_SWIPE_MAX}px)` : "translateX(0)";
   lfDragState = null;
@@ -2144,35 +2301,30 @@ function lfEndDrag() {
 lfList.addEventListener("pointerup", lfEndDrag);
 lfList.addEventListener("pointercancel", lfEndDrag);
 
-let lfHoldTimer = null;
-lfList.addEventListener("pointerdown", (e) => {
-  const btn = e.target.closest(".lf-interval-btn");
-  if (!btn) return;
-  lfHoldTimer = setTimeout(() => showLfIntervalPopover(btn.dataset.id), 300);
-});
-["pointerup", "pointerleave", "pointercancel"].forEach(evt => {
-  lfList.addEventListener(evt, () => { clearTimeout(lfHoldTimer); hideLfIntervalPopover(); });
-});
-function showLfIntervalPopover(id) {
-  const r = runners.find(rr => String(rr.id) === String(id));
-  if (!r) return;
-  document.getElementById("lfIntervalTitle").textContent = `Intervalle – ${r.name}`;
-  const ts = r.lapTimestamps || [];
-  const listEl = document.getElementById("lfIntervalList");
-  if (ts.length < 2) {
-    listEl.innerHTML = '<p style="color:var(--muted);">Noch nicht genug Runden für Intervalle.</p>';
-  } else {
-    let rows = "";
-    for (let i = 1; i < ts.length; i++) {
-      const deltaSec = Math.round((ts[i] - ts[i - 1]) / 1000);
-      rows += `<div>Runde ${i} → ${i + 1}: ${formatTime(deltaSec)}</div>`;
-    }
-    listEl.innerHTML = rows;
-  }
+/* ---- Detailfenster (Lauf + Schwimmen): Zeiten ansehen, Person entfernen ---- */
+let detailsRemoveCb = null;
+function openDetailsModal(title, html, onRemove) {
+  document.getElementById("lfIntervalTitle").textContent = title;
+  document.getElementById("lfIntervalList").innerHTML = html;
+  detailsRemoveCb = onRemove || null;
+  document.getElementById("lfIntervalRemoveBtn").classList.toggle("hidden", !onRemove);
   document.getElementById("lfIntervalOverlay").classList.remove("hidden");
 }
-function hideLfIntervalPopover() { document.getElementById("lfIntervalOverlay").classList.add("hidden"); }
-document.getElementById("lfIntervalClose").addEventListener("click", hideLfIntervalPopover);
+function closeDetailsModal() { document.getElementById("lfIntervalOverlay").classList.add("hidden"); detailsRemoveCb = null; }
+document.getElementById("lfIntervalClose").addEventListener("click", closeDetailsModal);
+document.getElementById("lfIntervalRemoveBtn").addEventListener("click", () => { const cb = detailsRemoveCb; closeDetailsModal(); if (cb) cb(); });
+function showLfDetails(id) {
+  const r = runners.find(rr => String(rr.id) === String(id));
+  if (!r) return;
+  const ts = r.lapTimestamps || [];
+  let html;
+  if (ts.length < 2) html = `<p style="color:var(--muted);">${r.laps} Runden · noch nicht genug Runden für Intervalle.</p>`;
+  else {
+    html = `<p style="margin-top:0;"><b>${r.laps} Runden</b></p>`;
+    for (let i = 1; i < ts.length; i++) html += `<div>Runde ${i} → ${i + 1}: ${formatTime(Math.round((ts[i] - ts[i - 1]) / 1000))}</div>`;
+  }
+  openDetailsModal(`Rundenzeiten – ${r.name}`, html, () => openConfirm(`"${r.name}" wirklich entfernen?`, () => removeRunner(id), null, "Entfernen"));
+}
 
 lfList.addEventListener("click", (e) => {
   const dz = e.target.closest(".lf-delete-zone");
@@ -2191,6 +2343,7 @@ lfList.addEventListener("click", (e) => {
   const id = btn.dataset.id;
   if (btn.dataset.action === "plus") tapLapPlus(id);
   if (btn.dataset.action === "minus") tapLapMinus(id);
+  if (btn.dataset.action === "details" && Date.now() - lfSwipedAt > 400) showLfDetails(id);
 });
 
 function exportLaufResults() {
@@ -2213,8 +2366,7 @@ document.getElementById("lf_allPlusBtn").addEventListener("click", addLapAll);
 document.getElementById("lf_sortBtn").addEventListener("click", sortRunners);
 document.getElementById("lf_resetLapsBtn").addEventListener("click", () => openConfirm("Alle Rundenzahlen auf 0 zurücksetzen?", resetAllLaps, null, "Zurücksetzen"));
 document.getElementById("lf_exportBtn").addEventListener("click", exportLaufResults);
-document.getElementById("lf_startBtn").addEventListener("click", startLaufTimer);
-document.getElementById("lf_pauseBtn").addEventListener("click", pauseLaufTimer);
+document.getElementById("lf_startBtn").addEventListener("click", () => { if (laufTimerRunning) pauseLaufTimer(); else startLaufTimer(); });
 document.getElementById("lf_resetTimerBtn").addEventListener("click", () => openConfirm("Timer wirklich auf 12:00 zurücksetzen?", resetLaufTimer, null, "Zurücksetzen"));
 document.getElementById("lf_classesBtn").addEventListener("click", () => {
   openClassesModal((students) => {
@@ -2309,6 +2461,7 @@ function setSchwimmMode(mode) {
 function renderSchwimmMode() {
   document.querySelectorAll(".sw-mode-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === schwimmMode));
   document.getElementById("sw_timerBox").classList.toggle("hidden", schwimmMode === "staggered");
+  document.getElementById("sw_startBtn").classList.toggle("hidden", schwimmMode === "staggered"); // gestaffelt: eigene Uhren pro Start
   document.getElementById("sw_stagTimers").classList.toggle("hidden", schwimmMode !== "staggered");
   renderStaggeredTimers();
   renderSwimAll();
@@ -2376,12 +2529,17 @@ function clearLanes() {
   }, null, "Entfernen");
 }
 document.getElementById("sw_clearLanesBtn").addEventListener("click", clearLanes);
-function renderSchwimmTimer() { document.getElementById("sw_timerDisplay").textContent = formatTime(schwimmElapsed); }
+function renderSchwimmTimer() {
+  document.getElementById("sw_timerDisplay").textContent = formatTime(schwimmElapsed);
+  const btn = document.getElementById("sw_startBtn");
+  btn.textContent = schwimmTimerRunning ? "⏸ Pause" : (schwimmElapsed > 0 ? "▶ Weiter" : "▶ Start");
+  btn.classList.toggle("btn-secondary", schwimmTimerRunning);
+}
 function startSchwimmTimer() {
   if (schwimmTimerRunning) return;
   schwimmTimerRunning = true; schwimmClock.startedAt = Date.now();
   schwimmTimerInterval = setInterval(schwimmTick, 250);
-  schwimmSave();
+  schwimmSave(); renderSchwimmTimer();
 }
 function schwimmTick() { schwimmElapsed = clockElapsedSec(schwimmClock); renderSchwimmTimer(); }
 function pauseSchwimmTimer() {
@@ -2484,7 +2642,7 @@ function renderSwimAll() {
   const lanes = [1, 2, 3, 4].map(n => document.getElementById("sw_lane" + n));
   const poolSwimmers = swimmers.filter(s => !s.lane);
   pool.innerHTML = poolSwimmers.length === 0 ? '<div class="sw-empty-hint">Alle zugeteilt.</div>' : poolSwimmers.map(s => `
-    <div class="sw-chip" data-id="${s.id}"><span>${escapeHtml(s.name)}</span><button data-action="delete" data-id="${s.id}">✕</button></div>
+    <div class="sw-chip" data-id="${s.id}"><span>${escapeHtml(s.name)}</span><button data-action="delete" data-id="${s.id}" aria-label="${escapeHtml(s.name)} entfernen">✕</button></div>
   `).join("");
   lanes.forEach((laneEl, i) => {
     const laneNum = i + 1;
@@ -2500,23 +2658,31 @@ function renderSwimAll() {
       const posBadge = schwimmMode === "staggered" && s.position ? `<div class="sw-pos-badge">${s.position}</div>` : "";
       const remaining = targetLengths - s.lengths;
       const almostDone = s.finishTime === null && remaining > 0 && remaining <= 2;
+      // Kopf = Griff zum Ziehen + Antippen für Details; darunter drei gleich breite Zählknöpfe, damit nichts aus der Bahn ragt
       return `
       <div class="sw-card${almostDone ? " sw-almost-done" : ""}" data-id="${s.id}">
         ${posBadge}
-        <div class="sw-top"><div class="sw-name">${escapeHtml(s.name)}</div>${resultHtml}</div>
-        ${deficitHtml}
+        <button class="sw-head" data-action="details" data-id="${s.id}"><span class="sw-name">${escapeHtml(s.name)}</span><span class="sw-lengths">${s.lengths}/${targetLengths}</span></button>
+        ${resultHtml}${deficitHtml}
         <div class="sw-bottom">
-          <button class="sw-interval-btn" data-id="${s.id}" title="Längenzeiten (gedrückt halten)">⏱</button>
-          <button class="sw-lenbtn minus" data-action="minus" data-id="${s.id}">−</button>
-          <div class="sw-lengths">${s.lengths}/${targetLengths}</div>
+          <button class="sw-lenbtn minus" data-action="minus" data-id="${s.id}" aria-label="Länge abziehen">−</button>
           <button class="sw-lenbtn plus1" data-action="plus1" data-id="${s.id}">+1</button>
           <button class="sw-lenbtn plus2" data-action="plus2" data-id="${s.id}">+2</button>
-          <button class="sw-del" data-action="delete" data-id="${s.id}">✕</button>
         </div>
       </div>`;
     }).join("");
   });
 }
+function showSwDetails(id) {
+  const s = swimmers.find(x => String(x.id) === String(id));
+  if (!s) return;
+  const ts = s.lengthTimes || [];
+  const html = ts.length === 0
+    ? `<p style="color:var(--muted);">${s.lengths}/${targetLengths} Längen · noch keine Zeiten erfasst.</p>`
+    : `<p style="margin-top:0;"><b>${s.lengths}/${targetLengths} Längen</b></p>` + ts.map((t, i) => `<div>Länge ${i + 1}: ${formatTime(Math.max(0, Math.round(t)))}</div>`).join("");
+  openDetailsModal(`Längenzeiten – ${s.name}`, html, () => openConfirm(`"${s.name}" wirklich entfernen?`, () => removeSwimmer(id), null, "Entfernen"));
+}
+let swDraggedAt = 0;
 document.getElementById("schwimmView").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
@@ -2524,6 +2690,7 @@ document.getElementById("schwimmView").addEventListener("click", (e) => {
   if (action === "plus1") changeLength(id, 1);
   else if (action === "plus2") changeLength(id, 2);
   else if (action === "minus") changeLength(id, -1);
+  else if (action === "details") { if (Date.now() - swDraggedAt > 400) showSwDetails(id); }
   else if (action === "delete") {
     const s = swimmers.find(s => String(s.id) === String(id));
     if (!s) return;
@@ -2540,54 +2707,31 @@ setInterval(() => {
     const elapsedMs = now - s.lastTapAt;
     if (elapsedMs >= SW_COOLDOWN_MS) { if (btn) btn.style.background = ""; s.lastTapAt = null; s.lastTapBtn = null; return; }
     const deg = (elapsedMs / SW_COOLDOWN_MS) * 360;
-    if (btn) btn.style.background = `conic-gradient(#16a34a ${deg}deg, #f59e0b ${deg}deg 360deg)`;
+    if (btn) btn.style.background = `conic-gradient(#15803d ${deg}deg, #b45309 ${deg}deg 360deg)`;
   });
 }, 150);
 
-function showSwIntervalPopover(id) {
-  const s = swimmers.find(x => String(x.id) === String(id));
-  if (!s) return;
-  document.getElementById("lfIntervalTitle").textContent = `Längenzeiten – ${s.name}`;
-  const ts = s.lengthTimes || [];
-  const listEl = document.getElementById("lfIntervalList");
-  if (ts.length === 0) {
-    listEl.innerHTML = '<p style="color:var(--muted);">Noch keine Längen erfasst.</p>';
-  } else {
-    let rows = "";
-    ts.forEach((t, i) => { rows += `<div>Länge ${i + 1}: ${formatTime(Math.max(0, Math.round(t)))}</div>`; });
-    listEl.innerHTML = rows;
-  }
-  document.getElementById("lfIntervalOverlay").classList.remove("hidden");
-}
-function hideSwIntervalPopover() { document.getElementById("lfIntervalOverlay").classList.add("hidden"); }
-let swHoldTimer = null;
+// Ziehen startet erst nach 8 px Bewegung am Namen (Kopf) oder am Chip – ein normaler Tipp öffnet die Details.
+// Der Rest der Karte lässt die Seite scrollen.
+let swDraggingId = null, swDragGhost = null, swCurrentHoverZone = null, swPending = null;
 document.getElementById("schwimmView").addEventListener("pointerdown", (e) => {
-  const btn = e.target.closest(".sw-interval-btn");
-  if (!btn) return;
-  swHoldTimer = setTimeout(() => showSwIntervalPopover(btn.dataset.id), 300);
-});
-["pointerup", "pointerleave", "pointercancel"].forEach(evt => {
-  document.getElementById("schwimmView").addEventListener(evt, () => { clearTimeout(swHoldTimer); hideSwIntervalPopover(); });
-});
-
-let swDraggingId = null, swDragGhost = null, swCurrentHoverZone = null;
-document.getElementById("schwimmView").addEventListener("pointerdown", (e) => {
-  if (e.target.closest("button")) return;
-  const card = e.target.closest(".sw-card, .sw-chip");
-  if (!card) return;
-  swDraggingId = card.dataset.id;
-  const s = swimmers.find(s => String(s.id) === String(swDraggingId));
-  const ghost = document.createElement("div");
-  ghost.className = "sw-drag-ghost";
-  ghost.textContent = s ? s.name : "";
-  document.body.appendChild(ghost);
-  swDragGhost = ghost;
-  swPositionGhost(e.clientX, e.clientY);
-  e.preventDefault();
+  if (e.target.closest("button") && !e.target.closest(".sw-head")) return;
+  const handle = e.target.closest(".sw-head, .sw-chip");
+  if (!handle) return;
+  const card = handle.closest(".sw-card, .sw-chip");
+  swPending = { id: card.dataset.id, x: e.clientX, y: e.clientY };
 });
 function swPositionGhost(x, y) { if (swDragGhost) { swDragGhost.style.left = x + "px"; swDragGhost.style.top = y + "px"; } }
 function swFindDropZone(x, y) { const el = document.elementFromPoint(x, y); return el ? el.closest(".sw-dropzone") : null; }
 document.addEventListener("pointermove", (e) => {
+  if (swPending && !swDraggingId && Math.hypot(e.clientX - swPending.x, e.clientY - swPending.y) > 8) {
+    swDraggingId = swPending.id;
+    const s = swimmers.find(x => String(x.id) === String(swDraggingId));
+    swDragGhost = document.createElement("div");
+    swDragGhost.className = "sw-drag-ghost";
+    swDragGhost.textContent = s ? s.name : "";
+    document.body.appendChild(swDragGhost);
+  }
   if (!swDraggingId) return;
   swPositionGhost(e.clientX, e.clientY);
   const zone = swFindDropZone(e.clientX, e.clientY);
@@ -2603,8 +2747,16 @@ function swComputeInsertIndex(zoneEl, y, excludeId) {
   }
   return cards.length;
 }
+function swEndDrag() {
+  if (swCurrentHoverZone) swCurrentHoverZone.classList.remove("drop-hover");
+  swCurrentHoverZone = null;
+  if (swDragGhost) { swDragGhost.remove(); swDragGhost = null; }
+  swDraggingId = null; swPending = null;
+}
+document.addEventListener("pointercancel", swEndDrag);
 document.addEventListener("pointerup", (e) => {
-  if (!swDraggingId) return;
+  if (!swDraggingId) { swPending = null; return; }
+  swDraggedAt = Date.now();
   const zone = swFindDropZone(e.clientX, e.clientY);
   if (zone) {
     const s = swimmers.find(s => String(s.id) === String(swDraggingId));
@@ -2614,7 +2766,7 @@ document.addEventListener("pointerup", (e) => {
       if (laneNum === 0) {
         s.lane = 0; s.position = null;
       } else if (schwimmMode === "staggered") {
-        const others = swimmers.filter(x => x.lane === laneNum && x.id !== s.id);
+        const others = swimmers.filter(x => x.lane === laneNum && x.id !== s.id).sort((a, b) => (a.position || 0) - (b.position || 0));
         if (others.length >= 4) {
           openConfirm(`Bahn ${laneNum} hat bereits 4 Personen (Start 1–4 belegt).`, null, null, "OK");
         } else {
@@ -2630,10 +2782,7 @@ document.addEventListener("pointerup", (e) => {
       schwimmSave();
     }
   }
-  if (swCurrentHoverZone) swCurrentHoverZone.classList.remove("drop-hover");
-  swCurrentHoverZone = null;
-  if (swDragGhost) { swDragGhost.remove(); swDragGhost = null; }
-  swDraggingId = null;
+  swEndDrag();
   renderSwimAll();
 });
 
@@ -2656,8 +2805,7 @@ document.getElementById("sw_addBtn").addEventListener("click", () => {
   addSwimmer(input.value, 0); input.value = ""; input.focus();
 });
 document.getElementById("sw_nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("sw_addBtn").click(); });
-document.getElementById("sw_startBtn").addEventListener("click", startSchwimmTimer);
-document.getElementById("sw_pauseBtn").addEventListener("click", pauseSchwimmTimer);
+document.getElementById("sw_startBtn").addEventListener("click", () => { if (schwimmTimerRunning) pauseSchwimmTimer(); else startSchwimmTimer(); });
 document.getElementById("sw_resetTimerBtn").addEventListener("click", () => openConfirm("Neues Rennen starten? Zeit und Längen werden zurückgesetzt (Bahnzuteilung bleibt erhalten).", resetSchwimmRace, null, "Zurücksetzen"));
 document.getElementById("sw_resetResultsBtn").addEventListener("click", () => openConfirm("Alle Längen und Zeiten zurücksetzen?", resetAllResults, null, "Zurücksetzen"));
 document.getElementById("sw_exportBtn").addEventListener("click", exportSwimResults);
@@ -2927,6 +3075,8 @@ document.getElementById("tabExams").addEventListener("click", () => switchKrTab(
 function switchKrTab(tab) {
   document.getElementById("viewRubrics").classList.toggle("hidden", tab !== "rubrics");
   document.getElementById("viewExams").classList.toggle("hidden", tab !== "exams");
+  document.getElementById("tabRubrics").classList.toggle("active", tab === "rubrics");
+  document.getElementById("tabExams").classList.toggle("active", tab === "exams");
   if (tab === "exams") renderExamList();
 }
 function computeNote(points, maxSix) {
@@ -2947,7 +3097,7 @@ function renderRubricList() {
       <div class="card-actions">
         <button class="btn btn-outline" data-action="edit" data-id="${r.id}">Bearbeiten</button>
         <button class="btn btn-outline" data-action="export" data-id="${r.id}">Exportieren</button>
-        <button class="btn btn-danger" data-action="delete" data-id="${r.id}">Löschen</button>
+        <button class="btn btn-danger-outline" data-action="delete" data-id="${r.id}">Löschen</button>
       </div>
     </div>`;
   }).join("");
@@ -3225,7 +3375,7 @@ function renderExamList() {
       <div class="card-sub">${rubric ? escapeHtml(rubric.name) : "(Raster gelöscht)"} · ${done}/${total} bewertet</div>
       <div class="card-actions">
         <button class="btn btn-outline" data-action="open" data-id="${ex.id}">Öffnen</button>
-        <button class="btn btn-danger" data-action="delete" data-id="${ex.id}">Löschen</button>
+        <button class="btn btn-danger-outline" data-action="delete" data-id="${ex.id}">Löschen</button>
       </div>
     </div>`;
   }).join("");
@@ -3280,7 +3430,7 @@ function renderExamStudentList() {
     const a1Graded = a1 && a1.note != null, a2Graded = a2 && a2.note != null;
     const btn1 = `<button class="attempt-btn${a1Graded ? " graded" : ""}${a1Graded && a1.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="1">${attemptButtonLabel(a1, 1, attempts === 2)}</button>`;
     const btn2 = attempts === 2 ? `<button class="attempt-btn${a2Graded ? " graded" : ""}${a2Graded && a2.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="2">${attemptButtonLabel(a2, 2, true)}</button>` : "";
-    return `<div class="student-row"><div class="sname">${escapeHtml(name)}</div>${btn1}${btn2}<button class="btn btn-danger" data-action="remove" data-name="${escapeHtml(name)}">✕</button></div>`;
+    return `<div class="student-row"><div class="sname">${escapeHtml(name)}</div>${btn1}${btn2}<button class="btn btn-danger-outline icon-btn" data-action="remove" data-name="${escapeHtml(name)}" aria-label="${escapeHtml(name)} entfernen">✕</button></div>`;
   }).join("");
 }
 document.getElementById("examStudentList").addEventListener("click", (e) => {
@@ -3949,6 +4099,8 @@ document.getElementById("pkTabRuns").addEventListener("click", () => pkSwitchTab
 function pkSwitchTab(tab) {
   document.getElementById("pkViewCourses").classList.toggle("hidden", tab !== "courses");
   document.getElementById("pkViewRuns").classList.toggle("hidden", tab !== "runs");
+  document.getElementById("pkTabCourses").classList.toggle("active", tab === "courses");
+  document.getElementById("pkTabRuns").classList.toggle("active", tab === "runs");
   if (tab === "runs") renderRunList();
 }
 function computeParkourNote(course, effectiveTime) {
@@ -3970,7 +4122,7 @@ function renderCourseList() {
       <div class="card-sub">Strafen: ${penaltyText}</div>
       <div class="card-actions">
         <button class="btn btn-outline" data-action="edit" data-id="${c.id}">Bearbeiten</button>
-        <button class="btn btn-danger" data-action="delete" data-id="${c.id}">Löschen</button>
+        <button class="btn btn-danger-outline" data-action="delete" data-id="${c.id}">Löschen</button>
       </div>
     </div>`;
   }).join("");
@@ -4049,7 +4201,7 @@ function renderRunList() {
       <div class="card-sub">${course ? escapeHtml(course.name) : "(Parcours gelöscht)"} · ${done}/${total} bewertet</div>
       <div class="card-actions">
         <button class="btn btn-outline" data-action="open" data-id="${run.id}">Öffnen</button>
-        <button class="btn btn-danger" data-action="delete" data-id="${run.id}">Löschen</button>
+        <button class="btn btn-danger-outline" data-action="delete" data-id="${run.id}">Löschen</button>
       </div>
     </div>`;
   }).join("");
@@ -4104,7 +4256,7 @@ function renderRunStudentList() {
       <div class="sname">${escapeHtml(name)}</div>
       <button class="attempt-btn${a1g ? " graded" : ""}${a1g && a1.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="1">${pkAttemptLabel(a1, 1)}</button>
       <button class="attempt-btn${a2g ? " graded" : ""}${a2g && a2.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="2">${pkAttemptLabel(a2, 2)}</button>
-      <button class="btn btn-danger" data-action="remove" data-name="${escapeHtml(name)}">✕</button>
+      <button class="btn btn-danger-outline icon-btn" data-action="remove" data-name="${escapeHtml(name)}" aria-label="${escapeHtml(name)} entfernen">✕</button>
     </div>`;
   }).join("");
 }
@@ -4496,7 +4648,7 @@ function renderTmList() {
         <div class="tm-rating-value ${cls}">${p.rating > 0 ? "+" : ""}${p.rating}</div>
         <button data-action="rplus" data-id="${p.id}">+</button>
       </div>
-      <button class="btn btn-danger" data-action="remove" data-id="${p.id}" style="padding:6px 10px;">✕</button>
+      <button class="btn btn-danger-outline icon-btn" data-action="remove" data-id="${p.id}" aria-label="${escapeHtml(p.name)} entfernen">✕</button>
     </div>`;
   }).join("");
 }
