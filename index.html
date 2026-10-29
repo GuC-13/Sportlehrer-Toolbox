@@ -516,10 +516,6 @@
   .sw-empty-hint { font-size: 0.8125rem; }
   .sw-distance-btn.active .l { color: var(--text); }
   .sb-hint { color: #94a3b8; }
-  .grading-hint { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; margin: -4px 0 12px; font-weight: 600; }
-  .self-pick { position: relative; box-shadow: inset 0 0 0 3px var(--warn-text); }
-  .self-badge { position: absolute; top: 2px; right: 4px; font-size: 0.9rem; }
-  .level-cell, .box-cell { position: relative; }
   .best-note { display: block; font-size: 0.8125rem; color: var(--muted); font-weight: 600; }
   .student-row { flex-wrap: wrap; }
   .sl-prev { text-align: center; color: var(--muted); font-weight: 600; margin: 0 0 6px; min-height: 1.2em; }
@@ -545,7 +541,7 @@
     </div>
     <div class="tool-grid" id="homeToolGrid"></div>
     <p class="hint">Reihenfolge ändern: Box lange drücken und ziehen – oder unter ⚙️ Einstellungen.</p>
-    <div id="appVersionLabel" class="version-label">v2026-10-29.2</div>
+    <div id="appVersionLabel" class="version-label">v2026-10-29.3</div>
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <button id="homeClassesBtn"><span class="ic">👥</span><span>Klassen</span></button>
       <button id="homeVerlaufBtn"><span class="ic">📊</span><span>Leistungen</span></button>
@@ -563,7 +559,6 @@
         <div class="more-menu hidden">
           <button id="lf_sortBtn">↕︎ Nach Runden sortieren</button>
           <button id="lf_exportBtn">📤 Ergebnisse exportieren</button>
-          <button id="lf_lapLenBtn">📏 Rundenlänge festlegen</button>
           <button id="lf_resetTimerBtn">⏱ Timer auf 12:00 zurücksetzen</button>
           <button id="lf_resetLapsBtn" class="danger">↺ Alle Runden zurücksetzen</button>
         </div>
@@ -697,10 +692,10 @@
     <div class="sl-controls">
       <button class="btn" id="sl_startBtn">▶ Start</button>
       <button class="btn btn-secondary" id="sl_resetBtn">↺ Zurücksetzen</button>
-      <button class="btn btn-outline" id="sl_enterBtn">✎ Anzahl eingeben</button>
+      <button class="btn btn-outline" id="sl_enterBtn">✎ Übungswerte eintragen</button>
       <button class="btn hidden" id="sl_saveBtn">In Leistungen speichern</button>
     </div>
-    <p class="hint">Ganze Klasse gleichzeitig: Partner:innen zählen mit, du startest die Uhr (Signal am Ende) und trägst danach die Zahlen mit „✎ Anzahl eingeben" ein – die App springt automatisch zur nächsten Person.</p>
+    <p class="hint"><b>Note:</b> Du zählst selbst mit dem grossen Knopf und speicherst. <b>Übung (formativ):</b> Die ganze Klasse springt gleichzeitig, Partner:innen zählen, du trägst die Zahlen mit „✎ Übungswerte eintragen" der Reihe nach ein. Übungswerte stehen getrennt in den Leistungen und zählen nicht zur Note.</p>
   </div>
 
   <!-- ============ MULTISTOPPUHR ============ -->
@@ -1123,7 +1118,6 @@
 <div class="modal-overlay hidden" id="gradingOverlay">
   <div class="modal-box wide">
     <h2 id="gradingTitle">Bewertung</h2>
-    <p id="gradingHint" class="grading-hint hidden"></p>
     <div class="grade-summary">
       <div><span class="pts" id="gradingPointsLabel">0 Punkte</span></div>
       <div class="note" id="gradingNoteLabel">–</div>
@@ -2204,16 +2198,16 @@ let laufTimerInterval = null;
 let laufTimerRunning = false;
 let laufTimerEndAt = null; // Zielzeitpunkt (ms) – Restzeit wird aus der echten Uhrzeit berechnet, nicht durch Mitzählen
 
-// Rundenlänge in Metern (0 = unbekannt): erst damit sind Resultate auf verschiedenen Bahnen vergleichbar (Cooper-Test misst Meter)
-let laufLapMeters = 0;
-function laufSave() { saveJSON(LAUF_STORAGE_KEY, { runners, laufTimerRemaining, laufTimerEndAt: laufTimerRunning ? laufTimerEndAt : null, laufLapMeters }); }
-function laufResultText(laps) { return `${laps} Runden${laufLapMeters ? ` (${laps * laufLapMeters} m)` : ""}`; }
+// Kreuzlauf auf dem Volleyballfeld: Einheit sind Runden. Wegen der Richtungswechsel ist die Strecke nicht mit einem
+// freien Lauf (Cooper/Finnenbahn) vergleichbar – Meter werden deshalb nur als grobe Orientierung im Detailfenster gezeigt.
+const LAUF_LAP_METERS_APPROX = 60;
+function laufSave() { saveJSON(LAUF_STORAGE_KEY, { runners, laufTimerRemaining, laufTimerEndAt: laufTimerRunning ? laufTimerEndAt : null }); }
+function laufResultText(laps) { return `${laps} Runden`; }
 function laufLoad() {
   const data = loadJSON(LAUF_STORAGE_KEY, null);
   if (!data) return;
   if (Array.isArray(data.runners)) runners = data.runners;
   if (typeof data.laufTimerRemaining === "number") laufTimerRemaining = data.laufTimerRemaining;
-  if (typeof data.laufLapMeters === "number") laufLapMeters = data.laufLapMeters;
   // Lief der Timer beim Schliessen/Neuladen noch, läuft er nahtlos weiter
   if (typeof data.laufTimerEndAt === "number") {
     laufTimerRemaining = Math.max(0, Math.ceil((data.laufTimerEndAt - Date.now()) / 1000));
@@ -2317,7 +2311,7 @@ function renderLaufList() {
   listEl.innerHTML = runners.map(r => {
     // Unterzeile: eigene Distanz + eigenes letztes Resultat (individuelle Bezugsnorm statt Vergleich mit anderen)
     const last = lastResultFor(r.sid ? r : r.name, "12-Minuten-Lauf");
-    const sub = [laufLapMeters ? `${r.laps * laufLapMeters} m` : "", last ? `zuletzt ${firstNumber(last.detail)}` : ""].filter(Boolean).join(" · ");
+    const sub = last ? `zuletzt ${firstNumber(last.detail)}` : "";
     return `
     <div class="lf-runner" data-id="${r.id}">
       <div class="lf-delete-zone" data-id="${r.id}">Löschen</div>
@@ -2391,7 +2385,7 @@ function showLfDetails(id) {
   let html;
   if (ts.length < 2) html = `<p style="color:var(--muted);">${r.laps} Runden · noch nicht genug Runden für Intervalle.</p>`;
   else {
-    html = `<p style="margin-top:0;"><b>${laufResultText(r.laps)}</b></p>`;
+    html = `<p style="margin-top:0;"><b>${laufResultText(r.laps)}</b> <span style="color:var(--muted);">(≈ ${r.laps * LAUF_LAP_METERS_APPROX} m Kreuzlauf)</span></p>`;
     for (let i = 1; i < ts.length; i++) html += `<div>Runde ${i} → ${i + 1}: ${formatTime(Math.round((ts[i] - ts[i - 1]) / 1000))}</div>`;
   }
   const last = lastResultFor(r.sid ? r : r.name, "12-Minuten-Lauf");
@@ -2437,9 +2431,6 @@ document.getElementById("lf_addBtn").addEventListener("click", () => {
 document.getElementById("lf_nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("lf_addBtn").click(); });
 document.getElementById("lf_allPlusBtn").addEventListener("click", addLapAll);
 document.getElementById("lf_sortBtn").addEventListener("click", sortRunners);
-document.getElementById("lf_lapLenBtn").addEventListener("click", () => {
-  openNumberPrompt("Rundenlänge in Metern", "z.B. 400 (Bahn) oder 200 (Halle) · 0 = ohne Meterangabe", laufLapMeters || "", (m) => { laufLapMeters = m; laufSave(); renderLaufList(); });
-});
 document.getElementById("lf_resetLapsBtn").addEventListener("click", () => openConfirm("Alle Rundenzahlen auf 0 zurücksetzen?", resetAllLaps, null, "Zurücksetzen"));
 document.getElementById("lf_exportBtn").addEventListener("click", exportLaufResults);
 document.getElementById("lf_startBtn").addEventListener("click", () => { if (laufTimerRunning) pauseLaufTimer(); else startLaufTimer(); });
@@ -3511,16 +3502,14 @@ function renderExamStudentList() {
     const a1Graded = a1 && a1.note != null, a2Graded = a2 && a2.note != null;
     const btn1 = `<button class="attempt-btn${a1Graded ? " graded" : ""}${a1Graded && a1.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="1">${attemptButtonLabel(a1, 1, attempts === 2)}</button>`;
     const btn2 = attempts === 2 ? `<button class="attempt-btn${a2Graded ? " graded" : ""}${a2Graded && a2.note < 4 ? " low" : ""}" data-action="grade" data-name="${escapeHtml(name)}" data-attempt="2">${attemptButtonLabel(a2, 2, true)}</button>` : "";
-    const selfBtn = `<button class="attempt-btn self-btn${res.self ? " graded" : ""}" data-action="self" data-name="${escapeHtml(name)}" title="Selbsteinschätzung">🙋${res.self ? " ✓" : " Selbst"}</button>`;
     const best = bestAttemptNote(res);
-    return `<div class="student-row"><div class="sname">${escapeHtml(name)}${best != null && attempts === 2 ? `<span class="best-note">Beste Note: ${formatNote(best)}</span>` : ""}</div>${selfBtn}${btn1}${btn2}<button class="btn btn-danger-outline icon-btn" data-action="remove" data-name="${escapeHtml(name)}" aria-label="${escapeHtml(name)} entfernen">✕</button></div>`;
+    return `<div class="student-row"><div class="sname">${escapeHtml(name)}${best != null && attempts === 2 ? `<span class="best-note">Beste Note: ${formatNote(best)}</span>` : ""}</div>${btn1}${btn2}<button class="btn btn-danger-outline icon-btn" data-action="remove" data-name="${escapeHtml(name)}" aria-label="${escapeHtml(name)} entfernen">✕</button></div>`;
   }).join("");
 }
 document.getElementById("examStudentList").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-action]"); if (!btn) return;
   const name = btn.dataset.name;
   if (btn.dataset.action === "grade") openGrading(name, Number(btn.dataset.attempt) || 1);
-  else if (btn.dataset.action === "self") openGrading(name, 1, "self");
   else if (btn.dataset.action === "remove") {
     openConfirm(`"${name}" aus dieser Prüfung entfernen?`, () => {
       const ex = exams.find(x => x.id === currentExamId);
@@ -3589,8 +3578,7 @@ function buildStudentReportSection(ex, rubric, name) {
       tableHtml = `<table class="grid"><thead><tr><th>Kriterium</th><th>Bewertung</th></tr></thead><tbody>` +
         rubric.criteria.map((c, ci) => {
           const checkedSet = new Set(a.checked ? a.checked[ci] : []);
-          const selfSet = new Set(res.self && res.self.checked ? res.self.checked[ci] : []);
-          const boxesHtml = c.boxes.map((b, bi) => `<span class="box${checkedSet.has(bi) ? " on" : ""}">${checkedSet.has(bi) ? "✓ " : "☐ "}${escapeHtml(b.label)}${selfSet.has(bi) ? " 🙋" : ""}</span>`).join(" ");
+          const boxesHtml = c.boxes.map((b, bi) => `<span class="box${checkedSet.has(bi) ? " on" : ""}">${checkedSet.has(bi) ? "✓ " : "☐ "}${escapeHtml(b.label)}</span>`).join(" ");
           const comment = (a.comments && a.comments[ci]) ? `<div class="comment">${escapeHtml(a.comments[ci])}</div>` : "";
           return `<tr><td class="crit"><b>${escapeHtml(c.title)}</b>${c.desc ? `<div class="desc">${escapeHtml(c.desc)}</div>` : ""}</td><td>${boxesHtml}${comment}</td></tr>`;
         }).join("") + "</tbody></table>";
@@ -3600,16 +3588,14 @@ function buildStudentReportSection(ex, rubric, name) {
           const sel = a.selections ? a.selections[ci] : null;
           const cells = c.points.map((p, li) => {
             const isSel = sel === li;
-            const isSelf = res.self && res.self.selections && res.self.selections[ci] === li;
             const style = isSel ? ` style="background:${levelColorPrint(li, c.points.length)}; font-weight:800;"` : "";
-            return `<td${style}>${isSel ? "●" : ""}${isSelf ? " 🙋" : ""}</td>`;
+            return `<td${style}>${isSel ? "●" : ""}</td>`;
           }).join("");
           const comment = (a.comments && a.comments[ci]) ? `<div class="comment">${escapeHtml(a.comments[ci])}</div>` : "";
           return `<tr><td class="crit"><b>${escapeHtml(c.title)}</b>${c.desc ? `<div class="desc">${escapeHtml(c.desc)}</div>` : ""}${comment}</td>${cells}</tr>`;
         }).join("") + "</tbody></table>";
     }
-    const legend = res.self ? `<div class="legend">${rubric.type === "checkboxes" ? "✓" : "●"} Bewertung Lehrperson · 🙋 deine Selbsteinschätzung</div>` : "";
-    const summary = legend + (a && a.note != null ? `<div class="summary">Note <b>${formatNote(a.note)}</b> · ${a.points} / ${a.maxSix} Punkte</div>` : "");
+    const summary = a && a.note != null ? `<div class="summary">Note <b>${formatNote(a.note)}</b> · ${a.points} / ${a.maxSix} Punkte</div>` : "";
     sections += `
       <section class="report-page">
         <div class="report-header">
@@ -3650,7 +3636,6 @@ document.getElementById("examPdfBtn").addEventListener("click", () => {
   .box.on { background:#bbf7d0; border-color:#16a34a; font-weight:700; }
   .summary { font-size:1.05rem; font-weight:700; text-align:right; }
   .pk-empty { color:#94a3b8; font-style:italic; }
-  .legend { font-size:0.8rem; color:#475569; margin-bottom:6px; }
   @media print { .report-page { padding: 14mm; } }
 </style></head><body>${body}</body></html>`;
   const w = window.open("", "_blank");
@@ -3661,27 +3646,18 @@ document.getElementById("examPdfBtn").addEventListener("click", () => {
   setTimeout(() => w.print(), 300);
 });
 
-// gradingMode "self": Selbsteinschätzung der Schülerin / des Schülers am selben Raster (ohne Eintrag in den Leistungen).
-// In der Bewertung durch die Lehrperson werden deren Kreuze mit 🙋 angezeigt → Gesprächsgrundlage für das Feedback.
-let gradingName = null, gradingAttempt = 1, gradingSelections = [], gradingChecked = [], gradingComments = [], gradingMode = "teacher", gradingSelf = null;
-function openGrading(name, attemptNum, mode) {
-  gradingName = name; gradingAttempt = attemptNum || 1; gradingMode = mode === "self" ? "self" : "teacher";
+let gradingName = null, gradingAttempt = 1, gradingSelections = [], gradingChecked = [], gradingComments = [];
+function openGrading(name, attemptNum) {
+  gradingName = name; gradingAttempt = attemptNum || 1;
   const ex = exams.find(x => x.id === currentExamId);
   const rubric = rubrics.find(r => r.id === ex.rubricId);
   if (!rubric) { openConfirm("Das Kriterienraster dieser Prüfung wurde gelöscht.", null, null, "OK"); return; }
-  const res = ex.results[name] || {};
-  const existing = gradingMode === "self" ? res.self : res["attempt" + gradingAttempt];
-  gradingSelf = gradingMode === "teacher" ? (res.self || null) : null;
+  const existing = (ex.results[name] || {})["attempt" + gradingAttempt];
   gradingComments = rubric.criteria.map((c, i) => (existing && existing.comments) ? (existing.comments[i] || "") : "");
   if (rubric.type === "checkboxes") gradingChecked = rubric.criteria.map((c, i) => new Set(existing && existing.checked ? existing.checked[i] : []));
   else gradingSelections = rubric.criteria.map((c, i) => (existing && existing.selections) ? existing.selections[i] : null);
-  const attemptSuffix = gradingMode === "self" ? " – 🙋 Selbsteinschätzung" : ((rubric.attempts || 1) === 2 ? ` – ${gradingAttempt}. Versuch` : "");
+  const attemptSuffix = (rubric.attempts || 1) === 2 ? ` – ${gradingAttempt}. Versuch` : "";
   document.getElementById("gradingTitle").textContent = `${rubric.name} – ${name}${attemptSuffix}`;
-  const hint = document.getElementById("gradingHint");
-  hint.textContent = gradingMode === "self"
-    ? "Gib das Gerät der Schülerin / dem Schüler: Wie gut gelingt dir das? Wähle pro Kriterium ehrlich aus."
-    : (gradingSelf ? `🙋 = Selbsteinschätzung (${gradingSelf.points} Pt.) – vergleiche im Feedbackgespräch.` : "");
-  hint.classList.toggle("hidden", !hint.textContent);
   renderGradingTable(rubric); updateGradingSummary(rubric);
   document.getElementById("gradingOverlay").classList.remove("hidden");
 }
@@ -3699,10 +3675,9 @@ function renderGradingTable(rubric) {
         <td class="crit-title-cell"><span class="t">${escapeHtml(c.title)}</span><span class="d">${escapeHtml(c.desc)}</span></td>
         <td class="checkbox-cell">${c.boxes.map((b, bi) => {
           const checked = gradingChecked[ci].has(bi);
-          const selfPick = gradingSelf && gradingSelf.checked && (gradingSelf.checked[ci] || []).includes(bi);
-          return `<span class="box-cell${checked ? " selected" : ""}${selfPick ? " self-pick" : ""}" data-ci="${ci}" data-bi="${bi}">${selfPick ? '<span class="self-badge">🙋</span>' : ""}${escapeHtml(b.label)}<span class="bp">${b.points} Pt.</span></span>`;
+          return `<span class="box-cell${checked ? " selected" : ""}" data-ci="${ci}" data-bi="${bi}">${escapeHtml(b.label)}<span class="bp">${b.points} Pt.</span></span>`;
         }).join("")}</td>
-        <td class="comment-cell"><textarea data-ci="${ci}" placeholder="${gradingMode === "self" ? "Was will ich verbessern?" : "Notiz / nächster Schritt..."}">${escapeHtml(gradingComments[ci])}</textarea></td>
+        <td class="comment-cell"><textarea data-ci="${ci}" placeholder="Notiz / nächster Schritt...">${escapeHtml(gradingComments[ci])}</textarea></td>
       </tr>`;
     });
     html += "</tbody>";
@@ -3716,10 +3691,9 @@ function renderGradingTable(rubric) {
       c.points.forEach((p, li) => {
         const selected = gradingSelections[ci] === li;
         const bg = selected ? levelColor(li, c.points.length) : "var(--card)";
-        const selfPick = gradingSelf && gradingSelf.selections && gradingSelf.selections[ci] === li;
-        html += `<td class="level-cell${selected ? " selected" : ""}${selfPick ? " self-pick" : ""}" style="background:${bg}" data-ci="${ci}" data-li="${li}">${selfPick ? '<span class="self-badge">🙋</span>' : ""}${p} Pt.</td>`;
+        html += `<td class="level-cell${selected ? " selected" : ""}" style="background:${bg}" data-ci="${ci}" data-li="${li}">${p} Pt.</td>`;
       });
-      html += `<td class="comment-cell"><textarea data-ci="${ci}" placeholder="${gradingMode === "self" ? "Was will ich verbessern?" : "Notiz / nächster Schritt..."}">${escapeHtml(gradingComments[ci])}</textarea></td></tr>`;
+      html += `<td class="comment-cell"><textarea data-ci="${ci}" placeholder="Notiz / nächster Schritt...">${escapeHtml(gradingComments[ci])}</textarea></td></tr>`;
     });
     html += "</tbody>";
     table.outerHTML = `<table class="grading-table" id="gradingTable">${html}</table>`;
@@ -3754,7 +3728,7 @@ function currentGradingPoints(rubric) {
 function updateGradingSummary(rubric) {
   const points = currentGradingPoints(rubric);
   const note = computeNote(points, rubric.maxSix);
-  document.getElementById("gradingPointsLabel").textContent = `${gradingMode === "self" ? "Selbst: " : ""}${points} / ${rubric.maxSix} Punkte`;
+  document.getElementById("gradingPointsLabel").textContent = `${points} / ${rubric.maxSix} Punkte`;
   document.getElementById("gradingNoteLabel").textContent = note != null ? formatNote(note) : "–";
 }
 document.getElementById("gradingCancel").addEventListener("click", () => document.getElementById("gradingOverlay").classList.add("hidden"));
@@ -3767,16 +3741,6 @@ document.getElementById("gradingSave").addEventListener("click", () => {
   const doSave = () => {
     const points = currentGradingPoints(rubric);
     if (!ex.results[gradingName]) ex.results[gradingName] = {};
-    if (gradingMode === "self") {
-      const selfResult = { comments: gradingComments.slice(), points };
-      if (rubric.type === "checkboxes") selfResult.checked = gradingChecked.map(set => Array.from(set));
-      else selfResult.selections = gradingSelections.slice();
-      ex.results[gradingName].self = selfResult;
-      saveExams();
-      document.getElementById("gradingOverlay").classList.add("hidden");
-      renderExamStudentList();
-      return;
-    }
     const note = computeNote(points, rubric.maxSix);
     const attemptResult = { comments: gradingComments.slice(), points, maxSix: rubric.maxSix, note: note != null ? roundToQuarter(note) : null };
     if (rubric.type === "checkboxes") attemptResult.checked = gradingChecked.map(set => Array.from(set));
@@ -3789,7 +3753,7 @@ document.getElementById("gradingSave").addEventListener("click", () => {
       attemptResult.note != null ? `Note ${formatNote(attemptResult.note)} (${points}/${rubric.maxSix} Pt.)` : "nicht bewertet", `exam:${ex.id}:${gradingAttempt}`);
   };
   // Ein versehentliches "Speichern" ohne Auswahl ergäbe Note 1 → nachfragen
-  if (open > 0 && gradingMode === "teacher") {
+  if (open > 0) {
     const msg = rubric.type === "checkboxes"
       ? "Es ist noch kein Feld angekreuzt. Trotzdem speichern? Das ergibt die tiefste Note."
       : `${open} von ${rubric.criteria.length} Kriterien sind noch nicht bewertet und zählen 0 Punkte. Trotzdem speichern?`;
@@ -3820,7 +3784,7 @@ function renderSeilStudentSelect() {
 }
 function renderSeilPrev() {
   const person = currentSeilPerson();
-  const last = person ? lastResultFor(person, `Seilspringen ${seilDuration}s`) : null;
+  const last = person ? lastResultFor(person, seilLabel(false)) : null;
   document.getElementById("sl_prevInfo").textContent = last ? `Letztes Mal (${formatDateDE(last.date)}): ${last.detail}` : "";
 }
 document.getElementById("sl_studentSelect").addEventListener("change", renderSeilPrev);
@@ -3878,14 +3842,14 @@ document.getElementById("sl_enterBtn").addEventListener("click", () => {
 });
 // Ganze Klasse eintragen: nach jeder Zahl direkt die nächste Person, ohne Zwischenmeldung
 function seilPromptFor(person, prevInfo) {
-  const last = lastResultFor(person, `Seilspringen ${seilDuration}s`);
-  const hint = [prevInfo, `${seilDuration} Sek., von Partner:in gezählt`, last ? `letztes Mal: ${last.detail}` : ""].filter(Boolean).join(" · ");
-  openNumberPrompt(`Sprünge – ${person.name}`, hint, "", (n) => {
+  const last = lastResultFor(person, seilLabel(true));
+  const hint = [prevInfo, `Übung ${seilDuration} Sek., zählt nicht zur Note`, last ? `letzte Übung: ${firstNumber(last.detail)}` : ""].filter(Boolean).join(" · ");
+  openNumberPrompt(`Übungswert – ${person.name}`, hint, "", (n) => {
     seilCount = n; renderSeilCount();
-    const r = seilSaveCurrent(); if (!r) return;
+    const r = seilSaveCurrent(true); if (!r) return;
     const saved = `✓ ${r.name}: ${r.count}${seilDiffText(r.diff)}`;
     if (r.hasNext) seilPromptFor(currentSeilPerson(), saved);
-    else openConfirm(`${saved}. Alle eingetragen.`, null, null, "OK");
+    else { seilReset(); openConfirm(`${saved}. Alle Übungswerte eingetragen.`, null, null, "OK"); }
   }, person.sid ? () => {
     const sel = document.getElementById("sl_studentSelect");
     if (sel.selectedIndex < sel.options.length - 1) { sel.selectedIndex++; renderSeilPrev(); seilPromptFor(currentSeilPerson(), `${person.name} übersprungen`); }
@@ -3893,14 +3857,16 @@ function seilPromptFor(person, prevInfo) {
   } : null);
 }
 // Speichert das Resultat der gewählten Person; in einer Klasse geht es zur nächsten Person weiter
-function seilSaveCurrent() {
+// formative = true: von Partner:innen gezählter Übungswert – eigene Disziplin in den Leistungen, nie Teil der Note
+function seilLabel(formative) { return `Seilspringen ${seilDuration}s${formative ? " – Übung" : ""}`; }
+function seilSaveCurrent(formative) {
   const person = currentSeilPerson();
   if (!person) { openConfirm("Bitte einen Namen angeben oder aus einer Klasse wählen.", null, null, "OK"); return null; }
-  const label = `Seilspringen ${seilDuration}s`;
+  const label = seilLabel(formative);
   const last = lastResultFor(person, label);
   const count = seilCount;
   const diff = last && firstNumber(last.detail) != null ? count - firstNumber(last.detail) : null;
-  pushHistory(person, "Seilspringen", label, `${count} Sprünge`);
+  pushHistory(person, formative ? "Seilspringen (formativ)" : "Seilspringen", label, formative ? `${count} Sprünge (Partner gezählt)` : `${count} Sprünge`);
   document.getElementById("sl_saveBtn").classList.add("hidden"); // kein versehentliches Doppelt-Speichern
   const studentSel = document.getElementById("sl_studentSelect");
   const hasNext = !!person.sid && studentSel.selectedIndex >= 0 && studentSel.selectedIndex < studentSel.options.length - 1;
@@ -3909,7 +3875,7 @@ function seilSaveCurrent() {
 }
 function seilDiffText(diff) { return diff == null ? "" : ` (${diff > 0 ? "+" : ""}${diff} gegenüber letztem Mal)`; }
 document.getElementById("sl_saveBtn").addEventListener("click", () => {
-  const r = seilSaveCurrent(); if (!r) return;
+  const r = seilSaveCurrent(false); if (!r) return;
   openConfirm(`Ergebnis für ${r.name} gespeichert: ${r.count} Sprünge${seilDiffText(r.diff)}.${r.hasNext ? ` Weiter mit ${r.nextName}.` : ""}`, null, null, "OK");
 });
 
