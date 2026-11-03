@@ -541,7 +541,7 @@
     </div>
     <div class="tool-grid" id="homeToolGrid"></div>
     <p class="hint">Reihenfolge ändern: Box lange drücken und ziehen – oder unter ⚙️ Einstellungen.</p>
-    <div id="appVersionLabel" class="version-label">v2026-11-03.1</div>
+    <div id="appVersionLabel" class="version-label">v2026-11-03.2</div>
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <button id="homeClassesBtn"><span class="ic">👥</span><span>Klassen</span></button>
       <button id="homeVerlaufBtn"><span class="ic">📊</span><span>Leistungen</span></button>
@@ -880,7 +880,7 @@
 <!-- ============ SHARED MODALS ============ -->
 <div class="modal-overlay hidden" id="confirmOverlay">
   <div class="modal-box">
-    <p id="confirmMessage" style="font-size:1.05rem; margin:0 0 16px;"></p>
+    <p id="confirmMessage" style="font-size:1.05rem; margin:0 0 16px; white-space:pre-line; max-height:60vh; overflow-y:auto;"></p>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="confirmCancel">Abbrechen</button>
       <button class="btn btn-danger" id="confirmOk">Bestätigen</button>
@@ -4958,6 +4958,34 @@ sbLoad(); sbRender();
 renderTmList();
 renderBackupInfo();
 renderActiveClassUI();
+
+/* ---- Einmalige Neuberechnung (v2026-11-03): Noten aus Tabellen wurden früher interpoliert und aufgerundet ---- */
+// Gespeicherte Schwimm- und Sprintresultate werden aus der gespeicherten Zeit nach der Schwellen-Logik neu benotet.
+const REGRADE_KEY = "spt_regrade_thresholds_v1";
+function regradeHistoryOnce() {
+  try { if (localStorage.getItem(REGRADE_KEY)) return; } catch (e) { return; }
+  const changes = [];
+  Object.values(history).forEach(entries => entries.forEach(en => {
+    let m, note = null;
+    const swim = String(en.label).match(/^(\d+)m Schwimmen$/);
+    const sprint = String(en.label).match(/^(60|80)m Sprint$/);
+    if (swim && (m = String(en.detail).match(/^(\d+):(\d{2}) · Note ([\d.]+)/))) {
+      note = computeSwimGrade(Number(swim[1]), Number(m[1]) * 60 + Number(m[2]));
+    } else if (sprint && (m = String(en.detail).match(/^([\d.]+) s · Note ([\d.]+)/))) {
+      note = computeSprintGrade(sprint[1] === "60" ? "1" : "3", Number(m[1]));
+    }
+    if (note == null) return;
+    const oldNote = swim ? m[3] : m[2];
+    const newNote = formatNote(note);
+    if (oldNote === newNote) return;
+    en.detail = en.detail.replace(`Note ${oldNote}`, `Note ${newNote}`);
+    changes.push(`${en.name || "?"}: ${en.label} ${formatDateDE(en.date)} – ${oldNote} → ${newNote}`);
+  }));
+  if (changes.length) persistHistory();
+  try { localStorage.setItem(REGRADE_KEY, "1"); } catch (e) {}
+  if (changes.length) openConfirm(`Notenberechnung korrigiert: ${changes.length} gespeicherte Note${changes.length === 1 ? "" : "n"} in den Leistungen angepasst.\n\n${changes.slice(0, 12).join("\n")}${changes.length > 12 ? `\n… und ${changes.length - 12} weitere` : ""}`, null, null, "OK");
+}
+regradeHistoryOnce();
 // Browser bitten, die Daten nicht automatisch zu löschen (Safari räumt sonst ungenutzte Website-Daten weg)
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
 
