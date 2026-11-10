@@ -325,6 +325,10 @@
   .box-cell .bp { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
   .box-cell.selected { background: var(--accent-bg); color: white; border-color: var(--accent-bg); }
   .box-cell.selected .bp { color: rgba(255,255,255,0.85); }
+  .box-cell.full { background: var(--success-bg); color: white; border-color: var(--success-bg); }
+  .box-cell.full .bp { color: rgba(255,255,255,0.85); }
+  .box-cell.half { background: linear-gradient(to right, #f59e0b 50%, var(--card) 50%); border-color: #f59e0b; }
+  .box-cell.half .bp { color: var(--text); font-weight: 700; }
   .grade-summary { display: flex; gap: 20px; align-items: baseline; margin-bottom: 14px; background: var(--bg); border-radius: 10px; padding: 10px 14px; }
   .grade-summary .note { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
   .grade-summary .pts { color: var(--muted); }
@@ -541,7 +545,7 @@
     </div>
     <div class="tool-grid" id="homeToolGrid"></div>
     <p class="hint">Reihenfolge ändern: Box lange drücken und ziehen – oder unter ⚙️ Einstellungen.</p>
-    <div id="appVersionLabel" class="version-label">v2026-11-03.2</div>
+    <div id="appVersionLabel" class="version-label">v2026-11-10.1</div>
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <button id="homeClassesBtn"><span class="ic">👥</span><span>Klassen</span></button>
       <button id="homeVerlaufBtn"><span class="ic">📊</span><span>Leistungen</span></button>
@@ -1070,6 +1074,13 @@
     <div class="toggle-group" id="attemptsToggle">
       <button class="toggle-btn" data-attempts="1">1 Versuch</button>
       <button class="toggle-btn" data-attempts="2">2 Versuche</button>
+    </div>
+    <div id="halfPointsSection" class="hidden">
+      <label class="field-label">Halbe Punkte</label>
+      <div class="toggle-group" id="halfPointsToggle">
+        <button class="toggle-btn" data-half="0">Nein (1 Klick = volle Punkte)</button>
+        <button class="toggle-btn" data-half="1">Ja (1. Klick halb, 2. Klick voll)</button>
+      </div>
     </div>
     <div id="levelsSection">
       <label class="field-label">Bewertungsstufen (von bester zu schlechtester)</label>
@@ -3194,6 +3205,7 @@ function downloadTextFile(filename, text) {
 function sanitizeFilename(name) { return name.replace(/[\\/:*?"<>|]/g, "").trim() || "kriterienraster"; }
 function exportRubricCsv(rubric) {
   const lines = [`#TYP=${rubric.type === "checkboxes" ? "ANKREUZFELDER" : "STUFEN"}`, `#NOTE6=${rubric.maxSix}`, `#VERSUCHE=${rubric.attempts || 1}`];
+  if (rubric.type === "checkboxes" && rubric.halfPoints) lines.push("#HALBE=JA");
   if (rubric.type === "checkboxes") {
     const maxBoxes = Math.max(0, ...rubric.criteria.map(c => c.boxes.length));
     const header = ["Kriterium", "Beschreibung"];
@@ -3217,14 +3229,14 @@ document.getElementById("exportTemplateBtn").addEventListener("click", () => {
   downloadTextFile("Kriterienraster-Vorlage.csv", lines.join("\n"));
 });
 
-let editingRubricId = null, draftType = "levels", draftAttempts = 1, draftLevels = [], draftCriteria = [];
+let editingRubricId = null, draftType = "levels", draftAttempts = 1, draftHalf = false, draftLevels = [], draftCriteria = [];
 function openRubricEditor(rubric) {
   if (rubric) {
     editingRubricId = rubric.id;
     document.getElementById("rubricEditorTitle").textContent = "Kriterienraster bearbeiten";
     document.getElementById("rubricName").value = rubric.name;
     document.getElementById("rubricMaxSix").value = rubric.maxSix;
-    draftType = rubric.type || "levels"; draftAttempts = rubric.attempts || 1;
+    draftType = rubric.type || "levels"; draftAttempts = rubric.attempts || 1; draftHalf = !!rubric.halfPoints;
     draftLevels = (rubric.levels || []).slice();
     draftCriteria = draftType === "checkboxes"
       ? rubric.criteria.map(c => ({ id: c.id, title: c.title, desc: c.desc, boxes: (c.boxes || []).map(b => ({ ...b })) }))
@@ -3233,16 +3245,17 @@ function openRubricEditor(rubric) {
     editingRubricId = null;
     document.getElementById("rubricEditorTitle").textContent = "Neues Kriterienraster";
     document.getElementById("rubricName").value = ""; document.getElementById("rubricMaxSix").value = "";
-    draftType = "levels"; draftAttempts = 1;
+    draftType = "levels"; draftAttempts = 1; draftHalf = false;
     draftLevels = ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"];
     draftCriteria = [];
   }
-  renderTypeToggle(); renderAttemptsToggle(); renderLevelsEditor(); renderCriteriaEditor();
+  renderTypeToggle(); renderAttemptsToggle(); renderHalfToggle(); renderLevelsEditor(); renderCriteriaEditor();
   document.getElementById("rubricEditorOverlay").classList.remove("hidden");
 }
 function closeRubricEditor() { document.getElementById("rubricEditorOverlay").classList.add("hidden"); }
 function renderTypeToggle() {
   document.getElementById("levelsSection").classList.toggle("hidden", draftType !== "levels");
+  document.getElementById("halfPointsSection").classList.toggle("hidden", draftType !== "checkboxes");
   document.querySelectorAll("#typeToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.type === draftType));
 }
 function renderAttemptsToggle() {
@@ -3254,6 +3267,13 @@ document.getElementById("typeToggle").addEventListener("click", (e) => {
   const doSwitch = () => { draftType = newType; draftCriteria = []; renderTypeToggle(); renderCriteriaEditor(); };
   if (draftCriteria.length > 0) openConfirm("Beim Wechsel der Bewertungsart werden die bereits erfassten Kriterien zurückgesetzt. Fortfahren?", doSwitch, null, "Wechseln");
   else doSwitch();
+});
+function renderHalfToggle() {
+  document.querySelectorAll("#halfPointsToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", (btn.dataset.half === "1") === draftHalf));
+}
+document.getElementById("halfPointsToggle").addEventListener("click", (e) => {
+  const btn = e.target.closest(".toggle-btn"); if (!btn) return;
+  draftHalf = btn.dataset.half === "1"; renderHalfToggle();
 });
 document.getElementById("attemptsToggle").addEventListener("click", (e) => {
   const btn = e.target.closest(".toggle-btn"); if (!btn) return;
@@ -3362,6 +3382,7 @@ document.getElementById("rubricEditorSave").addEventListener("click", () => {
   if (draftCriteria.length === 0) { openConfirm("Bitte mindestens ein Kriterium hinzufügen.", null, null, "OK"); return; }
   const rubricObj = {
     id: editingRubricId || uid(), name, maxSix, type: draftType, attempts: draftAttempts,
+    halfPoints: draftType === "checkboxes" && draftHalf,
     levels: draftType === "levels" ? draftLevels.slice() : [],
     criteria: draftType === "checkboxes"
       ? draftCriteria.map(c => ({ id: c.id, title: c.title || "Ohne Titel", desc: c.desc || "", boxes: c.boxes.map(b => ({ label: b.label || "Ohne Beschriftung", points: b.points })) }))
@@ -3378,7 +3399,7 @@ document.getElementById("csvFileInput").addEventListener("change", (e) => {
   readFileText(file).then(text => {
     try {
       const parsed = parseRubricCsv(text);
-      draftType = parsed.type; draftAttempts = parsed.attempts || 1;
+      draftType = parsed.type; draftAttempts = parsed.attempts || 1; draftHalf = !!parsed.halfPoints;
       draftLevels = parsed.levels; draftCriteria = parsed.criteria;
       editingRubricId = null;
       const maxSix = parsed.maxSix != null ? parsed.maxSix : (parsed.type === "checkboxes"
@@ -3387,7 +3408,7 @@ document.getElementById("csvFileInput").addEventListener("change", (e) => {
       document.getElementById("rubricEditorTitle").textContent = "Neues Kriterienraster (aus CSV)";
       document.getElementById("rubricName").value = file.name.replace(/\.csv$/i, "");
       document.getElementById("rubricMaxSix").value = maxSix;
-      renderTypeToggle(); renderAttemptsToggle(); renderLevelsEditor(); renderCriteriaEditor();
+      renderTypeToggle(); renderAttemptsToggle(); renderHalfToggle(); renderLevelsEditor(); renderCriteriaEditor();
       document.getElementById("rubricEditorOverlay").classList.remove("hidden");
     } catch (err) {
       openConfirm("CSV konnte nicht gelesen werden. Erwartetes Format: Kriterium;Beschreibung;Stufe1;Stufe2;... (oder eine mit dieser App exportierte Datei).", null, null, "OK");
@@ -3397,7 +3418,7 @@ document.getElementById("csvFileInput").addEventListener("change", (e) => {
 });
 function parseRubricCsv(text) {
   const rawLines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(l => l.trim().length > 0);
-  const meta = { type: "levels", maxSix: null, attempts: 1 };
+  const meta = { type: "levels", maxSix: null, attempts: 1, halfPoints: false };
   let i = 0;
   while (i < rawLines.length && rawLines[i].trim().startsWith("#")) {
     const eq = rawLines[i].indexOf("=");
@@ -3407,6 +3428,7 @@ function parseRubricCsv(text) {
       if (key === "TYP") meta.type = val.toUpperCase() === "ANKREUZFELDER" ? "checkboxes" : "levels";
       else if (key === "NOTE6") meta.maxSix = Number(val) || null;
       else if (key === "VERSUCHE") meta.attempts = Number(val) === 2 ? 2 : 1;
+      else if (key === "HALBE") meta.halfPoints = /^(JA|1|TRUE)$/i.test(val);
     }
     i++;
   }
@@ -3419,7 +3441,7 @@ function parseRubricCsv(text) {
       for (let c = 2; c < cells.length; c += 2) { const label = cells[c]; if (label) boxes.push({ label, points: Number(cells[c + 1]) || 0 }); }
       return { id: uid(), title: cells[0] || "", desc: cells[1] || "", boxes };
     });
-    return { type: "checkboxes", maxSix: meta.maxSix, attempts: meta.attempts, levels: [], criteria };
+    return { type: "checkboxes", maxSix: meta.maxSix, attempts: meta.attempts, halfPoints: meta.halfPoints, levels: [], criteria };
   }
   const header = lines[0]; const levels = header.slice(2);
   while (levels.length && !levels[levels.length - 1]) levels.pop(); // leere Excel-Spalten am Ende
@@ -3579,7 +3601,10 @@ function buildStudentReportSection(ex, rubric, name) {
       tableHtml = `<table class="grid"><thead><tr><th>Kriterium</th><th>Bewertung</th></tr></thead><tbody>` +
         rubric.criteria.map((c, ci) => {
           const checkedSet = new Set(a.checked ? a.checked[ci] : []);
-          const boxesHtml = c.boxes.map((b, bi) => `<span class="box${checkedSet.has(bi) ? " on" : ""}">${checkedSet.has(bi) ? "✓ " : "☐ "}${escapeHtml(b.label)}</span>`).join(" ");
+          const halfSet = new Set(a.half ? a.half[ci] : []);
+          const boxesHtml = c.boxes.map((b, bi) => halfSet.has(bi)
+            ? `<span class="box half">½ ${escapeHtml(b.label)}</span>`
+            : `<span class="box${checkedSet.has(bi) ? " on" : ""}">${checkedSet.has(bi) ? "✓ " : "☐ "}${escapeHtml(b.label)}</span>`).join(" ");
           const comment = (a.comments && a.comments[ci]) ? `<div class="comment">${escapeHtml(a.comments[ci])}</div>` : "";
           return `<tr><td class="crit"><b>${escapeHtml(c.title)}</b>${c.desc ? `<div class="desc">${escapeHtml(c.desc)}</div>` : ""}</td><td>${boxesHtml}${comment}</td></tr>`;
         }).join("") + "</tbody></table>";
@@ -3633,8 +3658,9 @@ document.getElementById("examPdfBtn").addEventListener("click", () => {
   td.crit { text-align:left; min-width:160px; }
   td.crit .desc { font-weight:400; color:#64748b; font-size:0.78rem; margin-top:2px; }
   .comment { font-style:italic; color:#475569; font-size:0.78rem; margin-top:4px; }
-  .box { display:inline-block; border:1px solid #cbd5e1; border-radius:6px; padding:3px 7px; margin:2px; font-size:0.8rem; }
+  .box { display:inline-block; border:1px solid #cbd5e1; border-radius:6px; padding:3px 7px; margin:2px; font-size:0.8rem; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .box.on { background:#bbf7d0; border-color:#16a34a; font-weight:700; }
+  .box.half { background:linear-gradient(to right, #fcd34d 50%, #fff 50%); border-color:#f59e0b; font-weight:700; }
   .summary { font-size:1.05rem; font-weight:700; text-align:right; }
   .pk-empty { color:#94a3b8; font-style:italic; }
   @media print { .report-page { padding: 14mm; } }
@@ -3647,7 +3673,7 @@ document.getElementById("examPdfBtn").addEventListener("click", () => {
   setTimeout(() => w.print(), 300);
 });
 
-let gradingName = null, gradingAttempt = 1, gradingSelections = [], gradingChecked = [], gradingComments = [];
+let gradingName = null, gradingAttempt = 1, gradingSelections = [], gradingChecked = [], gradingHalf = [], gradingComments = [];
 function openGrading(name, attemptNum) {
   gradingName = name; gradingAttempt = attemptNum || 1;
   const ex = exams.find(x => x.id === currentExamId);
@@ -3655,7 +3681,10 @@ function openGrading(name, attemptNum) {
   if (!rubric) { openConfirm("Das Kriterienraster dieser Prüfung wurde gelöscht.", null, null, "OK"); return; }
   const existing = (ex.results[name] || {})["attempt" + gradingAttempt];
   gradingComments = rubric.criteria.map((c, i) => (existing && existing.comments) ? (existing.comments[i] || "") : "");
-  if (rubric.type === "checkboxes") gradingChecked = rubric.criteria.map((c, i) => new Set(existing && existing.checked ? existing.checked[i] : []));
+  if (rubric.type === "checkboxes") {
+    gradingChecked = rubric.criteria.map((c, i) => new Set(existing && existing.checked ? existing.checked[i] : []));
+    gradingHalf = rubric.criteria.map((c, i) => new Set(existing && existing.half ? existing.half[i] : []));
+  }
   else gradingSelections = rubric.criteria.map((c, i) => (existing && existing.selections) ? existing.selections[i] : null);
   const attemptSuffix = (rubric.attempts || 1) === 2 ? ` – ${gradingAttempt}. Versuch` : "";
   document.getElementById("gradingTitle").textContent = `${rubric.name} – ${name}${attemptSuffix}`;
@@ -3675,8 +3704,10 @@ function renderGradingTable(rubric) {
       html += `<tr data-ci="${ci}">
         <td class="crit-title-cell"><span class="t">${escapeHtml(c.title)}</span><span class="d">${escapeHtml(c.desc)}</span></td>
         <td class="checkbox-cell">${c.boxes.map((b, bi) => {
-          const checked = gradingChecked[ci].has(bi);
-          return `<span class="box-cell${checked ? " selected" : ""}" data-ci="${ci}" data-bi="${bi}">${escapeHtml(b.label)}<span class="bp">${b.points} Pt.</span></span>`;
+          const checked = gradingChecked[ci].has(bi), half = gradingHalf[ci].has(bi);
+          const cls = half ? " half" : checked ? (rubric.halfPoints ? " full" : " selected") : "";
+          const bp = half ? `½ · ${b.points / 2} von ${b.points} Pt.` : `${b.points} Pt.`;
+          return `<span class="box-cell${cls}" data-ci="${ci}" data-bi="${bi}">${escapeHtml(b.label)}<span class="bp">${bp}</span></span>`;
         }).join("")}</td>
         <td class="comment-cell"><textarea data-ci="${ci}" placeholder="Notiz / nächster Schritt...">${escapeHtml(gradingComments[ci])}</textarea></td>
       </tr>`;
@@ -3712,7 +3743,12 @@ document.getElementById("gradingOverlay").addEventListener("click", (e) => {
   const chip = e.target.closest(".box-cell");
   if (chip) {
     const ci = Number(chip.dataset.ci), bi = Number(chip.dataset.bi);
-    if (gradingChecked[ci].has(bi)) gradingChecked[ci].delete(bi); else gradingChecked[ci].add(bi);
+    const full = gradingChecked[ci], half = gradingHalf[ci];
+    // Mit halben Punkten: leer → halb → voll → leer; sonst: leer ↔ voll
+    if (half.has(bi)) { half.delete(bi); if (rubric.halfPoints) full.add(bi); }
+    else if (full.has(bi)) full.delete(bi);
+    else if (rubric.halfPoints) half.add(bi);
+    else full.add(bi);
     renderGradingTable(rubric); updateGradingSummary(rubric);
   }
 });
@@ -3722,7 +3758,7 @@ document.getElementById("gradingOverlay").addEventListener("input", (e) => {
 });
 function currentGradingPoints(rubric) {
   if (rubric.type === "checkboxes") {
-    return rubric.criteria.reduce((sum, c, ci) => { let s = 0; gradingChecked[ci].forEach(bi => s += c.boxes[bi].points); return sum + s; }, 0);
+    return rubric.criteria.reduce((sum, c, ci) => { let s = 0; gradingChecked[ci].forEach(bi => s += c.boxes[bi].points); gradingHalf[ci].forEach(bi => s += c.boxes[bi].points / 2); return sum + s; }, 0);
   }
   return rubric.criteria.reduce((sum, c, ci) => { const li = gradingSelections[ci]; return sum + (li != null ? c.points[li] : 0); }, 0);
 }
@@ -3737,14 +3773,14 @@ document.getElementById("gradingSave").addEventListener("click", () => {
   const ex = exams.find(x => x.id === currentExamId);
   const rubric = rubrics.find(r => r.id === ex.rubricId);
   const open = rubric.type === "checkboxes"
-    ? (gradingChecked.every(set => set.size === 0) ? rubric.criteria.length : 0)
+    ? (gradingChecked.every(set => set.size === 0) && gradingHalf.every(set => set.size === 0) ? rubric.criteria.length : 0)
     : gradingSelections.filter(v => v == null).length;
   const doSave = () => {
     const points = currentGradingPoints(rubric);
     if (!ex.results[gradingName]) ex.results[gradingName] = {};
     const note = computeNote(points, rubric.maxSix);
     const attemptResult = { comments: gradingComments.slice(), points, maxSix: rubric.maxSix, note: note != null ? roundToQuarter(note) : null };
-    if (rubric.type === "checkboxes") attemptResult.checked = gradingChecked.map(set => Array.from(set));
+    if (rubric.type === "checkboxes") { attemptResult.checked = gradingChecked.map(set => Array.from(set)); attemptResult.half = gradingHalf.map(set => Array.from(set)); }
     else attemptResult.selections = gradingSelections.slice();
     ex.results[gradingName]["attempt" + gradingAttempt] = attemptResult;
     saveExams();
