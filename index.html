@@ -546,7 +546,7 @@
     </div>
     <div class="tool-grid" id="homeToolGrid"></div>
     <p class="hint">Reihenfolge ändern: Box lange drücken und ziehen – oder unter ⚙️ Einstellungen.</p>
-    <div id="appVersionLabel" class="version-label">v2026-11-10.2</div>
+    <div id="appVersionLabel" class="version-label">v2026-11-10.3</div>
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <button id="homeClassesBtn"><span class="ic">👥</span><span>Klassen</span></button>
       <button id="homeVerlaufBtn"><span class="ic">📊</span><span>Leistungen</span></button>
@@ -3054,6 +3054,7 @@ const DEFAULT_RUBRICS = [
       { title: `Armzug`, desc: ``, boxes: [{"label": "Kräftiger Armzug", "points": 1}, {"label": "Nur bis zu den Schultern (ca. 90°)", "points": 1}, {"label": "Saubere Ziehbewegung", "points": 1}, {"label": "Aktives Kopfeintauchen", "points": 1}] },
       { title: `Rhythmus`, desc: ``, boxes: [{"label": "Stetige, gleichmässige Bewegung", "points": 1}, {"label": "Richtige Reihenfolge Arm/Bein", "points": 1}, {"label": "Passende Gleitphasenlänge", "points": 1}] },
       { title: `Gleitphase`, desc: ``, boxes: [{"label": "Gestreckt", "points": 1}, {"label": "Gespannt", "points": 1}, {"label": "Kopf zwischen den Armen, Blick nach unten", "points": 1}] },
+      { title: `Allgemeine Form`, desc: `Zusatz- oder Abzugspunkt`, boxes: [{"label": "+", "points": 1}, {"label": "-", "points": -1}] },
     ]
   },
   {
@@ -3117,6 +3118,7 @@ const DEFAULT_RUBRICS = [
       { title: `Anlauf`, desc: ``, boxes: [{"label": "Dynamischer Anlauf", "points": 1}, {"label": "Kräftiger Absprung", "points": 1}, {"label": "Höhe – Sprung in die Höhe", "points": 1}] },
       { title: `In der Luft`, desc: ``, boxes: [{"label": "Streckung – ganzkörperlich gestreckte Haltung", "points": 1}, {"label": "Blick nach vorne und zwischen gestreckten Armen", "points": 1}, {"label": "Spannung – gespannte Haltung", "points": 1}, {"label": "Füsse – gestreckt", "points": 1}, {"label": "Keine Rotation – keine Drehung des Körpers", "points": 1}] },
       { title: `Landung`, desc: ``, boxes: [{"label": "Kontrollierte Punktlandung", "points": 1}, {"label": "Kontrolliert in die Knie", "points": 1}, {"label": "Ohne Schritte – Landung wird gehalten und gezeigt", "points": 1}] },
+      { title: `Allgemeine Form`, desc: `Zusatz- oder Abzugspunkt`, boxes: [{"label": "+", "points": 1}, {"label": "-", "points": -1}] },
     ]
   },
   {
@@ -3129,6 +3131,7 @@ const DEFAULT_RUBRICS = [
       { title: `Vor dem Sprung`, desc: ``, boxes: [{"label": "Korrekte Startposition – Schrittstellung, Hände am Block", "points": 1}, {"label": "Beginn Sprung – nach vorne ziehen, Gewichtsverlagerung", "points": 1}, {"label": "Kraftvolles Abspringen", "points": 1}] },
       { title: `In der Luft`, desc: ``, boxes: [{"label": "Gestreckte Haltung", "points": 1}, {"label": "Spannung", "points": 1}, {"label": "Kopf zwischen Armen – Blick nach unten", "points": 1}] },
       { title: `Beim Eintauchen`, desc: ``, boxes: [{"label": "Sauberes Eintauchen – Füsse gehen dort ins Wasser, wo der Kopf eintaucht", "points": 1}, {"label": "Spannung nach Eintauchen – Arme bleiben oben", "points": 1}, {"label": "Umlenken in Schwimmrichtung – Delfinschläge", "points": 1}, {"label": "Flüssiges Weiterschwimmen möglich – nicht zu tief, Armzug sobald an der Oberfläche", "points": 1}] },
+      { title: `Allgemeine Form`, desc: `Zusatz- oder Abzugspunkt`, boxes: [{"label": "+", "points": 1}, {"label": "-", "points": -1}] },
     ]
   },
 ];
@@ -3150,6 +3153,20 @@ seedDefaultRubrics();
 // Halbe Punkte: Standard ist «an» (fehlendes Feld = an, nur explizit false = aus)
 function usesHalfPoints(rubric) { return rubric.type === "checkboxes" && rubric.halfPoints !== false; }
 // Einmalig: bereits eingefügte Vorlage «Brustgleichschlag» an neue Fassung anpassen (nur unveränderte Teile)
+// Einmalig: Kriterium «Allgemeine Form» (+1 / -1) in bereits eingefügte Vorlagen ergänzen (Note-6-Punkte bleiben)
+(function migrateAllgemeineFormV1() {
+  const KEY = "spt_allg_form_v1";
+  if (localStorage.getItem(KEY)) return;
+  const names = ["Brustgleichschlag", "Strecksprung", "Startsprung"];
+  let changed = false;
+  rubrics.filter(r => names.includes(r.name) && r.type === "checkboxes").forEach(r => {
+    if (r.criteria.some(c => c.title === "Allgemeine Form")) return;
+    r.criteria.push({ id: uid(), title: "Allgemeine Form", desc: "Zusatz- oder Abzugspunkt", boxes: [{ label: "+", points: 1 }, { label: "-", points: -1 }] });
+    changed = true;
+  });
+  if (changed) saveRubrics();
+  localStorage.setItem(KEY, "1");
+})();
 (function migrateBrustRubricV2() {
   const KEY = "spt_brust_rubric_v2";
   if (localStorage.getItem(KEY)) return;
