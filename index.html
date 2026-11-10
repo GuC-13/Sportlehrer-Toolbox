@@ -327,6 +327,7 @@
   .box-cell.selected .bp { color: rgba(255,255,255,0.85); }
   .box-cell.full { background: var(--success-bg); color: white; border-color: var(--success-bg); }
   .box-cell.full .bp { color: rgba(255,255,255,0.85); }
+  .box-cell.full.minus { background: var(--danger-bg); border-color: var(--danger-bg); }
   .box-cell.half { background: linear-gradient(to right, #f59e0b 50%, var(--card) 50%); border-color: #f59e0b; }
   .box-cell.half .bp { color: var(--text); font-weight: 700; }
   .grade-summary { display: flex; gap: 20px; align-items: baseline; margin-bottom: 14px; background: var(--bg); border-radius: 10px; padding: 10px 14px; }
@@ -545,7 +546,7 @@
     </div>
     <div class="tool-grid" id="homeToolGrid"></div>
     <p class="hint">Reihenfolge ändern: Box lange drücken und ziehen – oder unter ⚙️ Einstellungen.</p>
-    <div id="appVersionLabel" class="version-label">v2026-11-10.1</div>
+    <div id="appVersionLabel" class="version-label">v2026-11-10.2</div>
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <button id="homeClassesBtn"><span class="ic">👥</span><span>Klassen</span></button>
       <button id="homeVerlaufBtn"><span class="ic">📊</span><span>Leistungen</span></button>
@@ -3044,15 +3045,15 @@ const DEFAULT_RUBRICS = [
   },
   {
     name: `Brustgleichschlag`,
-    maxSix: 15,
+    maxSix: 14,
     type: "checkboxes",
     attempts: 1,
     levels: [],
     criteria: [
-      { title: `Beinschlag`, desc: ``, boxes: [{"label": "Kräftig", "points": 1}, {"label": "Eng", "points": 1}, {"label": "Füsse nach aussen gedreht", "points": 1}, {"label": "Schwungvolle Bewegung", "points": 1}, {"label": "Starker Antrieb", "points": 1}] },
-      { title: `Armzug`, desc: ``, boxes: [{"label": "Kräftiger Armzug", "points": 1}, {"label": "Nur bis zu den Schultern (ca. 90°)", "points": 1}, {"label": "Saubere Ziehbewegung", "points": 1}, {"label": "Armzug-Atmen-Kopf eintauchen", "points": 1}] },
-      { title: `Rhythmus`, desc: ``, boxes: [{"label": "Stetige, kraftvolle Bewegung", "points": 1}, {"label": "Richtige Reihenfolge Arm/Bein", "points": 1}, {"label": "Passende Gleitphasenlänge", "points": 1}] },
-      { title: `Gleitphase`, desc: ``, boxes: [{"label": "Gestreckt", "points": 1}, {"label": "Gespannt", "points": 1}, {"label": "Kopf zwischen den Armen", "points": 1}] },
+      { title: `Beinschlag`, desc: ``, boxes: [{"label": "Kräftig", "points": 1}, {"label": "Eng", "points": 1}, {"label": "Füsse nach aussen gedreht", "points": 1}, {"label": "Schwungvolle Bewegung", "points": 1}, {"label": "Starker Antrieb", "points": 1}, {"label": "Schere oder Knickfuss", "points": -1}] },
+      { title: `Armzug`, desc: ``, boxes: [{"label": "Kräftiger Armzug", "points": 1}, {"label": "Nur bis zu den Schultern (ca. 90°)", "points": 1}, {"label": "Saubere Ziehbewegung", "points": 1}, {"label": "Aktives Kopfeintauchen", "points": 1}] },
+      { title: `Rhythmus`, desc: ``, boxes: [{"label": "Stetige, gleichmässige Bewegung", "points": 1}, {"label": "Richtige Reihenfolge Arm/Bein", "points": 1}, {"label": "Passende Gleitphasenlänge", "points": 1}] },
+      { title: `Gleitphase`, desc: ``, boxes: [{"label": "Gestreckt", "points": 1}, {"label": "Gespannt", "points": 1}, {"label": "Kopf zwischen den Armen, Blick nach unten", "points": 1}] },
     ]
   },
   {
@@ -3146,6 +3147,24 @@ function seedDefaultRubrics() {
   localStorage.setItem(DEFAULT_RUBRICS_SEEDED_KEY, "1");
 }
 seedDefaultRubrics();
+// Halbe Punkte: Standard ist «an» (fehlendes Feld = an, nur explizit false = aus)
+function usesHalfPoints(rubric) { return rubric.type === "checkboxes" && rubric.halfPoints !== false; }
+// Einmalig: bereits eingefügte Vorlage «Brustgleichschlag» an neue Fassung anpassen (nur unveränderte Teile)
+(function migrateBrustRubricV2() {
+  const KEY = "spt_brust_rubric_v2";
+  if (localStorage.getItem(KEY)) return;
+  const renames = { "Armzug-Atmen-Kopf eintauchen": "Aktives Kopfeintauchen", "Stetige, kraftvolle Bewegung": "Stetige, gleichmässige Bewegung", "Kopf zwischen den Armen": "Kopf zwischen den Armen, Blick nach unten" };
+  let changed = false;
+  rubrics.filter(r => r.name === "Brustgleichschlag" && r.type === "checkboxes").forEach(r => {
+    if (r.maxSix === 15) { r.maxSix = 14; changed = true; }
+    r.criteria.forEach(c => {
+      (c.boxes || []).forEach(b => { if (renames[b.label]) { b.label = renames[b.label]; changed = true; } });
+      if (c.title === "Beinschlag" && !c.boxes.some(b => b.label === "Schere oder Knickfuss")) { c.boxes.push({ label: "Schere oder Knickfuss", points: -1 }); changed = true; }
+    });
+  });
+  if (changed) saveRubrics();
+  localStorage.setItem(KEY, "1");
+})();
 function saveRubrics() { saveJSON(RUBRICS_KEY, rubrics); }
 function saveExams() { saveJSON(EXAMS_KEY, exams); }
 
@@ -3205,7 +3224,7 @@ function downloadTextFile(filename, text) {
 function sanitizeFilename(name) { return name.replace(/[\\/:*?"<>|]/g, "").trim() || "kriterienraster"; }
 function exportRubricCsv(rubric) {
   const lines = [`#TYP=${rubric.type === "checkboxes" ? "ANKREUZFELDER" : "STUFEN"}`, `#NOTE6=${rubric.maxSix}`, `#VERSUCHE=${rubric.attempts || 1}`];
-  if (rubric.type === "checkboxes" && rubric.halfPoints) lines.push("#HALBE=JA");
+  if (rubric.type === "checkboxes") lines.push(`#HALBE=${usesHalfPoints(rubric) ? "JA" : "NEIN"}`);
   if (rubric.type === "checkboxes") {
     const maxBoxes = Math.max(0, ...rubric.criteria.map(c => c.boxes.length));
     const header = ["Kriterium", "Beschreibung"];
@@ -3229,14 +3248,14 @@ document.getElementById("exportTemplateBtn").addEventListener("click", () => {
   downloadTextFile("Kriterienraster-Vorlage.csv", lines.join("\n"));
 });
 
-let editingRubricId = null, draftType = "levels", draftAttempts = 1, draftHalf = false, draftLevels = [], draftCriteria = [];
+let editingRubricId = null, draftType = "levels", draftAttempts = 1, draftHalf = true, draftLevels = [], draftCriteria = [];
 function openRubricEditor(rubric) {
   if (rubric) {
     editingRubricId = rubric.id;
     document.getElementById("rubricEditorTitle").textContent = "Kriterienraster bearbeiten";
     document.getElementById("rubricName").value = rubric.name;
     document.getElementById("rubricMaxSix").value = rubric.maxSix;
-    draftType = rubric.type || "levels"; draftAttempts = rubric.attempts || 1; draftHalf = !!rubric.halfPoints;
+    draftType = rubric.type || "levels"; draftAttempts = rubric.attempts || 1; draftHalf = rubric.halfPoints !== false;
     draftLevels = (rubric.levels || []).slice();
     draftCriteria = draftType === "checkboxes"
       ? rubric.criteria.map(c => ({ id: c.id, title: c.title, desc: c.desc, boxes: (c.boxes || []).map(b => ({ ...b })) }))
@@ -3245,7 +3264,7 @@ function openRubricEditor(rubric) {
     editingRubricId = null;
     document.getElementById("rubricEditorTitle").textContent = "Neues Kriterienraster";
     document.getElementById("rubricName").value = ""; document.getElementById("rubricMaxSix").value = "";
-    draftType = "levels"; draftAttempts = 1; draftHalf = false;
+    draftType = "levels"; draftAttempts = 1; draftHalf = true;
     draftLevels = ["Trifft fast immer", "Trifft meistens", "Trifft manchmal", "Trifft nicht zu"];
     draftCriteria = [];
   }
@@ -3399,7 +3418,7 @@ document.getElementById("csvFileInput").addEventListener("change", (e) => {
   readFileText(file).then(text => {
     try {
       const parsed = parseRubricCsv(text);
-      draftType = parsed.type; draftAttempts = parsed.attempts || 1; draftHalf = !!parsed.halfPoints;
+      draftType = parsed.type; draftAttempts = parsed.attempts || 1; draftHalf = parsed.halfPoints !== false;
       draftLevels = parsed.levels; draftCriteria = parsed.criteria;
       editingRubricId = null;
       const maxSix = parsed.maxSix != null ? parsed.maxSix : (parsed.type === "checkboxes"
@@ -3418,7 +3437,7 @@ document.getElementById("csvFileInput").addEventListener("change", (e) => {
 });
 function parseRubricCsv(text) {
   const rawLines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(l => l.trim().length > 0);
-  const meta = { type: "levels", maxSix: null, attempts: 1, halfPoints: false };
+  const meta = { type: "levels", maxSix: null, attempts: 1, halfPoints: true };
   let i = 0;
   while (i < rawLines.length && rawLines[i].trim().startsWith("#")) {
     const eq = rawLines[i].indexOf("=");
@@ -3705,7 +3724,7 @@ function renderGradingTable(rubric) {
         <td class="crit-title-cell"><span class="t">${escapeHtml(c.title)}</span><span class="d">${escapeHtml(c.desc)}</span></td>
         <td class="checkbox-cell">${c.boxes.map((b, bi) => {
           const checked = gradingChecked[ci].has(bi), half = gradingHalf[ci].has(bi);
-          const cls = half ? " half" : checked ? (rubric.halfPoints ? " full" : " selected") : "";
+          const cls = half ? " half" : checked ? (usesHalfPoints(rubric) ? (b.points < 0 ? " full minus" : " full") : " selected") : "";
           const bp = half ? `½ · ${b.points / 2} von ${b.points} Pt.` : `${b.points} Pt.`;
           return `<span class="box-cell${cls}" data-ci="${ci}" data-bi="${bi}">${escapeHtml(b.label)}<span class="bp">${bp}</span></span>`;
         }).join("")}</td>
@@ -3745,9 +3764,9 @@ document.getElementById("gradingOverlay").addEventListener("click", (e) => {
     const ci = Number(chip.dataset.ci), bi = Number(chip.dataset.bi);
     const full = gradingChecked[ci], half = gradingHalf[ci];
     // Mit halben Punkten: leer → halb → voll → leer; sonst: leer ↔ voll
-    if (half.has(bi)) { half.delete(bi); if (rubric.halfPoints) full.add(bi); }
+    if (half.has(bi)) { half.delete(bi); if (usesHalfPoints(rubric)) full.add(bi); }
     else if (full.has(bi)) full.delete(bi);
-    else if (rubric.halfPoints) half.add(bi);
+    else if (usesHalfPoints(rubric)) half.add(bi);
     else full.add(bi);
     renderGradingTable(rubric); updateGradingSummary(rubric);
   }
