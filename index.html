@@ -528,6 +528,14 @@
   .sw-distance-btn { padding: 6px 2px; }
   .sw-distance-btn .l { white-space: nowrap; }
   .version-label { font-size: 0.8125rem; }
+
+  /* Injurio: kleines Symbol oben rechts auf der Startseite, öffnet QR-Code */
+  #homeView { position: relative; }
+  #homeView > h1 { padding: 0 50px; }
+  .injurio-btn { position: absolute; top: 12px; right: 14px; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); font-size: 1.35rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #injurioOverlay .modal-box { max-width: 360px; text-align: center; }
+  .qr-svg { display: block; width: 100%; max-width: 260px; margin: 0 auto 12px; border-radius: 8px; }
+  .injurio-url { font-size: 0.875rem; color: var(--muted); overflow-wrap: anywhere; margin: 0 0 4px; }
 </style>
 </head>
 <body>
@@ -536,6 +544,7 @@
   <!-- ============ HOME ============ -->
   <div id="homeView" class="view">
     <h1>🏅 Sportlehrer-Toolbox</h1>
+    <button class="injurio-btn" id="injurioBtn" aria-label="Injurio – QR-Code für verletzte Schülerinnen und Schüler" title="Injurio (Training trotz Verletzung)">🩹</button>
     <div class="active-class-bar" id="activeClassBar">
       <label for="activeClassSelect">👥 Aktive Klasse</label>
       <select id="activeClassSelect"></select>
@@ -546,7 +555,7 @@
     </div>
     <div class="tool-grid" id="homeToolGrid"></div>
     <p class="hint">Reihenfolge ändern: Box lange drücken und ziehen – oder unter ⚙️ Einstellungen.</p>
-    <div id="appVersionLabel" class="version-label">v2026-11-10.3</div>
+    <div id="appVersionLabel" class="version-label">v2026-11-17.1</div>
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <button id="homeClassesBtn"><span class="ic">👥</span><span>Klassen</span></button>
       <button id="homeVerlaufBtn"><span class="ic">📊</span><span>Leistungen</span></button>
@@ -883,6 +892,19 @@
 </div>
 
 <!-- ============ SHARED MODALS ============ -->
+<div class="modal-overlay hidden" id="injurioOverlay">
+  <div class="modal-box">
+    <h2>🩹 Injurio</h2>
+    <p style="margin:0 0 12px; font-size:0.95rem;">Geleitetes Training für verletzte Schülerinnen und Schüler. QR-Code mit dem iPad scannen:</p>
+    <svg class="qr-svg" viewBox="0 0 37 37" role="img" aria-label="QR-Code zu Injurio"><rect width="37" height="37" fill="#fff"/><path fill="#000" d="M4 4h7v1h-7zM12 4h2v1h-2zM15 4h2v1h-2zM19 4h6v1h-6zM26 4h7v1h-7zM4 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM15 5h1v1h-1zM18 5h2v1h-2zM21 5h1v1h-1zM24 5h1v1h-1zM26 5h1v1h-1zM32 5h1v1h-1zM4 6h1v1h-1zM6 6h3v1h-3zM10 6h1v1h-1zM13 6h2v1h-2zM16 6h4v1h-4zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h3v1h-3zM32 6h1v1h-1zM4 7h1v1h-1zM6 7h3v1h-3zM10 7h1v1h-1zM12 7h2v1h-2zM20 7h2v1h-2zM23 7h1v1h-1zM26 7h1v1h-1zM28 7h3v1h-3zM32 7h1v1h-1zM4 8h1v1h-1zM6 8h3v1h-3zM10 8h1v1h-1zM13 8h1v1h-1zM15 8h3v1h-3zM23 8h2v1h-2zM26 8h1v1h-1zM28 8h3v1h-3zM32 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM18 9h1v1h-1zM21 9h3v1h-3zM26 9h1v1h-1zM32 9h1v1h-1zM4 10h7v1h-7zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h7v1h-7zM12 11h1v1h-1zM15 11h1v1h-1zM17 11h2v1h-2zM21 11h4v1h-4zM4 12h1v1h-1zM6 12h2v1h-2zM9 12h3v1h-3zM13 12h1v1h-1zM17 12h2v1h-2zM20 12h2v1h-2zM23 12h1v1h-1zM26 12h1v1h-1zM29 12h1v1h-1zM31 12h2v1h-2zM4 13h1v1h-1zM8 13h1v1h-1zM11 13h2v1h-2zM14 13h1v1h-1zM16 13h1v1h-1zM19 13h6v1h-6zM26 13h1v1h-1zM28 13h1v1h-1zM32 13h1v1h-1zM6 14h1v1h-1zM10 14h1v1h-1zM12 14h3v1h-3zM18 14h2v1h-2zM22 14h1v1h-1zM30 14h2v1h-2zM4 15h2v1h-2zM7 15h2v1h-2zM11 15h4v1h-4zM16 15h4v1h-4zM22 15h7v1h-7zM32 15h1v1h-1zM4 16h1v1h-1zM7 16h1v1h-1zM10 16h1v1h-1zM14 16h3v1h-3zM24 16h2v1h-2zM29 16h2v1h-2zM4 17h1v1h-1zM6 17h1v1h-1zM8 17h2v1h-2zM13 17h1v1h-1zM15 17h1v1h-1zM17 17h1v1h-1zM23 17h1v1h-1zM25 17h3v1h-3zM30 17h3v1h-3zM5 18h1v1h-1zM8 18h1v1h-1zM10 18h2v1h-2zM14 18h3v1h-3zM18 18h1v1h-1zM23 18h1v1h-1zM26 18h3v1h-3zM30 18h3v1h-3zM7 19h1v1h-1zM12 19h1v1h-1zM14 19h2v1h-2zM17 19h1v1h-1zM20 19h1v1h-1zM26 19h1v1h-1zM28 19h1v1h-1zM31 19h1v1h-1zM4 20h2v1h-2zM8 20h4v1h-4zM16 20h1v1h-1zM19 20h1v1h-1zM22 20h3v1h-3zM27 20h3v1h-3zM31 20h1v1h-1zM6 21h3v1h-3zM12 21h6v1h-6zM19 21h3v1h-3zM24 21h1v1h-1zM27 21h1v1h-1zM29 21h3v1h-3zM4 22h1v1h-1zM6 22h1v1h-1zM10 22h1v1h-1zM14 22h2v1h-2zM19 22h3v1h-3zM26 22h3v1h-3zM30 22h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM13 23h2v1h-2zM19 23h3v1h-3zM26 23h1v1h-1zM30 23h1v1h-1zM5 24h1v1h-1zM7 24h1v1h-1zM9 24h4v1h-4zM14 24h4v1h-4zM19 24h12v1h-12zM12 25h1v1h-1zM17 25h2v1h-2zM20 25h5v1h-5zM28 25h5v1h-5zM4 26h7v1h-7zM12 26h1v1h-1zM17 26h1v1h-1zM20 26h1v1h-1zM23 26h2v1h-2zM26 26h1v1h-1zM28 26h2v1h-2zM31 26h1v1h-1zM4 27h1v1h-1zM10 27h1v1h-1zM12 27h2v1h-2zM16 27h1v1h-1zM20 27h1v1h-1zM24 27h1v1h-1zM28 27h2v1h-2zM31 27h2v1h-2zM4 28h1v1h-1zM6 28h3v1h-3zM10 28h1v1h-1zM13 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM24 28h5v1h-5zM30 28h2v1h-2zM4 29h1v1h-1zM6 29h3v1h-3zM10 29h1v1h-1zM12 29h4v1h-4zM18 29h8v1h-8zM28 29h2v1h-2zM32 29h1v1h-1zM4 30h1v1h-1zM6 30h3v1h-3zM10 30h1v1h-1zM12 30h1v1h-1zM14 30h1v1h-1zM16 30h3v1h-3zM20 30h1v1h-1zM22 30h3v1h-3zM27 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM4 31h1v1h-1zM10 31h1v1h-1zM13 31h1v1h-1zM15 31h1v1h-1zM18 31h1v1h-1zM24 31h1v1h-1zM27 31h1v1h-1zM29 31h1v1h-1zM31 31h1v1h-1zM4 32h7v1h-7zM12 32h1v1h-1zM14 32h1v1h-1zM16 32h2v1h-2zM20 32h1v1h-1zM22 32h5v1h-5zM31 32h1v1h-1z"/></svg>
+    <p class="injurio-url">guc-13.github.io/Injurio</p>
+    <div class="modal-actions" style="justify-content:center">
+      <a class="btn btn-secondary" href="https://guc-13.github.io/Injurio/" target="_blank" rel="noopener" style="text-decoration:none">Seite öffnen</a>
+      <button class="btn" id="injurioCloseBtn">Schliessen</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="confirmOverlay">
   <div class="modal-box">
     <p id="confirmMessage" style="font-size:1.05rem; margin:0 0 16px; white-space:pre-line; max-height:60vh; overflow-y:auto;"></p>
@@ -1405,6 +1427,9 @@ document.getElementById("homeSettingsBtn").addEventListener("click", () => {
   renderSettingsTiles(); renderBackupInfo();
   document.getElementById("settingsOverlay").classList.remove("hidden");
 });
+document.getElementById("injurioBtn").addEventListener("click", () => document.getElementById("injurioOverlay").classList.remove("hidden"));
+document.getElementById("injurioCloseBtn").addEventListener("click", () => document.getElementById("injurioOverlay").classList.add("hidden"));
+document.getElementById("injurioOverlay").addEventListener("click", (e) => { if (e.target.id === "injurioOverlay") e.target.classList.add("hidden"); });
 document.getElementById("settingsCloseBtn").addEventListener("click", () => document.getElementById("settingsOverlay").classList.add("hidden"));
 const LAST_BACKUP_KEY = "spt_last_backup";
 const BACKUP_REMIND_DAYS = 14;
